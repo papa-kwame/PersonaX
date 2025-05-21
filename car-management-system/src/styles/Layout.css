@@ -1,0 +1,13 @@
+/* src/styles/components/layout.css */
+
+  
+  .main-content {
+    display: flex;
+    flex: 1;
+  }
+  
+  .content-area {
+    flex: 1;
+    padding: var(--space-lg);
+    background-color: var(--light-gray);
+  }
