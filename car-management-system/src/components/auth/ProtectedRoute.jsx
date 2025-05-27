@@ -1,4 +1,3 @@
-// src/components/ProtectedRoute.jsx
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -11,20 +10,27 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
   }
 
   if (!isAuthenticated) {
+    // Not logged in → redirect to login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (location.pathname.startsWith('/admin') && !hasRole('Admin')) {
-    return <Navigate to="/unauthorized" replace />;
-  }
+  const path = location.pathname;
 
-  if (userRoles.includes('Mechanic') && !userRoles.includes('Admin')) {
-    if (location.pathname.startsWith('/mechanic')) {
-      return children;
+  // Role-based route enforcement
+  const routeAccess = {
+    '/dashboard': 'Admin',
+    '/admin': 'Admin',
+    '/mechanic': 'Mechanic',
+    '/userdashboard': 'User',
+  };
+
+  for (const prefix in routeAccess) {
+    if (path.startsWith(prefix) && !hasRole(routeAccess[prefix])) {
+      return <Navigate to="/unauthorized" replace />;
     }
-    return <Navigate to="/mechanic" replace />;
   }
 
+  // If the route requires specific roles, enforce them
   if (requiredRoles.length > 0 && !requiredRoles.some(role => hasRole(role))) {
     return <Navigate to="/unauthorized" replace />;
   }

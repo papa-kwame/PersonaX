@@ -36,7 +36,7 @@ export default function Admin()  { const navigate = useNavigate();
         <Container maxWidth="sm">
           <Stack spacing={4} alignItems="center">
             <Typography variant="h3" fontWeight={700}>
-              Welcome, Ameyaw 👋
+              Welcome
             </Typography>
             <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
               Redirecting to your admin dashboard...

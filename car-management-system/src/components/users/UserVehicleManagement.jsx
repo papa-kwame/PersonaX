@@ -41,6 +41,7 @@ import {
   styled
 } from '@mui/material';
 import CreatePersonalRequestModal from './CreatePersonalRequestModal'; // Import the modal component
+import VehicleRequestForm from '../new components/VehicleRequestForm';
 
 const API_URL = 'https://localhost:7092/api';
 
@@ -161,9 +162,12 @@ const UserVehicleManagement = () => {
     loading: true,
     vehicles: [],
     userRequests: [],
+    vehicleRequests: [], // New state for vehicle requests
     showRequestModal: false,
     showRequestsModal: false,
-    showCreateRequestModal: false, // New state for the CreatePersonalRequest modal
+    showCreateRequestModal: false,
+    showMyRequestsModal: false,
+    showVehicleRequestsModal: false, // New state for vehicle requests modal
     formData: { requestReason: '', department: '' },
     error: null
   });
@@ -180,15 +184,17 @@ const UserVehicleManagement = () => {
     try {
       setState(prev => ({ ...prev, loading: true }));
 
-      const [vehiclesRes, requestsRes] = await Promise.all([
+      const [vehiclesRes, requestsRes, vehicleRequestsRes] = await Promise.all([
         api.get(`/VehicleAssignment/ByUser/${userId}`),
-        api.get(`/VehicleAssignment/UserRequests/${userId}`)
+        api.get(`/MaintenanceRequest/my-requests?userId=${userId}`),
+        api.get(`/VehicleAssignment/MyVehicleRequests/${userId}`)
       ]);
 
       setState(prev => ({
         ...prev,
         vehicles: vehiclesRes.data,
         userRequests: requestsRes.data,
+        vehicleRequests: vehicleRequestsRes.data, 
         loading: false
       }));
     } catch (err) {
@@ -397,6 +403,170 @@ const UserVehicleManagement = () => {
     </Dialog>
   );
 
+  const renderMyRequestsModal = () => (
+    <Dialog
+      open={state.showMyRequestsModal}
+      onClose={() => setState(prev => ({ ...prev, showMyRequestsModal: false }))}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        style: {
+          maxWidth: '1000px',
+          maxHeight: '90vh'
+        }
+      }}
+    >
+      <DialogTitle>
+        <Box display="flex" alignItems="center">
+          <ClipboardCheckIcon style={{ marginRight: '12px', fontSize: '1.5rem', color: '#3f51b5' }} />
+          <Typography variant="h6" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#333' }}>
+            My Requests
+          </Typography>
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        {state.userRequests.length > 0 ? (
+          <Grid container spacing={3}>
+            {state.userRequests.map((request) => (
+              <Grid item xs={12} key={request.id}>
+                <Card style={{ marginBottom: '16px', padding: '16px' }}>
+                  <CardContent>
+                    <Typography variant="h6" style={{ fontSize: '1.1rem', marginBottom: '8px', color: '#333' }}>
+                      {request.vehicleMake} {request.vehicleModel}
+                    </Typography>
+                    <Typography variant="body2" style={{ color: '#666', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      License Plate: {request.licensePlate}
+                    </Typography>
+                    <Typography variant="body2" style={{ color: '#666', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      Request Type: {request.requestType}
+                    </Typography>
+                    <Typography variant="body2" style={{ color: '#666', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      Description: {request.description}
+                    </Typography>
+                    <Typography variant="body2" style={{ color: '#666', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      Status: <StatusChip label={request.status} status={String(request.status).toLowerCase()} size="small" />
+                    </Typography>
+                    <Typography variant="body2" style={{ color: '#666', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      Priority: {request.priority}
+                    </Typography>
+                    <Typography variant="body2" style={{ color: '#666', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      Estimated Cost: ${request.estimatedCost}
+                    </Typography>
+                    <Typography variant="body2" style={{ color: '#666', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      Department: {request.department}
+                    </Typography>
+                    <Typography variant="body2" style={{ color: '#666', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      Current Stage: {request.currentStage}
+                    </Typography>
+                    <Typography variant="body2" style={{ color: '#666', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      Route Name: {request.routeName}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Box py={4} textAlign="center">
+            <Typography variant="body1" color="textSecondary">
+              No requests found
+            </Typography>
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions style={{ padding: '16px 24px', borderTop: '1px solid #eee' }}>
+        <Button
+          onClick={() => setState(prev => ({ ...prev, showMyRequestsModal: false }))}
+          style={{
+            background: 'transparent',
+            color: '#3f51b5',
+            border: '1px solid #3f51b5',
+            padding: '8px 16px',
+            fontSize: '0.875rem'
+          }}
+        >
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
+  const renderVehicleRequestsModal = () => (
+    <Dialog
+      open={state.showVehicleRequestsModal}
+      onClose={() => setState(prev => ({ ...prev, showVehicleRequestsModal: false }))}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        style: {
+          maxWidth: '600px',
+          maxHeight: '90vh'
+        }
+      }}
+    >
+      <DialogTitle>
+        <Box display="flex" alignItems="center">
+          <CarFrontIcon style={{ marginRight: '12px', fontSize: '1.5rem', color: '#3f51b5' }} />
+          <Typography variant="h6" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#333' }}>
+            Your Vehicle Requests
+          </Typography>
+        </Box>
+      </DialogTitle>
+      <DialogContent style={{ padding: 0 }}>
+        {state.vehicleRequests.length > 0 ? (
+          <TableContainer>
+            <Table>
+              <TableHead style={{ background: '#f9f9f9' }}>
+                <TableRow>
+                  <TableCell style={{ fontWeight: 600, color: '#333' }}>Request Reason</TableCell>
+                  <TableCell style={{ fontWeight: 600, color: '#333' }}>Request Date</TableCell>
+                  <TableCell style={{ fontWeight: 600, color: '#333' }}>Status</TableCell>
+                  <TableCell style={{ fontWeight: 600, color: '#333' }}>Current Stage</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.vehicleRequests.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell>{request.requestReason}</TableCell>
+                    <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <StatusChip
+                        label={request.status}
+                        status={String(request.status).toLowerCase()}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{request.currentStage}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Box py={4} textAlign="center">
+            <Typography variant="body1" color="textSecondary">
+              No vehicle requests found
+            </Typography>
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions style={{ padding: '16px 24px', borderTop: '1px solid #eee' }}>
+        <Button
+          onClick={() => setState(prev => ({ ...prev, showVehicleRequestsModal: false }))}
+          style={{
+            background: 'transparent',
+            color: '#3f51b5',
+            border: '1px solid #3f51b5',
+            padding: '8px 16px',
+            fontSize: '0.875rem'
+          }}
+        >
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   const renderAssignedVehicles = () => (
     <StyledCard>
       <CardHeaderStyled
@@ -510,33 +680,12 @@ const UserVehicleManagement = () => {
           Vehicles
         </Typography>
         <Box display="flex" gap="16px">
-          <Button
-            variant="contained"
-            startIcon={<PlusIcon />}
-            style={{
-              background: '#3f51b5',
+          <VehicleRequestForm      style={{
+              background: '#4caf50',
               color: 'white',
               padding: '8px 16px',
               fontSize: '0.875rem'
-            }}
-            onClick={() => setState(prev => ({ ...prev, showRequestModal: true }))}
-          >
-            New
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<ClipboardCheckIcon />}
-            style={{
-              background: 'transparent',
-              color: '#3f51b5',
-              border: '1px solid #3f51b5',
-              padding: '8px 16px',
-              fontSize: '0.875rem'
-            }}
-            onClick={() => setState(prev => ({ ...prev, showRequestsModal: true }))}
-          >
-            Requests
-          </Button>
+            }}/>
           <Button
             variant="contained"
             startIcon={<PlusIcon />}
@@ -550,12 +699,41 @@ const UserVehicleManagement = () => {
           >
             Create Request
           </Button>
+          <Button
+            variant="outlined"
+            style={{
+              background: 'transparent',
+              color: '#3f51b5',
+              border: '1px solid #3f51b5',
+              padding: '8px 16px',
+              fontSize: '0.875rem'
+            }}
+            onClick={() => setState(prev => ({ ...prev, showMyRequestsModal: true }))}
+          >
+            My Requests
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<CarFrontIcon />}
+            style={{
+              background: 'transparent',
+              color: '#3f51b5',
+              border: '1px solid #3f51b5',
+              padding: '8px 16px',
+              fontSize: '0.875rem'
+            }}
+            onClick={() => setState(prev => ({ ...prev, showVehicleRequestsModal: true }))}
+          >
+            Vehicle Requests
+          </Button>
         </Box>
       </PageHeader>
 
       {renderAssignedVehicles()}
       {renderRequestModal()}
       {renderRequestsModal()}
+      {renderMyRequestsModal()}
+      {renderVehicleRequestsModal()}
       <CreatePersonalRequestModal
         open={state.showCreateRequestModal}
         onClose={() => setState(prev => ({ ...prev, showCreateRequestModal: false }))}

@@ -7,6 +7,8 @@ import "../components/dashboard/dashboard.css";
 import UserVehicleManagement from "../components/users/UserVehicleManagement";
 import { useAuth } from '../context/AuthContext';
 import VehicleAssignedCard from "../components/users/VehicleAssignedCard";
+import VehicleRequestForm from "../components/new components/VehicleRequestForm";
+import VehicleRequestsPage from "../components/new components/VehicleRequestsComponent";
 
 const api = axios.create({
   baseURL:  'https://localhost:7092/api',
@@ -150,15 +152,7 @@ export default function Dashboard() {
             color="#10b981"
           />
           
-          <StatsCard
-            title="Active Users"
-            stats={{ count: stats.users }}
-            link="/users"
-            linkText="Manage Users"
-            icon={<FiUsers />}
-            color="#3f37c9"
-          />
-          
+
           <StatsCard
             title="Assignments"
             stats={{ count: stats.assignments }}
@@ -177,7 +171,8 @@ export default function Dashboard() {
             color="#f8961e"
           />
         </div>
-  <UserVehicleManagement/>
+
+  <VehicleRequestForm/>
       </div>
     </div>
   );

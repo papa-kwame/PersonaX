@@ -53,23 +53,23 @@ function App() {
           
           <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/dashboard" element={
-              <ProtectedRoute requiredRoles={['User', 'Admin']}>
+              <ProtectedRoute requiredRoles={['Admin']}>
               <Layout><Dashboard /></Layout>
             </ProtectedRoute>
           } />
           <Route path="/userdashboard" element={
-            <ProtectedRoute requiredRoles={['User', 'Admin']}>
+            <ProtectedRoute requiredRoles={['User']}>
               <Layout><UserDashboard /></Layout>
             </ProtectedRoute>
           } />
           <Route path="/vehicles/new" element={
-            <ProtectedRoute requiredRoles={['User', 'Admin']}>
+            <ProtectedRoute requiredRoles={['Admin']}>
               <Layout><VehicleNewPage /></Layout>
             </ProtectedRoute>
           } />
         
           <Route path="/vehicles/:id" element={
-            <ProtectedRoute requiredRoles={['User', 'Admin']}>
+            <ProtectedRoute requiredRoles={['Admin']}>
               <Layout><VehicleShowPage /></Layout>
             </ProtectedRoute>
           } />
@@ -81,18 +81,18 @@ function App() {
           } />
   
             <Route path="/vehicles/:id/edit" element={
-    <ProtectedRoute requiredRoles={['User', 'Admin']}>
+    <ProtectedRoute requiredRoles={[ 'Admin']}>
               <Layout><VehicleEditForm /></Layout>
             </ProtectedRoute>
           } />
 
           <Route path="/vehicles" element={
-            <ProtectedRoute requiredRoles={['User', 'Admin']}>
+            <ProtectedRoute requiredRoles={[ 'Admin']}>
               <Layout><Assignments /></Layout>
             </ProtectedRoute>
           } />
                   <Route path="/assignments/:id/history" element={
-            <ProtectedRoute requiredRoles={['User', 'Admin']}>
+            <ProtectedRoute requiredRoles={[ 'Admin']}>
               <Layout><AssignmentHistory /></Layout>
             </ProtectedRoute>
           } />

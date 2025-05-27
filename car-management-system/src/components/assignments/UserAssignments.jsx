@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
 import {
   Container,
@@ -65,6 +65,14 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { format, parseISO } from 'date-fns';
+import VehicleRequestForm from '../new components/VehicleRequestForm';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded';
+import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
+import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 
 // Custom styled components
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -72,8 +80,11 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
   transition: 'all 0.3s ease',
   '&:hover': {
-    boxShadow: '0 6px 24px rgba(0,0,0,0.1)'
-  }
+    boxShadow: '0 6px 24px rgba(0,0,0,0.1)',
+    cursor: 'pointer'
+  },
+  padding: theme.spacing(2),
+  marginBottom: theme.spacing(2)
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -166,13 +177,6 @@ const professionalColors = {
   highlight: '#f0f4ff'
 };
 
-const requestTypeMap = {
-  'Repair': 0,
-  'Maintenance': 1,
-  'Inspection': 2,
-  'Other': 3
-};
-
 const priorityMap = {
   'Low': 0,
   'Medium': 1,
@@ -191,12 +195,6 @@ const statusMap = {
 const stageOrder = ['Create', 'Comment', 'Review', 'Commit', 'Approve', 'Complete'];
 
 const reverseMappings = {
-  requestType: {
-    0: 'Repair',
-    1: 'Maintenance',
-    2: 'Inspection',
-    3: 'Other'
-  },
   priority: {
     0: 'Low',
     1: 'Medium',
@@ -223,12 +221,428 @@ const safeFormat = (date, formatStr) => {
   }
 };
 
+const RequestDetails = ({ request, workflowStatus, requestComments }) => {
+  const theme = useTheme();
+
+  return (
+    <Box sx={{ mt: 4, px: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 4,
+          p: 3,
+          backgroundColor: alpha(theme.palette.primary.main, 0.04),
+          borderRadius: 3,
+          borderLeft: `4px solid ${theme.palette.primary.main}`,
+          boxShadow: theme.shadows[1]
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 700, color: professionalColors.text }}>
+          Request Details
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Avatar sx={{ width: 38, height: 38, bgcolor: professionalColors.primary }}>
+            {request.requestedByUserName?.charAt(0)?.toUpperCase() || 'U'}
+          </Avatar>
+          <Typography variant="body2" sx={{ color: professionalColors.textSecondary, fontWeight: 500 }}>
+            {request.requestedByUserEmail || 'Unknown User'}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)'
+          },
+          gap: 2,
+          mb: 2
+        }}
+      >
+        {[
+          {
+            label: 'Request Reason',
+            value: request.requestReason
+          },
+          {
+            label: 'Request Date',
+            value: request.requestDate
+          },
+          {
+            label: 'Department',
+            value: request.department
+          },
+          {
+            label: 'Vehicle',
+            value: request.vehicle ? `${request.vehicle.make} ${request.vehicle.model} (${request.vehicle.licensePlate})` : 'N/A'
+          }
+        ].map((item, index) => (
+          <StyledPaper
+            key={index}
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider'
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: professionalColors.textSecondary,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.6px',
+                fontSize: '0.68rem',
+                mb: 0.5,
+                display: 'block'
+              }}
+            >
+              {item.label}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {item.value}
+              </Typography>
+            </Box>
+          </StyledPaper>
+        ))}
+      </Box>
+      {workflowStatus && (
+        <StyledPaper elevation={0} sx={{ mb: 4, px: 2, py: 3, borderRadius: 3 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: professionalColors.textSecondary,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              fontSize: '0.72rem',
+              mb: 2
+            }}
+          >
+            Workflow Status
+          </Typography>
+
+          <Stepper activeStep={stageOrder.indexOf(request.currentStage)} orientation="horizontal">
+            {stageOrder.map((stage, index) => (
+              <Step key={stage}>
+                <StepLabel
+                  sx={{
+                    '& .MuiStepLabel-label': {
+                      fontWeight: 600,
+                      fontSize: '0.9rem'
+                    }
+                  }}
+                >
+                  {stage}
+                </StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+
+          <Box sx={{
+            mt: 4,
+            p: 4,
+            borderRadius: 3,
+            backgroundColor: 'background.paper',
+            boxShadow: '0px 2px 10px rgba(0, 0, 0, 0.08)',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
+            {/* Completed Actions Section */}
+            <Box sx={{ mb: 4 }}>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mb: 3,
+                pb: 1.5,
+                borderBottom: '1px solid',
+                borderColor: 'divider'
+              }}>
+                <CheckCircleOutlineRoundedIcon
+                  sx={{
+                    color: 'success.main',
+                    mr: 1.5,
+                    fontSize: 24
+                  }}
+                />
+                <Typography variant="subtitle1" sx={{
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  letterSpacing: 0.5
+                }}>
+                  Completed Actions
+                </Typography>
+              </Box>
+
+              {Object.entries(workflowStatus.completedActions).map(([stage, actions]) => (
+                <Box key={stage} sx={{
+                  mb: 3,
+                  pl: 2,
+                  borderLeft: '2px solid',
+                  borderColor: 'success.light'
+                }}>
+                  <Typography variant="body1" sx={{
+                    fontWeight: 500,
+                    mb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: 'text.primary',
+                    '&:before': {
+                      content: '""',
+                      display: 'inline-block',
+                      width: 10,
+                      height: 10,
+                      backgroundColor: 'success.main',
+                      borderRadius: '50%',
+                      mr: 2,
+                      flexShrink: 0
+                    }
+                  }}>
+                    {stage}
+                  </Typography>
+
+                  <Box sx={{ pl: 3 }}>
+                    {actions.map((action, index) => (
+                      <Box key={index} sx={{
+                        mb: 2.5,
+                        p: 2,
+                        borderRadius: 2,
+                        backgroundColor: 'action.hover',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          backgroundColor: 'action.selected',
+                          transform: 'translateY(-1px)'
+                        }
+                      }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <AccountCircleRoundedIcon
+                            sx={{
+                              color: 'action.active',
+                              mr: 1.5,
+                              fontSize: 20
+                            }}
+                          />
+                          <Typography variant="body2" sx={{
+                            fontWeight: 500,
+                            color: 'text.primary'
+                          }}>
+                            {action.userName}
+                          </Typography>
+                          <Box sx={{
+                            ml: 'auto',
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 4,
+                            backgroundColor: 'success.light',
+                            fontSize: '0.7rem',
+                            color: 'success.dark'
+                          }}>
+                            Completed
+                          </Box>
+                        </Box>
+
+                        <Typography variant="body2" sx={{
+                          color: 'text.secondary',
+                          pl: 3.5,
+                          mb: 1
+                        }}>
+                          {action.comments}
+                        </Typography>
+
+                        <Box sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          pl: 3.5
+                        }}>
+                          <AccessTimeRoundedIcon
+                            sx={{
+                              color: 'text.disabled',
+                              mr: 1,
+                              fontSize: 16
+                            }}
+                          />
+                          <Typography variant="caption" sx={{
+                            color: 'text.disabled'
+                          }}>
+                            {safeFormat(action.timestamp, 'PPpp')}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+
+            {/* Pending Actions Section */}
+            <Box>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mb: 3,
+                pb: 1.5,
+                borderBottom: '1px solid',
+                borderColor: 'divider'
+              }}>
+                <PendingActionsRoundedIcon
+                  sx={{
+                    color: 'warning.main',
+                    mr: 1.5,
+                    fontSize: 24
+                  }}
+                />
+                <Typography variant="subtitle1" sx={{
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  letterSpacing: 0.5
+                }}>
+                  Pending Actions
+                </Typography>
+              </Box>
+
+              <Box sx={{
+                display: 'grid',
+                gap: 2
+              }}>
+                {workflowStatus.pendingActions.map((action, index) => (
+                  <Box key={index} sx={{
+                    p: 2.5,
+                    borderRadius: 2,
+                    backgroundColor: action.isPending ? 'warning.lightest' : 'success.lightest',
+                    border: '1px solid',
+                    borderColor: action.isPending ? 'warning.light' : 'success.light',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)'
+                    }
+                  }}>
+                    <Box sx={{
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <Box sx={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: '50%',
+                        backgroundColor: action.isPending ? 'warning.main' : 'success.main',
+                        mr: 2,
+                        flexShrink: 0,
+                        boxShadow: '0 0 0 4px rgba(255, 167, 38, 0.2)'
+                      }} />
+
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography variant="subtitle2" sx={{
+                          fontWeight: 600,
+                          color: 'text.primary'
+                        }}>
+                          {action.role}
+                        </Typography>
+                        <Typography variant="caption" sx={{
+                          color: 'text.secondary',
+                          display: 'flex',
+                          alignItems: 'center',
+                          mt: 0.5
+                        }}>
+                          <PersonOutlineRoundedIcon sx={{ fontSize: 14, mr: 0.5 }} />
+                          {action.userName || 'Unassigned'}
+                        </Typography>
+                      </Box>
+
+                      <Chip
+                        label={action.isPending ? 'Pending' : 'Completed'}
+                        size="small"
+                        color={action.isPending ? 'warning' : 'success'}
+                        sx={{
+                          ml: 2,
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          height: 24,
+                          borderRadius: 6
+                        }}
+                        icon={action.isPending ?
+                          <HourglassBottomRoundedIcon fontSize="small" /> :
+                          <CheckCircleRoundedIcon fontSize="small" />
+                        }
+                      />
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Box>
+        </StyledPaper>
+      )}
+     
+    </Box>
+  );
+};
+
+// Action Buttons Component
+const ActionButtons = ({ request, onProcessStage, onRejectRequest, currentTab }) => {
+  const canProcessStage = currentTab === 'myRequests'; 
+  const isFinalStage = request.currentStage === 'Approve';
+  const processStageButtonRef = useRef(null);
+
+  return (
+    <Box sx={{ mt: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      {canProcessStage && (
+        <StyledButton
+          ref={processStageButtonRef}
+          variant="contained"
+          startIcon={<CheckCircleIcon />}
+          onClick={onProcessStage}
+          sx={{
+            minWidth: 200,
+            backgroundColor: professionalColors.primary,
+            '&:hover': {
+              backgroundColor: alpha(professionalColors.primary, 0.9)
+            }
+          }}
+        >
+          Process Current Stage
+        </StyledButton>
+      )}
+
+      {isFinalStage && (
+        <StyledButton
+          variant="outlined"
+          color="error"
+          startIcon={<CancelIcon />}
+          onClick={onRejectRequest}
+          sx={{
+            minWidth: 200,
+            borderColor: professionalColors.error,
+            color: professionalColors.error,
+            '&:hover': {
+              backgroundColor: alpha(professionalColors.error, 0.05),
+              borderColor: professionalColors.error
+            }
+          }}
+        >
+          Reject Request
+        </StyledButton>
+      )}
+    </Box>
+  );
+};
+
+// Main Component
 const VehicleAssignmentApp = () => {
   const theme = useTheme();
   const { isAuthenticated, userId, token } = useAuth();
   const [requests, setRequests] = useState([]);
   const [history, setHistory] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [myRequests, setMyRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('inbox');
   const [openDialog, setOpenDialog] = useState(false);
@@ -254,9 +668,11 @@ const VehicleAssignmentApp = () => {
   const formatRequestData = (request) => {
     const formatted = {
       ...request,
-      requestType: reverseMappings.requestType[request.requestType] || request.requestType,
       priority: reverseMappings.priority[request.priority] || request.priority,
-      status: reverseMappings.status[request.status] || request.status
+      status: reverseMappings.status[request.status] || request.status,
+      requestedByUserName: request.userName || request.requestedByUserName,
+      requestedByUserEmail: request.email || request.userEmail,
+      vehicle: request.vehicle || {}, // Ensure vehicle is not undefined
     };
 
     if (request.requestDate) {
@@ -276,15 +692,21 @@ const VehicleAssignmentApp = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [requestsRes, vehiclesRes, historyRes] = await Promise.all([
+        const [requestsRes, vehiclesRes, historyRes, myRequestsRes] = await Promise.all([
           api.get('/api/VehicleAssignment/AllRequests'),
           api.get('/api/Vehicles'),
-          api.get('/api/VehicleAssignment/AllAssignments')
+          api.get('/api/VehicleAssignment/AllAssignments'),
+          api.get(`/api/VehicleAssignment/MyVehicleRequests/${userId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          })
         ]);
 
         setRequests(requestsRes.data.map(formatRequestData));
         setVehicles(vehiclesRes.data);
         setHistory(historyRes.data.map(formatRequestData));
+        setMyRequests(myRequestsRes.data.map(formatRequestData));
 
         const pendingRes = await api.get(`/api/VehicleAssignment/my-pending-actions?userId=${userId}`, {
           headers: {
@@ -326,7 +748,7 @@ const VehicleAssignmentApp = () => {
   const fetchRequestComments = async (requestId) => {
     try {
       const response = await api.get(`/api/VehicleAssignment/vehicle-requests/${requestId}/comments`);
-      setRequestComments(response.data.comments);
+      setRequestComments(response.data.comments || []);
     } catch (error) {
       showNotification('Failed to fetch request comments', 'error');
     }
@@ -345,15 +767,13 @@ const VehicleAssignmentApp = () => {
     e.preventDefault();
     try {
       const requestPayload = {
+        userId: userId,
         vehicleId: formData.vehicleId,
         requestReason: formData.requestReason,
         priority: priorityMap[formData.priority],
-        estimatedCost: formData.estimatedCost,
-        adminComments: formData.adminComments || null,
-        department: formData.department
       };
 
-      const response = await api.post(`/api/VehicleAssignment/RequestVehicle?userId=${userId}`, requestPayload, {
+      const response = await api.post('/api/VehicleAssignment/RequestVehicle', requestPayload, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -374,9 +794,6 @@ const VehicleAssignmentApp = () => {
       setFormData({
         vehicleId: '',
         requestReason: '',
-        priority: 'Medium',
-        estimatedCost: 0,
-        department: 'HR'
       });
     } catch (error) {
       const errorMessage = error.response?.data?.title ||
@@ -418,14 +835,16 @@ const VehicleAssignmentApp = () => {
           payload.estimatedCost = formData.estimatedCost;
         }
 
-        await api.post(`/api/VehicleAssignment/vehicle-requests/${selectedRequest.id}/process-stage?userId=${userId}`, payload, {
+        const response = await api.post(`/api/VehicleAssignment/vehicle-requests/${selectedRequest.id}/process-stage?userId=${userId}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-      }
 
-      showNotification('Stage processed successfully!');
+        if (response.data.message) {
+          showNotification(response.data.message, 'success');
+        }
+      }
 
       const [requestsRes, pendingRes] = await Promise.all([
         api.get('/api/VehicleAssignment/AllRequests'),
@@ -441,6 +860,7 @@ const VehicleAssignmentApp = () => {
       setOpenStageDialog(false);
       setStageComments('');
       fetchWorkflowStatus(selectedRequest.id);
+      fetchRequestComments(selectedRequest.id); // Fetch comments again to update the list
     } catch (error) {
       const errorMessage = error.response?.data?.title ||
                         error.response?.data?.message ||
@@ -466,7 +886,7 @@ const VehicleAssignmentApp = () => {
       const rejectionReason = prompt("Please enter the reason for rejection:");
       if (rejectionReason === null) return;
 
-      await api.post(`/api/VehicleAssignment/${id}/reject?userId=${userId}`, rejectionReason, {
+      await api.post(`/api/VehicleAssignment/vehicle-requests/${id}/reject?userId=${userId}`, { comments: rejectionReason }, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -528,234 +948,6 @@ const VehicleAssignmentApp = () => {
     }
   };
 
-  const renderRequestDetails = (request) => {
-    return (
-      <Box sx={{ mt: 4, px: 2 }}>
-        {workflowStatus && (
-          <StyledPaper elevation={0} sx={{ mb: 4, px: 2, py: 3, borderRadius: 3 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: professionalColors.textSecondary,
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                fontSize: '0.72rem',
-                mb: 2
-              }}
-            >
-              Workflow Status
-            </Typography>
-
-            <Stepper activeStep={stageOrder.indexOf(request.currentStage)} orientation="horizontal">
-              {stageOrder.map((stage, index) => (
-                <Step key={stage}>
-                  <StepLabel
-                    sx={{
-                      '& .MuiStepLabel-label': {
-                        fontWeight: 600,
-                        fontSize: '0.9rem'
-                      }
-                    }}
-                  >
-                    {stage}
-                  </StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                Completed Actions:
-              </Typography>
-              {Object.entries(workflowStatus.completedActions).map(([stage, actions]) => (
-                <Box key={stage} sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                    {stage}:
-                  </Typography>
-                  {actions.map((action, index) => (
-                    <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="body2" sx={{ mr: 1 }}>
-                        {action.userName}:
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: professionalColors.textSecondary }}>
-                        {action.comments} ({safeFormat(action.timestamp, 'PPpp')})
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              ))}
-
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                Pending Actions:
-              </Typography>
-              {workflowStatus.pendingActions.map((action, index) => (
-                <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="body2" sx={{ mr: 1 }}>
-                    {action.role}:
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: professionalColors.textSecondary }}>
-                    {action.userName} ({action.isPending ? 'Pending' : 'Completed'})
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </StyledPaper>
-        )}
-
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 4,
-            p: 3,
-            backgroundColor: alpha(theme.palette.primary.main, 0.04),
-            borderRadius: 3,
-            borderLeft: `4px solid ${theme.palette.primary.main}`,
-            boxShadow: theme.shadows[1]
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 700, color: professionalColors.text }}>
-            Request Details
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar sx={{ width: 38, height: 38, bgcolor: professionalColors.primary }}>
-              {request.requestedByUserName?.charAt(0)?.toUpperCase() || 'U'}
-            </Avatar>
-            <Typography variant="body2" sx={{ color: professionalColors.textSecondary, fontWeight: 500 }}>
-              {request.requestedByUserEmail || 'Unknown User'}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)'
-            },
-            gap: 2,
-            mb: 2
-          }}
-        >
-          {[
-            {
-              label: 'Request Reason',
-              value: request.requestReason
-            },
-            {
-              label: 'Request Date',
-              value: request.requestDate
-            },
-            {
-              label: 'Status',
-              value: request.status
-            }
-          ].map((item, index) => (
-            <StyledPaper
-              key={index}
-              elevation={0}
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                backgroundColor: 'background.paper',
-                border: '1px solid',
-                borderColor: 'divider'
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  color: professionalColors.textSecondary,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.6px',
-                  fontSize: '0.68rem',
-                  mb: 0.5,
-                  display: 'block'
-                }}
-              >
-                {item.label}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {item.value}
-                </Typography>
-              </Box>
-            </StyledPaper>
-          ))}
-        </Box>
-
-        {request.adminComments && (
-          <StyledPaper elevation={0} sx={{
-            mb: 3,
-            backgroundColor: alpha(theme.palette.secondary.main, 0.03)
-          }}>
-           
-          </StyledPaper>
-        )}
-
-       
-      </Box>
-    );
-  };
-
-  const renderActionButtons = (request) => {
-    const canProcessStage = pendingActions.some(r => r.id === request.id);
-    const isFinalStage = request.currentStage === 'Approve';
-    const isCommitStage = request.currentStage === 'Commit';
-
-    return (
-      <Box sx={{ mt: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-        {canProcessStage && (
-          <StyledButton
-            variant="contained"
-            startIcon={<CheckCircleIcon />}
-            onClick={() => {
-              setSelectedRequest(request);
-              setOpenStageDialog(true);
-              fetchWorkflowStatus(request.id);
-            }}
-            sx={{
-              minWidth: 200,
-              backgroundColor: professionalColors.primary,
-              '&:hover': {
-                backgroundColor: alpha(professionalColors.primary, 0.9)
-              }
-            }}
-          >
-            Process Current Stage
-          </StyledButton>
-        )}
-
-
-
-        {isFinalStage && (
-          <StyledButton
-            variant="outlined"
-            color="error"
-            startIcon={<CancelIcon />}
-            onClick={() => handleRejectRequest(request.id)}
-            sx={{
-              minWidth: 200,
-              borderColor: professionalColors.error,
-              color: professionalColors.error,
-              '&:hover': {
-                backgroundColor: alpha(professionalColors.error, 0.05),
-                borderColor: professionalColors.error
-              }
-            }}
-          >
-            Reject Request
-          </StyledButton>
-        )}
-      </Box>
-    );
-  };
-
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{
@@ -798,34 +990,7 @@ const VehicleAssignmentApp = () => {
               Vehicle Assignment Requests
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <StyledButton
-                variant="contained"
-                onClick={() => setOpenDialog(true)}
-                startIcon={<AddIcon />}
-                sx={{
-                  backgroundColor: professionalColors.primary,
-                  '&:hover': {
-                    backgroundColor: alpha(professionalColors.primary, 0.9)
-                  }
-                }}
-              >
-                New Request
-              </StyledButton>
-              <StyledButton
-                variant="outlined"
-                onClick={() => setOpenHistoryDialog(true)}
-                startIcon={<HistoryIcon />}
-                sx={{
-                  borderColor: professionalColors.border,
-                  color: professionalColors.text,
-                  '&:hover': {
-                    borderColor: professionalColors.primary,
-                    color: professionalColors.primary
-                  }
-                }}
-              >
-                History
-              </StyledButton>
+              <VehicleRequestForm/>
             </Box>
           </Box>
         </Box>
@@ -907,6 +1072,25 @@ const VehicleAssignmentApp = () => {
               }
             }}
           />
+          <Tab
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AssignmentIcon fontSize="small" />
+                <span>My Requests</span>
+              </Box>
+            }
+            value="myVehicleRequests"
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500,
+              fontSize: '0.875rem',
+              py: 2,
+              minHeight: 'auto',
+              '&.Mui-selected': {
+                color: professionalColors.primary
+              }
+            }}
+          />
         </Tabs>
 
         <Box sx={{ p: 3 }}>
@@ -915,31 +1099,112 @@ const VehicleAssignmentApp = () => {
               {requests.length > 0 ? (
                 <List sx={{ '& > * + *': { mt: 1.5 } }}>
                   {requests.map((request) => (
-                    <StyledPaper key={request.id} elevation={0}>
+                    <StyledPaper
+                      key={request.id}
+                      elevation={0}
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setOpenDetailsDialog(true);
+                        fetchWorkflowStatus(request.id);
+                        fetchRequestComments(request.id);
+                      }}
+                      sx={{
+                        cursor: 'pointer',
+                        p: 2.5,
+                        borderRadius: 2,
+                        transition: 'all 0.2s ease',
+                        backgroundColor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                          borderColor: 'primary.light'
+                        }
+                      }}
+                    >
                       <Box sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 2,
+                        gap: 3,
                         flexWrap: 'wrap',
                         [theme.breakpoints.down('sm')]: {
                           flexDirection: 'column',
-                          alignItems: 'flex-start'
+                          alignItems: 'flex-start',
+                          gap: 1.5
                         }
                       }}>
-                        <Box sx={{ flex: 1, minWidth: 200 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                            {request.requestReason} - Requested by {request.requestedByUserEmail}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: professionalColors.textSecondary }}>
-                            {request.requestType} • {safeFormat(request.requestDate, 'PP')}
-                          </Typography>
-                        </Box>
                         <Box sx={{
-                          display: 'flex',
-                          gap: 1,
-                          flexWrap: 'wrap',
+                          flex: 1,
+                          minWidth: 250,
                           [theme.breakpoints.down('sm')]: {
                             width: '100%'
+                          }
+                        }}>
+                          <Typography variant="subtitle1" sx={{
+                            fontWeight: 700,
+                            color: 'text.primary',
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}>
+                            Vehicle Request
+                          </Typography>
+
+                          <Box sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 2,
+                            [theme.breakpoints.down('sm')]: {
+                              flexDirection: 'column',
+                              gap: 1
+                            }
+                          }}>
+                            <div>
+                              <Typography variant="body2" sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                color: 'text.secondary',
+                                mb: '9px'
+                              }}>
+                                {request.requestedByUserEmail}
+                              </Typography>
+
+                              <Typography variant="body2" sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                color: 'text.secondary'
+                              }}>
+                                {request.vehicle ? (
+                                  <>
+                                    <div>{request.vehicle.make} {request.vehicle.model} </div>
+                                    <Chip
+                                      label={request.vehicle.licensePlate}
+                                      size="small"
+                                      sx={{
+                                        height: 20,
+                                        ml: 1,
+                                        fontSize: '0.9rem',
+                                        backgroundColor: alpha(theme.palette.success.main, 0.1),
+                                        color: theme.palette.success.dark
+                                      }}
+                                    />
+                                  </>
+                                ) : 'N/A'}
+                              </Typography>
+                            </div>
+                          </Box>
+                        </Box>
+
+                        <Box sx={{
+                          display: 'flex',
+                          gap: 1.5,
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          [theme.breakpoints.down('sm')]: {
+                            width: '100%',
+                            justifyContent: 'flex-start'
                           }
                         }}>
                           <StatusBadge
@@ -947,53 +1212,33 @@ const VehicleAssignmentApp = () => {
                             size="small"
                             status={request.status}
                             icon={getStatusIcon(request.status)}
-                          />
-                          <PriorityBadge
-                            label={request.priority}
-                            size="small"
-                            priority={request.priority}
-                            icon={getPriorityIcon(request.priority)}
+                            sx={{
+                              px: 1.5,
+                              py: 0.5,
+                              fontSize: '0.8rem'
+                            }}
                           />
                           <Chip
                             label={request.currentStage}
                             size="small"
                             sx={{
-                              fontWeight: 500,
-                              backgroundColor: alpha(theme.palette.info.main, 0.1),
-                              color: theme.palette.info.main,
-                              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              backgroundColor: alpha(theme.palette.info.main, 0.15),
+                              color: theme.palette.info.dark,
+                              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                              height: 24
                             }}
                           />
-                        </Box>
-                      </Box>
-                      <Box sx={{
-                        mt: 2,
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        [theme.breakpoints.down('sm')]: {
-                          justifyContent: 'flex-start'
-                        }
-                      }}>
-                        <StyledButton
-                          variant="outlined"
-                          size="small"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setOpenDetailsDialog(true);
-                            fetchWorkflowStatus(request.id);
-                            fetchRequestComments(request.id);
-                          }}
-                          sx={{
-                            color: professionalColors.text,
-                            borderColor: professionalColors.border,
+                          <IconButton size="small" sx={{
+                            color: 'text.secondary',
                             '&:hover': {
-                              borderColor: professionalColors.primary,
-                              color: professionalColors.primary
+                              color: 'primary.main',
+                              backgroundColor: alpha(theme.palette.primary.main, 0.1)
                             }
-                          }}
-                        >
-                          View Details
-                        </StyledButton>
+                          }}>
+                          </IconButton>
+                        </Box>
                       </Box>
                     </StyledPaper>
                   ))}
@@ -1038,37 +1283,110 @@ const VehicleAssignmentApp = () => {
                     <StyledPaper
                       key={request.id}
                       elevation={0}
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setOpenDetailsDialog(true);
+                        fetchWorkflowStatus(request.id);
+                        fetchRequestComments(request.id);
+                      }}
                       sx={{
-                        backgroundColor: alpha(theme.palette.warning.main, 0.03),
+                        cursor: 'pointer',
+                        p: 2.5,
+                        borderRadius: 2,
+                        transition: 'all 0.2s ease',
+                        backgroundColor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
                         '&:hover': {
-                          borderColor: professionalColors.warning,
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                          borderColor: 'primary.light'
                         }
                       }}
                     >
                       <Box sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 2,
+                        gap: 3,
                         flexWrap: 'wrap',
                         [theme.breakpoints.down('sm')]: {
                           flexDirection: 'column',
-                          alignItems: 'flex-start'
+                          alignItems: 'flex-start',
+                          gap: 1.5
                         }
                       }}>
-                        <Box sx={{ flex: 1, minWidth: 200 }} >
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}  >
-                            {request.requestReason} - Requested by {request.requestedByUserEmail}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: professionalColors.textSecondary }}>
-                            {request.requestType} • {safeFormat(request.requestDate, 'PP')}
-                          </Typography>
-                        </Box>
                         <Box sx={{
-                          display: 'flex',
-                          gap: 1,
-                          flexWrap: 'wrap',
+                          flex: 1,
+                          minWidth: 250,
                           [theme.breakpoints.down('sm')]: {
                             width: '100%'
+                          }
+                        }}>
+                          <Typography variant="subtitle1" sx={{
+                            fontWeight: 700,
+                            mb: 0.5,
+                            color: 'text.primary',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                          }}>
+                            Vehicle Request
+                          </Typography>
+
+                          <Box sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 2,
+                            mt: 1.5,
+                            mb: 1.5,
+                            [theme.breakpoints.down('sm')]: {
+                              flexDirection: 'column',
+                              gap: 1
+                            }
+                          }}>
+                            <Typography variant="body2" sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              color: 'text.secondary'
+                            }}>
+                              {request.requestedByUserEmail}
+                            </Typography>
+
+                            <Typography variant="body2" sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              color: 'text.secondary'
+                            }}>
+                              {request.vehicle ? (
+                                <>
+                                  {request.vehicle.make} {request.vehicle.model}
+                                  <Chip
+                                    label={request.vehicle.licensePlate}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      ml: 1,
+                                      fontSize: '0.7rem',
+                                      backgroundColor: alpha(theme.palette.success.main, 0.1),
+                                      color: theme.palette.success.dark
+                                    }}
+                                  />
+                                </>
+                              ) : 'N/A'}
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <Box sx={{
+                          display: 'flex',
+                          gap: 1.5,
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          [theme.breakpoints.down('sm')]: {
+                            width: '100%',
+                            justifyContent: 'flex-start'
                           }
                         }}>
                           <StatusBadge
@@ -1076,65 +1394,33 @@ const VehicleAssignmentApp = () => {
                             size="small"
                             status={request.status}
                             icon={getStatusIcon(request.status)}
+                            sx={{
+                              px: 1.5,
+                              py: 0.5,
+                              fontSize: '0.8rem'
+                            }}
                           />
                           <Chip
                             label={request.currentStage}
                             size="small"
                             sx={{
-                              fontWeight: 500,
-                              backgroundColor: alpha(theme.palette.info.main, 0.1),
-                              color: theme.palette.info.main,
-                              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              backgroundColor: alpha(theme.palette.info.main, 0.15),
+                              color: theme.palette.info.dark,
+                              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                              height: 24
                             }}
                           />
+                          <IconButton size="small" sx={{
+                            color: 'text.secondary',
+                            '&:hover': {
+                              color: 'primary.main',
+                              backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                            }
+                          }}>
+                          </IconButton>
                         </Box>
-                      </Box>
-                      <Box sx={{
-                        mt: 2,
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        gap: 1,
-                        [theme.breakpoints.down('sm')]: {
-                          justifyContent: 'flex-start'
-                        }
-                      }}>
-                        <StyledButton
-                          variant="outlined"
-                          size="small"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setOpenDetailsDialog(true);
-                            fetchWorkflowStatus(request.id);
-                            fetchRequestComments(request.id);
-                          }}
-                          sx={{
-                            color: professionalColors.text,
-                            borderColor: professionalColors.border,
-                            '&:hover': {
-                              borderColor: professionalColors.primary,
-                              color: professionalColors.primary
-                            }
-                          }}
-                        >
-                          View Details
-                        </StyledButton>
-                        <StyledButton
-                          variant="contained"
-                          size="small"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setOpenStageDialog(true);
-                            fetchWorkflowStatus(request.id);
-                          }}
-                          sx={{
-                            backgroundColor: professionalColors.primary,
-                            '&:hover': {
-                              backgroundColor: alpha(professionalColors.primary, 0.9)
-                            }
-                          }}
-                        >
-                          Process Stage
-                        </StyledButton>
                       </Box>
                     </StyledPaper>
                   ))}
@@ -1165,6 +1451,188 @@ const VehicleAssignmentApp = () => {
                     mx: 'auto'
                   }}>
                     You don't have any pending actions for vehicle assignment requests at this time.
+                  </Typography>
+                </Box>
+              )}
+            </>
+          )}
+
+          {activeTab === 'myVehicleRequests' && (
+            <>
+              {myRequests.length > 0 ? (
+                <List sx={{ '& > * + *': { mt: 2 } }}>
+                  {myRequests.map((request) => (
+                    <StyledPaper
+                      key={request.id}
+                      elevation={0}
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setOpenDetailsDialog(true);
+                        fetchWorkflowStatus(request.id);
+                        fetchRequestComments(request.id);
+                      }}
+                      sx={{
+                        cursor: 'pointer',
+                        p: 2.5,
+                        borderRadius: 2,
+                        transition: 'all 0.2s ease',
+                        backgroundColor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                          borderColor: 'primary.light'
+                        }
+                      }}
+                    >
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        flexWrap: 'wrap',
+                        [theme.breakpoints.down('sm')]: {
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          gap: 1.5
+                        }
+                      }}>
+                        <Box sx={{
+                          flex: 1,
+                          minWidth: 250,
+                          [theme.breakpoints.down('sm')]: {
+                            width: '100%'
+                          }
+                        }}>
+                          <Typography variant="subtitle1" sx={{
+                            fontWeight: 700,
+                            mb: 0.5,
+                            color: 'text.primary',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                          }}>
+                            Vehicle Request
+                          </Typography>
+
+                          <Box sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 2,
+                            mt: 1.5,
+                            mb: 1.5,
+                            [theme.breakpoints.down('sm')]: {
+                              flexDirection: 'column',
+                              gap: 1
+                            }
+                          }}>
+                            <Typography variant="body2" sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              color: 'text.secondary'
+                            }}>
+                              {request.requestedByUserEmail}
+                            </Typography>
+
+                            <Typography variant="body2" sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1,
+                              color: 'text.secondary'
+                            }}>
+                              {request.vehicle ? (
+                                <>
+                                  {request.vehicle.make} {request.vehicle.model}
+                                  <Chip
+                                    label={request.vehicle.licensePlate}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      ml: 1,
+                                      fontSize: '0.7rem',
+                                      backgroundColor: alpha(theme.palette.success.main, 0.1),
+                                      color: theme.palette.success.dark
+                                    }}
+                                  />
+                                </>
+                              ) : 'N/A'}
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <Box sx={{
+                          display: 'flex',
+                          gap: 1.5,
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          [theme.breakpoints.down('sm')]: {
+                            width: '100%',
+                            justifyContent: 'flex-start'
+                          }
+                        }}>
+                          <StatusBadge
+                            label={request.status}
+                            size="small"
+                            status={request.status}
+                            icon={getStatusIcon(request.status)}
+                            sx={{
+                              px: 1.5,
+                              py: 0.5,
+                              fontSize: '0.8rem'
+                            }}
+                          />
+                          <Chip
+                            label={request.currentStage}
+                            size="small"
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              backgroundColor: alpha(theme.palette.info.main, 0.15),
+                              color: theme.palette.info.dark,
+                              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                              height: 24
+                            }}
+                          />
+                          <IconButton size="small" sx={{
+                            color: 'text.secondary',
+                            '&:hover': {
+                              color: 'primary.main',
+                              backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                            }
+                          }}>
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    </StyledPaper>
+                  ))}
+                </List>
+              ) : (
+                <Box sx={{
+                  textAlign: 'center',
+                  p: 6,
+                  border: `1px dashed ${professionalColors.border}`,
+                  borderRadius: '8px',
+                  backgroundColor: alpha(professionalColors.primary, 0.02)
+                }}>
+                  <AssignmentIcon sx={{
+                    fontSize: 80,
+                    color: alpha(professionalColors.textSecondary, 0.3),
+                    mb: 2
+                  }} />
+                  <Typography variant="h6" sx={{
+                    fontWeight: 500,
+                    color: professionalColors.textSecondary,
+                    mb: 1
+                  }}>
+                    No Vehicle Assignment Requests
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    color: alpha(professionalColors.textSecondary, 0.7),
+                    maxWidth: 400,
+                    mx: 'auto'
+                  }}>
+                    There are currently no vehicle assignment requests. Click "New Request" to create one.
                   </Typography>
                 </Box>
               )}
@@ -1340,8 +1808,20 @@ const VehicleAssignmentApp = () => {
           <DialogContent dividers sx={{ py: 3 }}>
             {selectedRequest && (
               <>
-                {renderRequestDetails(selectedRequest)}
-                {renderActionButtons(selectedRequest)}
+                <RequestDetails
+                  request={selectedRequest}
+                  workflowStatus={workflowStatus}
+                  requestComments={requestComments}
+                />
+                <ActionButtons
+                  request={selectedRequest}
+                  onProcessStage={() => {
+                    setOpenStageDialog(true);
+                    fetchWorkflowStatus(selectedRequest.id);
+                  }}
+                  onRejectRequest={() => handleRejectRequest(selectedRequest.id)}
+                  currentTab={activeTab}
+                />
               </>
             )}
           </DialogContent>
@@ -1422,7 +1902,6 @@ const VehicleAssignmentApp = () => {
           </DialogActions>
         </Dialog>
 
-        {/* History Dialog */}
         <Dialog
           open={openHistoryDialog}
           onClose={() => setOpenHistoryDialog(false)}
@@ -1449,7 +1928,15 @@ const VehicleAssignmentApp = () => {
                   <StyledPaper
                     key={request.id}
                     elevation={0}
+                    onClick={() => {
+                      setSelectedRequest(request);
+                      setOpenDetailsDialog(true);
+                    }}
                     sx={{
+                      cursor: 'pointer',
+                      '&:hover': {
+                        boxShadow: '0 6px 24px rgba(0,0,0,0.1)'
+                      },
                       p: 2,
                       borderRadius: '8px',
                       border: `1px solid ${professionalColors.border}`,
@@ -1493,33 +1980,6 @@ const VehicleAssignmentApp = () => {
                           icon={getStatusIcon(request.status)}
                         />
                       </Box>
-                    </Box>
-                    <Box sx={{
-                      mt: 2,
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      [theme.breakpoints.down('sm')]: {
-                        justifyContent: 'flex-start'
-                      }
-                    }}>
-                      <StyledButton
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setOpenDetailsDialog(true);
-                        }}
-                        sx={{
-                          color: professionalColors.text,
-                          borderColor: professionalColors.border,
-                          '&:hover': {
-                            borderColor: professionalColors.primary,
-                            color: professionalColors.primary
-                          }
-                        }}
-                      >
-                        View Details
-                      </StyledButton>
                     </Box>
                   </StyledPaper>
                 ))}

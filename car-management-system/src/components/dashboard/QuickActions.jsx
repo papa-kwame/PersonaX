@@ -11,6 +11,7 @@ import {
   FiCalendar
 } from "react-icons/fi";
 import "./dashboard.css";
+import VehicleAssignedCard from "../users/VehicleAssignedCard";
 
 export default function QuickActions() {
   const actions = [
@@ -32,24 +33,8 @@ export default function QuickActions() {
       link: "/vehicles/new",
       color: "#10b981"
     },
-    { 
-      icon: <FiCalendar />, 
-      label: "Schedule Service", 
-      link: "/maintenance/schedule",
-      color: "#f72585"
-    },
-    { 
-      icon: <FiBarChart2 />, 
-      label: "View Reports", 
-      link: "/reports",
-      color: "#3f37c9"
-    },
-    { 
-      icon: <FiDollarSign />, 
-      label: "Fuel Tracking", 
-      link: "/fuel",
-      color: "#4cc9f0"
-    }
+    
+
   ];
 
   return (
@@ -79,6 +64,8 @@ export default function QuickActions() {
           </Link>
         ))}
       </div>
+          <VehicleAssignedCard/>
+    
     </div>
   );
 }

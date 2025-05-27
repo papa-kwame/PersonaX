@@ -46,7 +46,8 @@ const Register = () => {
         email: formData.email,
         phoneNumber: formData.phoneNumber,
         password: formData.password,
-        confirmPassword: formData.confirmPassword
+        confirmPassword: formData.confirmPassword,
+        department:formData.department
       };
 
       // Replace with your actual API endpoint
@@ -103,6 +104,19 @@ const Register = () => {
                 className="form-control"
                 id="phoneNumber"
                 placeholder="Enter your phone number"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="mb-3">
+              <label htmlFor="department" className="form-label">Departments</label>
+              <input
+                type="text"
+                className="form-control"
+                id="department"
+                placeholder="Enter your Department"
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 required

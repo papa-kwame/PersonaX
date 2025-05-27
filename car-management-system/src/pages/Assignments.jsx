@@ -54,11 +54,9 @@ const Assignment = () => {
       pendingRequests: 0
     },
     formData: {
-      vehicleId: '',
       userId: '',
       requestReason: ''
     },
-    showAssignModal: false,
     showHistoryModal: false,
     showVehicleModal: false,
     showRequestModal: false,
@@ -155,28 +153,6 @@ const Assignment = () => {
       toast.error('Failed to fetch vehicle details');
     }
   };
-  const handleAssignVehicle = async () => {
-    try {
-      const { vehicleId, userId, reason, department } = state.formData;
-      if (!vehicleId || !userId || !reason || !department) {
-        toast.warning('Please select both vehicle and user, and provide a reason and department');
-        return;
-      }
-  
-      await api.post('/VehicleAssignment/Assign', { vehicleId, userId, reason, department });
-      toast.success('Vehicle assigned successfully');
-      setState(prev => ({
-        ...prev,
-        showAssignModal: false,
-        formData: { ...prev.formData, vehicleId: '', userId: '', reason: '', department: '' }
-      }));
-      fetchData();
-    } catch (error) {
-      console.error('Error assigning vehicle:', error);
-      toast.error(error.response?.data?.title || 'Failed to assign vehicle');
-    }
-  };
-  
 
   const handleUnassignVehicle = async (vehicleId) => {
     if (window.confirm('Are you sure you want to unassign this vehicle?')) {
@@ -328,16 +304,9 @@ const Assignment = () => {
         </Button>
         <Button
           variant="outline-secondary"
-          className="me-2"
           onClick={() => setState(prev => ({ ...prev, showRequestModal: true }))}
         >
           Request
-        </Button>
-        <Button
-          variant="outline-secondary"
-          onClick={() => setState(prev => ({ ...prev, showAssignModal: true }))}
-        >
-          Assign
         </Button>
       </div>
     </div>
@@ -497,20 +466,6 @@ const Assignment = () => {
                   <Button
                     variant="outline-secondary"
                     size="sm"
-                    className="me-2"
-                    onClick={() => {
-                      setState(prev => ({
-                        ...prev,
-                        formData: { ...prev.formData, vehicleId: vehicle.id },
-                        showAssignModal: true
-                      }));
-                    }}
-                  >
-                    Assign
-                  </Button>
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
                     onClick={() => fetchAssignmentHistory(vehicle.id)}
                   >
                     History
@@ -553,146 +508,6 @@ const Assignment = () => {
       )}
     </div>
   );
-
-  const renderAssignModal = () => (
-    <Modal show={state.showAssignModal} onHide={() => setState(prev => ({ ...prev, showAssignModal: false }))} centered>
-      <Modal.Header closeButton className="border-0 pb-0">
-        <Modal.Title className="fw-bold">
-          Assign Vehicle
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form>
-          <Form.Group className="mb-3">
-            <Form.Label>Vehicle</Form.Label>
-            <InputGroup className="mb-3">
-              <FormControl
-                placeholder="Search vehicles..."
-                value={state.vehicleSearch}
-                onChange={handleVehicleSearchChange}
-              />
-            </InputGroup>
-            <div className="border rounded" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-              {filteredVehicles.length > 0 ? (
-                <ListGroup variant="flush">
-                  {filteredVehicles.map(vehicle => (
-                    <ListGroup.Item
-                      key={vehicle.id}
-                      action
-                      active={state.formData.vehicleId === vehicle.id}
-                      onClick={() => setState(prev => ({
-                        ...prev,
-                        formData: { ...prev.formData, vehicleId: vehicle.id }
-                      }))}
-                    >
-                      {vehicle.make} {vehicle.model} ({vehicle.licensePlate})
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              ) : (
-                <div className="p-3 text-muted text-center">No vehicles found</div>
-              )}
-            </div>
-            {state.vehicleSearch && filteredVehicles.length === 0 && (
-              <Alert variant="secondary" className="mt-2">
-                No vehicles match your search. Try different keywords.
-              </Alert>
-            )}
-          </Form.Group>
-  
-          <Form.Group className="mb-3">
-            <Form.Label>User</Form.Label>
-            <InputGroup className="mb-3">
-              <FormControl
-                placeholder="Search users..."
-                value={state.userSearch}
-                onChange={handleUserSearchChange}
-              />
-            </InputGroup>
-            <div className="border rounded" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-              {filteredUsers.length > 0 ? (
-                <ListGroup variant="flush">
-                  {filteredUsers.map(user => (
-                    <ListGroup.Item
-                      key={user.id}
-                      action
-                      active={state.formData.userId === user.id}
-                      onClick={() => setState(prev => ({
-                        ...prev,
-                        formData: { ...prev.formData, userId: user.id }
-                      }))}
-                    >
-                      {user.userName} ({user.email})
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              ) : (
-                <div className="p-3 text-muted text-center">No users found</div>
-              )}
-            </div>
-            {state.userSearch && filteredUsers.length === 0 && (
-              <Alert variant="secondary" className="mt-2">
-                No users match your search. Try different keywords.
-              </Alert>
-            )}
-          </Form.Group>
-  
-          <Form.Group className="mb-3">
-            <Form.Label>Reason for Assignment</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={state.formData.reason}
-              onChange={(e) => setState(prev => ({
-                ...prev,
-                formData: { ...prev.formData, reason: e.target.value }
-              }))}
-              placeholder="Explain why this vehicle is being assigned..."
-              required
-            />
-          </Form.Group>
-  
-          <Form.Group className="mb-3">
-            <Form.Label>Department</Form.Label>
-            <Form.Control
-              type="text"
-              value={state.formData.department}
-              onChange={(e) => setState(prev => ({
-                ...prev,
-                formData: { ...prev.formData, department: e.target.value }
-              }))}
-              placeholder="Enter the department..."
-              required
-            />
-          </Form.Group>
-  
-          {state.formData.vehicleId && (
-            <Alert variant="secondary" className="mt-2">
-              Selected Vehicle: {state.vehicles.find(v => v.id === state.formData.vehicleId)?.make} {state.vehicles.find(v => v.id === state.formData.vehicleId)?.model}
-            </Alert>
-          )}
-          {state.formData.userId && (
-            <Alert variant="secondary" className="mt-2">
-              Selected User: {state.users.find(u => u.id === state.formData.userId)?.userName}
-            </Alert>
-          )}
-        </Form>
-      </Modal.Body>
-      <Modal.Footer className="border-0">
-        <Button variant="outline-secondary" onClick={() => setState(prev => ({ ...prev, showAssignModal: false }))}>
-          Cancel
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={handleAssignVehicle}
-          disabled={!state.formData.vehicleId || !state.formData.userId || !state.formData.reason || !state.formData.department}
-        >
-          Assign Vehicle
-        </Button>
-      </Modal.Footer>
-    </Modal>
-  );
-  
 
   const renderRequestModal = () => (
     <Modal show={state.showRequestModal} onHide={() => setState(prev => ({ ...prev, showRequestModal: false }))} centered>
@@ -805,7 +620,6 @@ const Assignment = () => {
                 <th>User</th>
                 <th>Request Date</th>
                 <th>Reason</th>
-                <th className="text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -818,23 +632,7 @@ const Assignment = () => {
                     </td>
                     <td>{safeFormat(request.requestDate, 'PPpp')}</td>
                     <td>{request.requestReason || 'No reason provided'}</td>
-                    <td className="text-end">
-                      <Button
-                        variant="outline-secondary"
-                        size="sm"
-                        className="me-2"
-                        onClick={() => {
-                          setState(prev => ({
-                            ...prev,
-                            formData: { ...prev.formData, userId: request.userId },
-                            showAssignModal: true,
-                            showRequestsModal: false
-                          }));
-                        }}
-                      >
-                        Assign Vehicle
-                      </Button>
-                    </td>
+
                   </tr>
                 ))
               ) : (
@@ -1161,7 +959,6 @@ const Assignment = () => {
         </Tab>
       </Tabs>
 
-      {renderAssignModal()}
       {renderRequestModal()}
       {renderRequestsModal()}
       {renderHistoryModal()}

@@ -2,8 +2,28 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getVehicleById, createVehicle, updateVehicle } from '../../services/vehicles';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import '../../styles/Vehicles.css';
+import {
+  Box,
+  Button,
+  Card,
+  CardHeader,
+  CardContent,
+  Container,
+  Divider,
+  Grid,
+  MenuItem,
+  TextField,
+  Typography,
+  LinearProgress,
+  Alert,
+  Stack,
+  Paper
+} from '@mui/material';
+import {
+  Save as SaveIcon,
+  Add as AddIcon,
+  ArrowBack as ArrowBackIcon
+} from '@mui/icons-material';
 
 export default function VehicleForm() {
   const { id } = useParams();
@@ -143,184 +163,226 @@ export default function VehicleForm() {
     return Object.keys(errors).length === 0;
   };
 
-  if (loading) return <div className="text-center my-4">Loading vehicle data...</div>;
-  if (error) return <div className="alert alert-danger">Error: {error}</div>;
+  if (loading) return (
+    <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <LinearProgress />
+      <Typography variant="body1" sx={{ mt: 2 }}>Loading vehicle data...</Typography>
+    </Container>
+  );
+
+  if (error) return (
+    <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Alert severity="error" sx={{ mb: 3 }}>Error: {error}</Alert>
+    </Container>
+  );
+
+  const vehicleTypes = [
+    { value: 'Sedan', label: 'Sedan' },
+    { value: 'SUV', label: 'SUV' },
+    { value: 'Truck', label: 'Truck' },
+    { value: 'Van', label: 'Van' },
+    { value: 'Hatchback', label: 'Hatchback' },
+    { value: 'Coupe', label: 'Coupe' }
+  ];
+
+  const statusOptions = [
+    { value: 'Available', label: 'Available' },
+    { value: 'Assigned', label: 'Assigned' },
+    { value: 'In Maintenance', label: 'In Maintenance' },
+    { value: 'Out of Service', label: 'Out of Service' }
+  ];
+
+  const fuelTypes = [
+    { value: 'Gasoline', label: 'Gasoline' },
+    { value: 'Diesel', label: 'Diesel' },
+    { value: 'Electric', label: 'Electric' },
+    { value: 'Hybrid', label: 'Hybrid' },
+    { value: 'LPG', label: 'LPG' }
+  ];
+
+  const fields = [
+    { name: 'make', label: 'Make *', required: true, xs: 12, sm: 6, md: 4 },
+    { name: 'model', label: 'Model *', required: true, xs: 12, sm: 6, md: 4 },
+    { 
+      name: 'year', 
+      label: 'Year *', 
+      type: 'number', 
+      required: true,
+      inputProps: { min: 1900, max: new Date().getFullYear() + 1 },
+      xs: 12, sm: 6, md: 4 
+    },
+    { name: 'licensePlate', label: 'License Plate *', required: true, xs: 12, sm: 6, md: 4 },
+    { name: 'vin', label: 'VIN *', required: true, xs: 12, sm: 6, md: 4 },
+    { 
+      name: 'currentMileage', 
+      label: 'Current Mileage', 
+      type: 'number',
+      inputProps: { min: 0 },
+      xs: 12, sm: 6, md: 4 
+    },
+    { name: 'color', label: 'Color', xs: 12, sm: 6, md: 4 },
+    { name: 'purchaseDate', label: 'Purchase Date', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { 
+      name: 'purchasePrice', 
+      label: 'Purchase Price ($)', 
+      type: 'number',
+      inputProps: { step: 0.01, min: 0 },
+      xs: 12, sm: 6, md: 4 
+    },
+    { name: 'lastServiceDate', label: 'Last Service Date', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { name: 'nextServiceDue', label: 'Next Service Due', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { 
+      name: 'serviceInterval', 
+      label: 'Service Interval (miles)', 
+      type: 'number',
+      inputProps: { min: 0 },
+      xs: 12, sm: 6, md: 4 
+    },
+    { 
+      name: 'engineSize', 
+      label: 'Engine Size (cc)', 
+      type: 'number',
+      inputProps: { min: 0 },
+      xs: 12, sm: 6, md: 4 
+    },
+    { name: 'roadworthyExpiry', label: 'Roadworthy Expiry', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { name: 'registrationExpiry', label: 'Registration Expiry', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { name: 'insuranceExpiry', label: 'Insurance Expiry', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { 
+      name: 'seatingCapacity', 
+      label: 'Seating Capacity', 
+      type: 'number',
+      inputProps: { min: 1 },
+      xs: 12, sm: 6, md: 4 
+    },
+  ];
 
   return (
-    <div className="container mt-4 vehicle-form-container">
-      <div className="card shadow-sm">
-        <div className="card-header bg-primary text-white">
-          <h2 className="mb-0">{id ? 'Edit Vehicle' : 'Add New Vehicle'}</h2>
-        </div>
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
-            <div className="row g-3">
-              {[
-                { name: 'make', label: 'Make *', placeholder: 'Enter vehicle make' },
-                { name: 'model', label: 'Model *', placeholder: 'Enter vehicle model' },
-                { 
-                  name: 'year', 
-                  label: 'Year *', 
-                  type: 'number', 
-                  min: 1900, 
-                  max: new Date().getFullYear() + 1,
-                  placeholder: 'Enter manufacturing year'
-                },
-                { name: 'licensePlate', label: 'License Plate *', placeholder: 'Enter license plate' },
-                { name: 'vin', label: 'VIN *', placeholder: 'Enter 17-character VIN' },
-                { 
-                  name: 'currentMileage', 
-                  label: 'Current Mileage', 
-                  type: 'number', 
-                  min: 0,
-                  placeholder: 'Enter current mileage'
-                },
-                { name: 'color', label: 'Color', placeholder: 'Enter vehicle color' },
-                { name: 'purchaseDate', label: 'Purchase Date', type: 'date' },
-                { 
-                  name: 'purchasePrice', 
-                  label: 'Purchase Price ($)', 
-                  type: 'number', 
-                  step: 0.01, 
-                  min: 0,
-                  placeholder: 'Enter purchase price'
-                },
-                { name: 'lastServiceDate', label: 'Last Service Date', type: 'date' },
-                { name: 'nextServiceDue', label: 'Next Service Due', type: 'date' },
-                { 
-                  name: 'serviceInterval', 
-                  label: 'Service Interval (miles)', 
-                  type: 'number', 
-                  min: 0,
-                  placeholder: 'Enter service interval'
-                },
-                { 
-                  name: 'engineSize', 
-                  label: 'Engine Size (cc)', 
-                  type: 'number', 
-                  min: 0,
-                  placeholder: 'Enter engine size'
-                },
-                { name: 'roadworthyExpiry', label: 'Roadworthy Expiry', type: 'date' },
-                { name: 'registrationExpiry', label: 'Registration Expiry', type: 'date' },
-                { name: 'insuranceExpiry', label: 'Insurance Expiry', type: 'date' },
-                { 
-                  name: 'seatingCapacity', 
-                  label: 'Seating Capacity', 
-                  type: 'number', 
-                  min: 1,
-                  placeholder: 'Enter seating capacity'
-                },
-              ].map(({ name, label, type = 'text', placeholder = '', ...rest }) => (
-                <div className="col-md-4" key={name}>
-                  <label className="form-label">{label}</label>
-                  <input
-                    type={type}
-                    className={`form-control ${validationErrors[name] ? 'is-invalid' : ''}`}
-                    name={name}
-                    value={formData[name]}
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      <Card elevation={3}>
+        <CardHeader 
+          title={<Typography variant="h4">{id ? 'Edit Vehicle' : 'Add New Vehicle'}</Typography>}
+          sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }}
+        />
+        <Divider />
+        <CardContent>
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <Grid container spacing={3}>
+              {/* Standard fields */}
+              {fields.map((field) => (
+                <Grid item key={field.name} xs={field.xs} sm={field.sm} md={field.md}>
+                  <TextField
+                    fullWidth
+                    label={field.label}
+                    name={field.name}
+                    value={formData[field.name]}
                     onChange={handleChange}
-                    placeholder={placeholder}
-                    {...rest}
+                    type={field.type || 'text'}
+                    error={!!validationErrors[field.name]}
+                    helperText={validationErrors[field.name]}
+                    required={field.required}
+                    InputLabelProps={field.InputLabelProps}
+                    inputProps={field.inputProps}
                   />
-                  {validationErrors[name] && (
-                    <div className="invalid-feedback d-block">{validationErrors[name]}</div>
-                  )}
-                </div>
+                </Grid>
               ))}
 
-              <div className="col-md-4">
-                <label className="form-label">Status *</label>
-                <select
-                  className={`form-select ${validationErrors.status ? 'is-invalid' : ''}`}
+              {/* Status dropdown */}
+              <Grid item xs={12} sm={6} md={4}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Status *"
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
+                  error={!!validationErrors.status}
+                  helperText={validationErrors.status}
                 >
-                  <option value="Available">Available</option>
-                  <option value="Assigned">Assigned</option>
-                  <option value="In Maintenance">In Maintenance</option>
-                  <option value="Out of Service">Out of Service</option>
-                </select>
-                {validationErrors.status && (
-                  <div className="invalid-feedback d-block">{validationErrors.status}</div>
-                )}
-              </div>
+                  {statusOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
 
-              <div className="col-md-4">
-                <label className="form-label">Vehicle Type</label>
-                <select
-                  className={`form-select ${validationErrors.vehicleType ? 'is-invalid' : ''}`}
+              {/* Vehicle Type dropdown */}
+              <Grid item xs={12} sm={6} md={4}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Vehicle Type"
                   name="vehicleType"
                   value={formData.vehicleType}
                   onChange={handleChange}
+                  error={!!validationErrors.vehicleType}
+                  helperText={validationErrors.vehicleType}
                 >
-                  <option value="Sedan">Sedan</option>
-                  <option value="SUV">SUV</option>
-                  <option value="Truck">Truck</option>
-                  <option value="Van">Van</option>
-                  <option value="Hatchback">Hatchback</option>
-                  <option value="Coupe">Coupe</option>
-                </select>
-                {validationErrors.vehicleType && (
-                  <div className="invalid-feedback d-block">{validationErrors.vehicleType}</div>
-                )}
-              </div>
+                  {vehicleTypes.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
 
-              <div className="col-md-4">
-                <label className="form-label">Fuel Type</label>
-                <select
-                  className={`form-select ${validationErrors.fuelType ? 'is-invalid' : ''}`}
+              {/* Fuel Type dropdown */}
+              <Grid item xs={12} sm={6} md={4}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Fuel Type"
                   name="fuelType"
                   value={formData.fuelType}
                   onChange={handleChange}
+                  error={!!validationErrors.fuelType}
+                  helperText={validationErrors.fuelType}
                 >
-                  <option value="Gasoline">Gasoline</option>
-                  <option value="Diesel">Diesel</option>
-                  <option value="Electric">Electric</option>
-                  <option value="Hybrid">Hybrid</option>
-                  <option value="LPG">LPG</option>
-                </select>
-                {validationErrors.fuelType && (
-                  <div className="invalid-feedback d-block">{validationErrors.fuelType}</div>
-                )}
-              </div>
+                  {fuelTypes.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
 
-              <div className="col-12">
-                <label className="form-label">Notes</label>
-                <textarea
-                  className={`form-control ${validationErrors.notes ? 'is-invalid' : ''}`}
+              {/* Notes textarea */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="Notes"
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
-                  rows="3"
-                  placeholder="Enter any additional notes"
+                  error={!!validationErrors.notes}
+                  helperText={validationErrors.notes}
                 />
-                {validationErrors.notes && (
-                  <div className="invalid-feedback d-block">{validationErrors.notes}</div>
-                )}
-              </div>
-            </div>
+              </Grid>
+            </Grid>
 
-            <div className="mt-4 d-flex justify-content-between">
-              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/vehicles')}>
-                <i className="bi bi-arrow-left me-2"></i>Cancel
-              </button>
-              <button type="submit" className="btn btn-primary">
-                {id ? (
-                  <>
-                    <i className="bi bi-save me-2"></i>Update Vehicle
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-plus-circle me-2"></i>Add Vehicle
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 4 }}>
+              <Button
+                variant="outlined"
+                startIcon={<ArrowBackIcon />}
+                onClick={() => navigate('/dashboard')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                startIcon={id ? <SaveIcon /> : <AddIcon />}
+              >
+                {id ? 'Update Vehicle' : 'Add Vehicle'}
+              </Button>
+            </Stack>
+          </Box>
+        </CardContent>
+      </Card>
+    </Container>
   );
 }

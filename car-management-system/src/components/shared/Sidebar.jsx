@@ -87,7 +87,7 @@ export default function Sidebar({ className = "" }) {
             >
               <span className="d-flex align-items-center">
                 <i className="bi bi-box-arrow-in-right me-3 fs-5" />
-                Maintenance
+                Requests 
               </span>
               <i className={`bi ${showMaintenanceMenu ? 'bi-chevron-up' : 'bi-chevron-down'} fs-6`} />
             </button>

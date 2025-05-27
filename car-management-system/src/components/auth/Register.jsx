@@ -37,13 +37,11 @@ export default function Register() {
       });
 
       if (!res.ok) {
-        // backend returns array of errors → surface first one
         const { errors } = await res.json();
         setError(errors?.[0]?.description || 'Registration failed');
         return;
       }
 
-      // success → navigate to dashboard (or login first, as you prefer)
       navigate('/dashboard');
     } catch (err) {
       setError('Network error. Please try again.');
@@ -83,6 +81,15 @@ export default function Register() {
           onChange={handleChange}
           required
         />
+        
+        <input
+          type="tel"
+          name="phoneNumber"
+          placeholder="Phone number"
+          value={formData.phoneNumber}
+          onChange={handleChange}
+          required
+        />
 
         <input
           type="password"
@@ -101,7 +108,7 @@ export default function Register() {
           onChange={handleChange}
           required
         />
-
+     
         <button type="submit">Register</button>
       </form>
     </div>

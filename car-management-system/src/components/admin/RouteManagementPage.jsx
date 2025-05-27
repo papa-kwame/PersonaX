@@ -405,7 +405,7 @@ const RouteManagementPage = () => {
               </div>
               <div>
                 <h2 className="fw-bold mb-0" style={{ color: '#2c3e50' }}>Route Management</h2>
-                <p className="text-muted mb-0">Create and manage approval workflows</p>
+                <p className="text-muted mb-0">Create and manage approval routes</p>
               </div>
             </div>
             <Button 
@@ -509,13 +509,12 @@ const RouteManagementPage = () => {
                             <div className="mb-3 flex-grow-1">
                               <h6 className="small text-uppercase text-muted mb-2 d-flex align-items-center">
                                 <ChatSquareText size={14} className="me-2" />
-                                Approval Flow ({(route.users || []).length})
+                                Route Flow ({(route.users || []).length})
                               </h6>
                               <div className="table-responsive">
                                 <Table hover className="mb-0">
                                   <thead>
-                                    <tr>
-                                      <th className="small text-uppercase text-muted">Step</th>
+                                    <tr>                                
                                       <th className="small text-uppercase text-muted">Role</th>
                                       <th className="small text-uppercase text-muted">User</th>
                                     </tr>
@@ -525,13 +524,8 @@ const RouteManagementPage = () => {
                                       .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
                                       .map((user, index) => (
                                         <tr key={`${route.id}-${user.userId}`}>
-                                          <td>
-                                            <div className="d-flex align-items-center">
-                                              <div className="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '24px', height: '24px' }}>
-                                                <span className="small text-primary">{index + 1}</span>
-                                              </div>
-                                            </div>
-                                          </td>
+                                            <td>{renderUserCell(user)}</td>
+
                                           <td>
                                             <Badge 
                                               bg="info" 
@@ -544,7 +538,6 @@ const RouteManagementPage = () => {
                                               {user.role || 'Unknown'}
                                             </Badge>
                                           </td>
-                                          <td>{renderUserCell(user)}</td>
                                         </tr>
                                       ))}
                                   </tbody>
@@ -562,7 +555,7 @@ const RouteManagementPage = () => {
                       <ShieldCheck size={32} className="text-primary" />
                     </div>
                     <h4 style={{ color: '#2c3e50' }}>No routes created yet</h4>
-                    <p className="text-muted mb-4">Create your first approval workflow to get started</p>
+                    <p className="text-muted mb-4">Create your first approval route to get started</p>
                     <Button 
                       variant="primary" 
                       onClick={openNewRouteModal}
@@ -602,7 +595,7 @@ const RouteManagementPage = () => {
       >
         <Modal.Header className="border-0 pb-0 position-relative" style={{ backgroundColor: '#f8f9fa' }}>
           <Modal.Title className="fw-bold" style={{ color: '#2c3e50' }}>
-            {isEditing ? 'Edit Approval Workflow' : 'Create New Workflow'}
+            {isEditing ? 'Edit Approval Route' : 'Create New Route'}
           </Modal.Title>
           <CloseButton 
             onClick={() => {
@@ -618,7 +611,7 @@ const RouteManagementPage = () => {
               <Form>
                 <Row className="g-3">
                   <Col md={6}>
-                    <FloatingLabel controlId="routeName" label="Workflow Name" className="mb-3">
+                    <FloatingLabel controlId="routeName" label="Route Name" className="mb-3">
                       <Form.Control 
                         type="text" 
                         value={currentRoute.name}
@@ -691,7 +684,6 @@ const RouteManagementPage = () => {
                       <Table hover className="mb-0">
                         <thead>
                           <tr>
-                            <th className="small text-uppercase text-muted">Step</th>
                             <th className="small text-uppercase text-muted">Role</th>
                             <th className="small text-uppercase text-muted">User</th>
                             <th className="small text-uppercase text-muted">Action</th>
@@ -702,13 +694,7 @@ const RouteManagementPage = () => {
                             .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
                             .map((user, index) => (
                               <tr key={user.id}>
-                                <td>
-                                  <div className="d-flex align-items-center">
-                                    <div className="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '24px', height: '24px' }}>
-                                      <span className="small text-primary">{index + 1}</span>
-                                    </div>
-                                  </div>
-                                </td>
+ 
                                 <td>
                                   {renderRoleDropdown(user)}
                                 </td>

@@ -8,7 +8,10 @@ import {
   Typography,
   TextField,
   Switch,
+  FormControlLabel,
   CircularProgress,
+  Pagination,
+  InputAdornment,
 } from '@mui/material';
 import {
   PersonCheck,
@@ -16,6 +19,7 @@ import {
   Trash,
   PencilSquare,
   People,
+  Search,
 } from 'react-bootstrap-icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -34,7 +38,11 @@ const AdminUsers = () => {
     phoneNumber: '',
     password: '',
     isActive: true,
+    department: '',
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10; // Updated to 10 users per page
 
   const loadUsers = async () => {
     try {
@@ -60,6 +68,7 @@ const AdminUsers = () => {
       phoneNumber: '',
       password: '',
       isActive: true,
+      department: '',
     });
 
   const openModal = (user = null) => {
@@ -71,6 +80,7 @@ const AdminUsers = () => {
         phoneNumber: user.phoneNumber || '',
         password: '',
         isActive: !user.isLocked,
+        department: user.department || '',
       });
     } else {
       resetForm();
@@ -106,6 +116,7 @@ const AdminUsers = () => {
           email: form.email,
           phoneNumber: form.phoneNumber,
           password: form.password,
+          department: form.department,
         });
         alert('User created');
       }
@@ -148,6 +159,27 @@ const AdminUsers = () => {
     }
   };
 
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset to first page on new search
+  };
+
+  const filteredUsers = users.filter((user) =>
+    user.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.phoneNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.department?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
+
   if (busy && users.length === 0)
     return (
       <div className="text-center py-5">
@@ -169,7 +201,21 @@ const AdminUsers = () => {
           <h2 className="fw-bold mb-0">User Management</h2>
           <p className="text-muted mb-0">Manage system users</p>
         </div>
-        <div className="ms-auto">
+        <div className="ms-auto d-flex align-items-center">
+          <TextField
+            label="Search"
+            variant="outlined"
+            value={searchQuery}
+            onChange={handleSearch}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ mr: 2 }}
+          />
           <button
             className="btn btn-primary d-flex align-items-center"
             onClick={() => openModal()}
@@ -189,13 +235,14 @@ const AdminUsers = () => {
                   <th>Username</th>
                   <th>Email</th>
                   <th>Phone</th>
-                  <th>Status</th>
+                  <th>Department</th>
+      
                   <th className="text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {users.length ? (
-                  users.map((u) => (
+                {currentUsers.length ? (
+                  currentUsers.map((u) => (
                     <tr key={u.id}>
                       <td>
                         <div className="d-flex align-items-center">
@@ -209,22 +256,17 @@ const AdminUsers = () => {
                       </td>
                       <td className="text-muted">{u.email}</td>
                       <td className="text-muted">{u.phoneNumber || '-'}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            u.isLocked ? 'bg-danger' : 'bg-success'
-                          }`}
-                          style={{
-                            cursor: isAdmin ? 'pointer' : 'default',
-                          }}
-                          onClick={() => isAdmin && toggleLock(u.id)}
-                        >
-                          {u.isLocked ? 'Locked' : 'Active'}
-                        </span>
-                      </td>
+                      <td className="text-muted">{u.department || '-'}</td>
+
                       <td className="text-end">
                         <div className="btn-group btn-group-sm">
-
+                          <button
+                            className="btn btn-outline-secondary"
+                            onClick={() => openModal(u)}
+                            disabled={!isAdmin}
+                          >
+                            <PencilSquare />
+                          </button>
                           <button
                             className="btn btn-outline-danger"
                             onClick={() => deleteUser(u.id)}
@@ -238,7 +280,7 @@ const AdminUsers = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center py-4 text-muted">
+                    <td colSpan="6" className="text-center py-4 text-muted">
                       No users found
                     </td>
                   </tr>
@@ -248,6 +290,17 @@ const AdminUsers = () => {
           </div>
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div className="d-flex justify-content-center mt-3">
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={handlePageChange}
+            color="primary"
+          />
+        </div>
+      )}
 
       <Modal open={modalOpen} onClose={closeModal}>
         <Box
@@ -295,6 +348,15 @@ const AdminUsers = () => {
               label="Phone Number"
               name="phoneNumber"
               value={form.phoneNumber}
+              onChange={handleInput}
+              fullWidth
+              margin="normal"
+            />
+
+            <TextField
+              label="Department"
+              name="department"
+              value={form.department}
               onChange={handleInput}
               fullWidth
               margin="normal"

@@ -33,7 +33,6 @@ import {
   Stepper,
   Step,
   StepLabel,
-  StepContent,
   useTheme,
   alpha,
   styled
@@ -62,19 +61,50 @@ import {
   DoneAll as DoneAllIcon,
   Info as InfoIcon,
   AttachFile as AttachFileIcon,
-  Download as DownloadIcon
+  Download as DownloadIcon,
+  DescriptionRounded as DescriptionRoundedIcon,
+  EventRounded as EventRoundedIcon,
+  TimelineRounded as TimelineRoundedIcon,
+  MonetizationOnRounded as MonetizationOnRoundedIcon,
+  AdminPanelSettingsRounded as AdminPanelSettingsRoundedIcon,
+  CloudUploadRounded as CloudUploadRoundedIcon,
+  DownloadRounded as DownloadRoundedIcon,
+  InsertDriveFileRounded as InsertDriveFileRoundedIcon,
+  AccessTimeRounded as AccessTimeRoundedIcon,
+  FiberManualRecord as FiberManualRecordIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { format, parseISO } from 'date-fns';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 
-// Custom styled components
+const stringToColor = (string) => {
+  let hash = 0;
+  let i;
+
+  for (i = 0; i < string.length; i += 1) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  let color = '#';
+
+  for (i = 0; i < 3; i += 1) {
+    const value = (hash >> (i * 8)) & 0xff;
+    color += `00${value.toString(16)}`.slice(-2);
+  }
+
+  return color;
+};
+
 const StyledPaper = styled(Paper)(({ theme }) => ({
   borderRadius: '12px',
   boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
   transition: 'all 0.3s ease',
   '&:hover': {
-    boxShadow: '0 6px 24px rgba(0,0,0,0.1)'
-  }
+    boxShadow: '0 6px 24px rgba(0,0,0,0.1)',
+    cursor: 'pointer'
+  },
+  padding: theme.spacing(2),
+  marginBottom: theme.spacing(2)
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -150,7 +180,6 @@ const PriorityBadge = styled(Chip)(({ theme, priority }) => {
   };
 });
 
-// Professional color palette
 const professionalColors = {
   primary: '#3f51b5',
   secondary: '#9c27b0',
@@ -215,12 +244,12 @@ const reverseMappings = {
 
 const MaintenanceRequestApp = () => {
   const theme = useTheme();
-  const { isAuthenticated, userId, token } = useAuth();
+  const { isAuthenticated, userId, token, userRoles } = useAuth();
   const [requests, setRequests] = useState([]);
   const [history, setHistory] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('inbox');
+  const [activeTab, setActiveTab] = useState('myRequests');
   const [openDialog, setOpenDialog] = useState(false);
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const [openStageDialog, setOpenStageDialog] = useState(false);
@@ -232,6 +261,7 @@ const MaintenanceRequestApp = () => {
   const [stageComments, setStageComments] = useState('');
   const [requestComments, setRequestComments] = useState([]);
   const [requestDocuments, setRequestDocuments] = useState([]);
+  const [myRequests, setMyRequests] = useState([]);
 
   const processStageButtonRef = useRef(null);
 
@@ -242,7 +272,7 @@ const MaintenanceRequestApp = () => {
     priority: 'Medium',
     estimatedCost: 0,
     adminComments: '',
-    department: 'HR' // Default department
+    department: 'HR'
   });
 
   const formatRequestData = (request) => {
@@ -305,19 +335,14 @@ const MaintenanceRequestApp = () => {
   }, [isAuthenticated, token, userId]);
 
   useEffect(() => {
-    if (selectedRequest && processStageButtonRef.current) {
-      const isRequestorInCurrentStage =
-        selectedRequest.requestedByUserId === userId &&
-        selectedRequest.currentRoute.userRoles.some(ur =>
-          ur.userId === userId &&
-          ur.role.toLowerCase() === selectedRequest.currentStage.toLowerCase()
-        );
+    setActiveTab('myRequests');
+  }, []);
 
-      if (isRequestorInCurrentStage) {
-        processStageButtonRef.current.click();
-      }
+  useEffect(() => {
+    if (activeTab === 'myRequestsTab') {
+      fetchMyRequests();
     }
-  }, [selectedRequest, userId]);
+  }, [activeTab]);
 
   const fetchWorkflowStatus = async (requestId) => {
     try {
@@ -350,6 +375,19 @@ const MaintenanceRequestApp = () => {
     }
   };
 
+  const fetchMyRequests = async () => {
+    try {
+      const response = await api.get(`/api/MaintenanceRequest/my-requests?userId=${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setMyRequests(response.data.map(formatRequestData));
+    } catch (error) {
+      showNotification('Failed to fetch your requests', 'error');
+    }
+  };
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
@@ -369,7 +407,7 @@ const MaintenanceRequestApp = () => {
         priority: priorityMap[formData.priority],
         estimatedCost: formData.estimatedCost,
         adminComments: formData.adminComments || null,
-        department: formData.department // Include department in the payload
+        department: formData.department
       };
 
       const response = await api.post(`/api/MaintenanceRequest?userId=${userId}`, requestPayload, {
@@ -395,9 +433,6 @@ const MaintenanceRequestApp = () => {
         requestType: 'Repair',
         description: '',
         priority: 'Medium',
-        estimatedCost: 0,
-        adminComments: '',
-        department: 'HR' // Reset to default department
       });
     } catch (error) {
       const errorMessage = error.response?.data?.title ||
@@ -599,213 +634,255 @@ const MaintenanceRequestApp = () => {
 
   const renderRequestDetails = (request) => {
     return (
-      <Box sx={{ mt: 4, px: 2 }}>
-        {workflowStatus && (
-          <StyledPaper elevation={0} sx={{ mb: 4, px: 2, py: 3, borderRadius: 3 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: professionalColors.textSecondary,
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                fontSize: '0.72rem',
-                mb: 2
-              }}
-            >
-              Workflow Status
-            </Typography>
-  
-            <Stepper activeStep={stageOrder.indexOf(request.currentStage)} orientation="horizontal">
-              {stageOrder.map((stage, index) => (
-                <Step key={stage}>
-                  <StepLabel
-                    sx={{
-                      '& .MuiStepLabel-label': {
-                        fontWeight: 600,
-                        fontSize: '0.9rem'
-                      }
-                    }}
-                  >
-                    {stage}
-                  </StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </StyledPaper>
-        )}
-  
-        <Box
-          sx={{
+      <Box sx={{ mt: 4, px: { xs: 2, md: 4 }, pb: 4 }}>
+        <Box sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+          mb: 4,
+          p: 3,
+          backgroundColor: alpha(theme.palette.primary.main, 0.03),
+          borderRadius: 3,
+          borderLeft: `4px solid ${theme.palette.primary.main}`,
+          boxShadow: theme.shadows[1]
+        }}>
+          <Typography variant="h6" sx={{
+            fontWeight: 700,
+            color: 'text.primary',
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            mb: 4,
-            p: 3,
-            backgroundColor: alpha(theme.palette.primary.main, 0.04),
-            borderRadius: 3,
-            borderLeft: `4px solid ${theme.palette.primary.main}`,
-            boxShadow: theme.shadows[1]
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 700, color: professionalColors.text }}>
+            gap: 1.5
+          }}>
+            <DescriptionRoundedIcon color="primary" />
             Request Details
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar sx={{ width: 38, height: 38, bgcolor: professionalColors.primary }}>
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            backgroundColor: 'action.hover',
+            p: 1.5,
+            borderRadius: 2
+          }}>
+            <Avatar sx={{
+              width: 36,
+              height: 36,
+              bgcolor: professionalColors.primary,
+              color: 'common.white'
+            }}>
               {request.requestedByUserName?.charAt(0)?.toUpperCase() || 'U'}
             </Avatar>
-            <Typography variant="body2" sx={{ color: professionalColors.textSecondary, fontWeight: 500 }}>
-              {request.requestedByUserName || 'Unknown User'}
-            </Typography>
+            <Box>
+              <Typography variant="caption" sx={{
+                color: 'text.secondary',
+                display: 'block',
+                lineHeight: 1.2
+              }}>
+                Requested by
+              </Typography>
+              <Typography variant="body2" sx={{
+                color: 'text.primary',
+                fontWeight: 500
+              }}>
+                {request.requestedByUserName || 'Unknown User'}
+              </Typography>
+            </Box>
           </Box>
         </Box>
-  
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)'
-            },
-            gap: 2,
-            mb: 2
-          }}
-        >
+
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)'
+          },
+          gap: 2,
+          mb: 4
+        }}>
           {[
             {
               label: 'Request Type',
               value: request.requestType,
-              icon: getRequestTypeIcon(request.requestType)
+              icon: getRequestTypeIcon(request.requestType),
+              color: 'primary.main'
             },
             {
               label: 'Priority',
               value: request.priority,
-              icon: getPriorityIcon(request.priority)
+              icon: getPriorityIcon(request.priority),
+              color: request.priority === 'High' ? 'error.main' :
+                     request.priority === 'Medium' ? 'warning.main' : 'success.main'
             },
             {
               label: 'Status',
               value: request.status,
-              icon: getStatusIcon(request.status)
+              icon: getStatusIcon(request.status),
+              color: request.status === 'Approved' ? 'success.main' :
+                     request.status === 'Rejected' ? 'error.main' : 'warning.main'
             },
             {
               label: 'Request Date',
-              value: format(request.requestDate, 'PPpp')
+              value: format(request.requestDate, 'PPpp'),
+              icon: <EventRoundedIcon />
             },
             {
               label: 'Current Stage',
-              value: request.currentStage
+              value: request.currentStage,
+              icon: <TimelineRoundedIcon />
             },
             {
               label: 'Estimated Cost',
               value: `$${request.estimatedCost?.toFixed(2) || '0.00'}`,
-              icon: <MonetizationOnIcon fontSize="small" />
+              icon: <MonetizationOnRoundedIcon />,
+              color: 'success.main'
             }
           ].map((item, index) => (
             <StyledPaper
               key={index}
               elevation={0}
               sx={{
-                p: 2,
+                p: 2.5,
                 borderRadius: 2,
                 backgroundColor: 'background.paper',
                 border: '1px solid',
-                borderColor: 'divider'
+                borderColor: 'divider',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: theme.shadows[2]
+                }
               }}
             >
               <Typography
                 variant="caption"
                 sx={{
-                  color: professionalColors.textSecondary,
+                  color: 'text.secondary',
                   fontWeight: 600,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.6px',
-                  fontSize: '0.68rem',
-                  mb: 0.5,
+                  letterSpacing: '0.5px',
+                  fontSize: '0.65rem',
+                  mb: 1,
                   display: 'block'
                 }}
               >
                 {item.label}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5
+              }}>
                 {item.icon &&
                   React.cloneElement(item.icon, {
                     sx: {
-                      color: professionalColors.textSecondary,
-                      fontSize: '1.2rem'
+                      color: item.color || 'text.secondary',
+                      fontSize: '1.4rem'
                     }
                   })}
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                <Typography variant="body1" sx={{
+                  fontWeight: 500,
+                  color: item.color || 'text.primary'
+                }}>
                   {item.value}
                 </Typography>
               </Box>
             </StyledPaper>
           ))}
         </Box>
-  
-        <StyledPaper elevation={0} sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{
-            color: professionalColors.textSecondary,
-            fontWeight: 500,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+
+        <StyledPaper elevation={0} sx={{
+          mb: 4,
+          p: 3,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider'
+        }}>
+          <Typography variant="overline" sx={{
+            display: 'block',
+            color: 'text.secondary',
+            fontWeight: 600,
+            letterSpacing: 1,
             fontSize: '0.7rem',
             mb: 2
           }}>
-            DESCRIPTION
+            Description
           </Typography>
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+          <Typography variant="body1" sx={{
+            whiteSpace: 'pre-line',
+            lineHeight: 1.6,
+            color: 'text.primary'
+          }}>
             {request.description}
           </Typography>
         </StyledPaper>
-  
+
         {request.adminComments && (
           <StyledPaper elevation={0} sx={{
-            mb: 3,
-            backgroundColor: alpha(theme.palette.secondary.main, 0.03)
+            mb: 4,
+            p: 3,
+            borderRadius: 3,
+            backgroundColor: alpha(theme.palette.secondary.main, 0.03),
+            border: '1px solid',
+            borderColor: 'divider'
           }}>
-            <Typography variant="subtitle2" sx={{
-              color: professionalColors.textSecondary,
-              fontWeight: 500,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              fontSize: '0.7rem',
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
               mb: 2
             }}>
-              ADMIN COMMENTS
-            </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+              <AdminPanelSettingsRoundedIcon color="secondary" />
+              <Typography variant="overline" sx={{
+                color: 'text.secondary',
+                fontWeight: 600,
+                letterSpacing: 1,
+                fontSize: '0.7rem'
+              }}>
+                Admin Comments
+              </Typography>
+            </Box>
+            <Typography variant="body1" sx={{
+              whiteSpace: 'pre-line',
+              lineHeight: 1.6,
+              color: 'text.primary'
+            }}>
               {request.adminComments}
             </Typography>
           </StyledPaper>
         )}
-  
-        <Box sx={{ mt: 4, px: 2 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              color: professionalColors.textSecondary,
-              fontWeight: 600,
-              fontSize: '0.75rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.75px',
-              mb: 1.5
-            }}
-          >
+
+        <StyledPaper elevation={0} sx={{
+          mb: 4,
+          p: 3,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider'
+        }}>
+          <Typography variant="overline" sx={{
+            display: 'block',
+            color: 'text.secondary',
+            fontWeight: 600,
+            letterSpacing: 1,
+            fontSize: '0.7rem',
+            mb: 2
+          }}>
             Upload Document
           </Typography>
-  
           <Box
             sx={{
-              p: 2,
+              p: 3,
               border: '1px dashed',
               borderColor: 'divider',
               borderRadius: 2,
               textAlign: 'center',
               backgroundColor: 'background.paper',
+              transition: 'all 0.2s ease',
               '&:hover': {
                 backgroundColor: 'action.hover',
+                borderColor: 'primary.main',
                 cursor: 'pointer'
               }
             }}
@@ -817,27 +894,49 @@ const MaintenanceRequestApp = () => {
               onChange={(e) => handleDocumentUpload(request.id, e.target.files[0])}
             />
             <label htmlFor={`upload-${request.id}`}>
-              <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 500 }}>
-                Click to Select File
-              </Typography>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1
+              }}>
+                <CloudUploadRoundedIcon sx={{
+                  color: 'primary.main',
+                  fontSize: '2.5rem'
+                }} />
+                <Typography variant="body2" sx={{
+                  color: 'primary.main',
+                  fontWeight: 500
+                }}>
+                  Click to select file or drag and drop
+                </Typography>
+                <Typography variant="caption" sx={{
+                  color: 'text.secondary'
+                }}>
+                  PDF, DOCX, XLSX up to 10MB
+                </Typography>
+              </Box>
             </label>
           </Box>
-        </Box>
-  
+        </StyledPaper>
+
         {requestDocuments.length > 0 && (
-          <StyledPaper elevation={0} sx={{ mb: 3, mt: 4, px: 2, py: 2, borderRadius: 3 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: professionalColors.textSecondary,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.75px',
-                mb: 1.5
-              }}
-            >
-              Documents
+          <StyledPaper elevation={0} sx={{
+            mb: 4,
+            p: 3,
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
+            <Typography variant="overline" sx={{
+              display: 'block',
+              color: 'text.secondary',
+              fontWeight: 600,
+              letterSpacing: 1,
+              fontSize: '0.7rem',
+              mb: 2
+            }}>
+              Attached Documents ({requestDocuments.length})
             </Typography>
             <List disablePadding>
               {requestDocuments.map((document, index) => (
@@ -847,31 +946,53 @@ const MaintenanceRequestApp = () => {
                     borderBottom: '1px solid',
                     borderColor: 'divider',
                     py: 1.5,
-                    px: 0
+                    px: 0,
+                    '&:last-child': {
+                      borderBottom: 'none'
+                    }
                   }}
                   secondaryAction={
-                    <IconButton
-                      edge="end"
-                      aria-label="download"
-                      onClick={() => handleDocumentDownload(document.documentId, document.fileName)}
-                    >
-                      <DownloadIcon />
-                    </IconButton>
+                    <Tooltip title="Download">
+                      <IconButton
+                        edge="end"
+                        aria-label="download"
+                        onClick={() => handleDocumentDownload(document.documentId, document.fileName)}
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                          }
+                        }}
+                      >
+                        <DownloadRoundedIcon color="primary" />
+                      </IconButton>
+                    </Tooltip>
                   }
                 >
                   <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: 'background.default', color: 'text.secondary' }}>
-                      <AttachFileIcon />
+                    <Avatar sx={{
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      color: 'primary.main'
+                    }}>
+                      <InsertDriveFileRoundedIcon />
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
                     primary={
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{
+                        fontWeight: 500,
+                        color: 'text.primary'
+                      }}>
                         {document.fileName}
                       </Typography>
                     }
                     secondary={
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      <Typography variant="caption" sx={{
+                        color: 'text.secondary',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
+                      }}>
+                        <EventRoundedIcon sx={{ fontSize: '0.9rem' }} />
                         {format(new Date(document.uploadDate), 'PPpp')}
                       </Typography>
                     }
@@ -881,51 +1002,217 @@ const MaintenanceRequestApp = () => {
             </List>
           </StyledPaper>
         )}
-  
-        {requestComments.length > 0 && (
-          <StyledPaper elevation={0} sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" sx={{
-              color: professionalColors.textSecondary,
-              fontWeight: 500,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              fontSize: '0.7rem',
-              mb: 2
-            }}>
-              COMMENTS
-            </Typography>
-            <List>
-              {requestComments.map((comment, index) => (
-                <ListItem key={index} alignItems="flex-start">
-                  <ListItemAvatar>
-                    <Avatar alt={comment.userId} src="/static/images/avatar/1.jpg" />
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {comment.userId}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: professionalColors.textSecondary }}>
-                          {format(new Date(comment.timestamp), 'PPpp')}
-                        </Typography>
-                      </Box>
+
+        {(workflowStatus || requestComments.length > 0) && (
+          <StyledPaper
+            elevation={0}
+            sx={{
+              mb: 4,
+              p: 3,
+              borderRadius: 3,
+              backgroundColor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.08)',
+              transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
+              '&:hover': {
+                boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)'
+              }
+            }}
+          >
+            {workflowStatus && (
+              <Box sx={{ mb: requestComments.length > 0 ? 4 : 0 }}>
+                <Typography
+                  variant="overline"
+                  sx={{
+                    display: 'block',
+                    color: 'text.secondary',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    fontSize: '0.65rem',
+                    mb: 2.5,
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  Workflow Progress
+                </Typography>
+
+                <Stepper
+                  activeStep={stageOrder.indexOf(request.currentStage)}
+                  orientation="horizontal"
+                  sx={{
+                    '& .MuiStepConnector-line': {
+                      borderColor: 'divider',
+                      borderWidth: 2
                     }
-                    secondary={
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
-                        {comment.comment}
-                      </Typography>
+                  }}
+                >
+                  {stageOrder.map((stage) => (
+                    <Step key={stage}>
+                      <StepLabel
+                        StepIconProps={{
+                          sx: {
+                            '&.Mui-completed': {
+                              color: 'success.main'
+                            },
+                            '&.Mui-active': {
+                              color: 'primary.main'
+                            },
+                            '&.Mui-disabled': {
+                              color: 'action.disabled'
+                            }
+                          }
+                        }}
+                        sx={{
+                          '& .MuiStepLabel-label': {
+                            fontWeight: 600,
+                            fontSize: '0.8rem',
+                            color: 'text.secondary',
+                            '&.Mui-active': {
+                              color: 'primary.main',
+                              fontWeight: 700
+                            },
+                            '&.Mui-completed': {
+                              color: 'success.main'
+                            }
+                          }
+                        }}
+                      >
+                        {stage}
+                      </StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
+              </Box>
+            )}
+
+            {requestComments.length > 0 && (
+              <Box sx={{ mt: workflowStatus ? 3 : 0 }}>
+                <Typography
+                  variant="overline"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    color: 'text.secondary',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    fontSize: '0.65rem',
+                    mb: 2,
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  <ChatBubbleOutlineRoundedIcon sx={{ fontSize: '1rem' }} />
+                  Comments ({requestComments.length})
+                </Typography>
+
+                <List disablePadding sx={{
+                  '& .MuiListItem-root': {
+                    transition: 'background-color 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                      borderRadius: 1
                     }
-                  />
-                </ListItem>
-              ))}
-            </List>
+                  }
+                }}>
+                  {requestComments.map((comment, index) => (
+                    <ListItem
+                      key={index}
+                      alignItems="flex-start"
+                      sx={{
+                        py: 2.5,
+                        px: 1.5,
+                        '&:not(:last-child)': {
+                          borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }
+                      }}
+                    >
+                      <ListItemAvatar>
+                        <Tooltip title={comment.userName || 'Unknown User'} arrow>
+                          <Avatar
+                            alt={comment.userName}
+                            src={comment.avatarUrl}
+                            sx={{
+                              bgcolor: stringToColor(comment.userName || 'Unknown User'),
+                              width: 36,
+                              height: 36,
+                              '&:hover': {
+                                transform: 'scale(1.1)',
+                                transition: 'transform 0.2s ease'
+                              }
+                            }}
+                          >
+                            {comment.userName?.charAt(0)?.toUpperCase() || 'U'}
+                          </Avatar>
+                        </Tooltip>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'flex-start',
+                              mb: 0.5
+                            }}
+                          >
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                fontWeight: 700,
+                                color: 'text.primary',
+                                lineHeight: 1.3
+                              }}
+                            >
+                              {comment.userName || 'Unknown User'}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: 'text.secondary',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                minWidth: 'max-content',
+                                ml: 1
+                              }}
+                            >
+                              <AccessTimeRoundedIcon sx={{
+                                fontSize: '0.85rem',
+                                opacity: 0.8
+                              }} />
+                              {format(new Date(comment.timestamp), 'PPpp')}
+                            </Typography>
+                          </Box>
+                        }
+                        secondary={
+                          <Box sx={{ mt: 1 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                whiteSpace: 'pre-line',
+                                color: 'text.primary',
+                                lineHeight: 1.7,
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              {comment.comment}
+                            </Typography>
+                          </Box>
+                        }
+                        sx={{ my: 0 }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
           </StyledPaper>
         )}
       </Box>
     );
   };
-  
 
   const renderActionButtons = (request) => {
     const canProcessStage = pendingActions.some(r => r.id === request.id);
@@ -1003,6 +1290,9 @@ const MaintenanceRequestApp = () => {
     );
   }
 
+  const hasRoutingRole = userRoles.some(role => role !== null);
+  const isAdmin = userRoles.includes('Admin');
+
   return (
     <Container maxWidth="xl" sx={{
       py: 4,
@@ -1076,16 +1366,85 @@ const MaintenanceRequestApp = () => {
             }
           }}
         >
+          {(hasRoutingRole || isAdmin) && (
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AssignmentIcon fontSize="small" />
+                  <span>My Pending Actions</span>
+                  {pendingActions.length > 0 && (
+                    <Badge
+                      badgeContent={pendingActions.length}
+                      color="secondary"
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          right: -10,
+                          top: -10,
+                          fontWeight: 500
+                        }
+                      }}
+                    />
+                  )}
+                </Box>
+              }
+              value="myRequests"
+              sx={{
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.875rem',
+                py: 2,
+                minHeight: 'auto',
+                '&.Mui-selected': {
+                  color: professionalColors.primary
+                }
+              }}
+            />
+          )}
+
+          {(hasRoutingRole || isAdmin) && (
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AssignmentIcon fontSize="small" />
+                  <span>All Requests</span>
+                  {requests.length > 0 && (
+                    <Badge
+                      badgeContent={requests.length}
+                      color="primary"
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          right: -10,
+                          top: -10,
+                          fontWeight: 500
+                        }
+                      }}
+                    />
+                  )}
+                </Box>
+              }
+              value="inbox"
+              sx={{
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.875rem',
+                py: 2,
+                minHeight: 'auto',
+                '&.Mui-selected': {
+                  color: professionalColors.primary
+                }
+              }}
+            />
+          )}
 
           <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AssignmentIcon fontSize="small" />
-                <span>My Pending Actions</span>
-                {pendingActions.length > 0 && (
+                <AssignmentReturnedIcon fontSize="small" />
+                <span>My Requests</span>
+                {myRequests.length > 0 && (
                   <Badge
-                    badgeContent={pendingActions.length}
-                    color="secondary"
+                    badgeContent={myRequests.length}
+                    color="primary"
                     sx={{
                       '& .MuiBadge-badge': {
                         right: -10,
@@ -1097,7 +1456,7 @@ const MaintenanceRequestApp = () => {
                 )}
               </Box>
             }
-            value="myRequests"
+            value="myRequestsTab"
             sx={{
               textTransform: 'none',
               fontWeight: 500,
@@ -1109,38 +1468,6 @@ const MaintenanceRequestApp = () => {
               }
             }}
           />
-          <Tab
-          label={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <AssignmentIcon fontSize="small" />
-              <span>All Requests</span>
-              {requests.length > 0 && (
-                <Badge
-                  badgeContent={requests.length}
-                  color="primary"
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      right: -10,
-                      top: -10,
-                      fontWeight: 500
-                    }
-                  }}
-                />
-              )}
-            </Box>
-          }
-          value="inbox"
-          sx={{
-            textTransform: 'none',
-            fontWeight: 500,
-            fontSize: '0.875rem',
-            py: 2,
-            minHeight: 'auto',
-            '&.Mui-selected': {
-              color: professionalColors.primary
-            }
-          }}
-        />
         </Tabs>
 
         <Box sx={{ p: 3 }}>
@@ -1149,12 +1476,23 @@ const MaintenanceRequestApp = () => {
               {requests.length > 0 ? (
                 <List sx={{ '& > * + *': { mt: 1.5 } }}>
                   {requests.map((request) => (
-                    <StyledPaper key={request.id} elevation={0}>
+                    <StyledPaper
+                      key={request.id}
+                      elevation={0}
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setOpenDetailsDialog(true);
+                        fetchWorkflowStatus(request.id);
+                        fetchRequestComments(request.id);
+                        fetchRequestDocuments(request.id);
+                      }}
+                    >
                       <Box sx={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 2,
                         flexWrap: 'wrap',
+                        p: 2,
                         [theme.breakpoints.down('sm')]: {
                           flexDirection: 'column',
                           alignItems: 'flex-start'
@@ -1199,36 +1537,6 @@ const MaintenanceRequestApp = () => {
                             }}
                           />
                         </Box>
-                      </Box>
-                      <Box sx={{
-                        mt: 2,
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        [theme.breakpoints.down('sm')]: {
-                          justifyContent: 'flex-start'
-                        }
-                      }}>
-                        <StyledButton
-                          variant="outlined"
-                          size="small"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setOpenDetailsDialog(true);
-                            fetchWorkflowStatus(request.id);
-                            fetchRequestComments(request.id);
-                            fetchRequestDocuments(request.id);
-                          }}
-                          sx={{
-                            color: professionalColors.text,
-                            borderColor: professionalColors.border,
-                            '&:hover': {
-                              borderColor: professionalColors.primary,
-                              color: professionalColors.primary
-                            }
-                          }}
-                        >
-                          View Details
-                        </StyledButton>
                       </Box>
                     </StyledPaper>
                   ))}
@@ -1279,12 +1587,20 @@ const MaintenanceRequestApp = () => {
                           borderColor: professionalColors.warning,
                         }
                       }}
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setOpenDetailsDialog(true);
+                        fetchWorkflowStatus(request.id);
+                        fetchRequestComments(request.id);
+                        fetchRequestDocuments(request.id);
+                      }}
                     >
                       <Box sx={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 2,
                         flexWrap: 'wrap',
+                        p: 2,
                         [theme.breakpoints.down('sm')]: {
                           flexDirection: 'column',
                           alignItems: 'flex-start'
@@ -1295,7 +1611,8 @@ const MaintenanceRequestApp = () => {
                             {request.vehicleMake} {request.vehicleModel} ({request.licensePlate})
                           </Typography>
                           <Typography variant="body2" sx={{ color: professionalColors.textSecondary }}>
-                            {request.requestType} • {format(request.requestDate, 'PP')}
+                            {request.requestType}
+                             {format(request.requestDate, 'PP')}
                           </Typography>
                         </Box>
                         <Box sx={{
@@ -1323,54 +1640,6 @@ const MaintenanceRequestApp = () => {
                             }}
                           />
                         </Box>
-                      </Box>
-                      <Box sx={{
-                        mt: 2,
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        gap: 1,
-                        [theme.breakpoints.down('sm')]: {
-                          justifyContent: 'flex-start'
-                        }
-                      }}>
-                        <StyledButton
-                          variant="outlined"
-                          size="small"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setOpenDetailsDialog(true);
-                            fetchWorkflowStatus(request.id);
-                            fetchRequestComments(request.id);
-                            fetchRequestDocuments(request.id);
-                          }}
-                          sx={{
-                            color: professionalColors.text,
-                            borderColor: professionalColors.border,
-                            '&:hover': {
-                              borderColor: professionalColors.primary,
-                              color: professionalColors.primary
-                            }
-                          }}
-                        >
-                          View Details
-                        </StyledButton>
-                        <StyledButton
-                          variant="contained"
-                          size="small"
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setOpenStageDialog(true);
-                            fetchWorkflowStatus(request.id);
-                          }}
-                          sx={{
-                            backgroundColor: professionalColors.primary,
-                            '&:hover': {
-                              backgroundColor: alpha(professionalColors.primary, 0.9)
-                            }
-                          }}
-                        >
-                          Process Stage
-                        </StyledButton>
                       </Box>
                     </StyledPaper>
                   ))}
@@ -1406,9 +1675,119 @@ const MaintenanceRequestApp = () => {
               )}
             </>
           )}
+
+          {activeTab === 'myRequestsTab' && (
+            <>
+              {myRequests.length > 0 ? (
+                <List sx={{ '& > * + *': { mt: 1.5 } }}>
+                  {myRequests.map((request) => (
+                    <StyledPaper
+                      key={request.id}
+                      elevation={0}
+                      sx={{
+                        p: 2,
+                        borderRadius: '8px',
+                        border: `1px solid ${professionalColors.border}`,
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          borderColor: professionalColors.primary,
+                          boxShadow: `0 2px 12px ${alpha(professionalColors.primary, 0.1)}`
+                        }
+                      }}
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setOpenDetailsDialog(true);
+                        fetchWorkflowStatus(request.id);
+                        fetchRequestComments(request.id);
+                        fetchRequestDocuments(request.id);
+                      }}
+                    >
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        flexWrap: 'wrap',
+                        [theme.breakpoints.down('sm')]: {
+                          flexDirection: 'column',
+                          alignItems: 'flex-start'
+                        }
+                      }}>
+                        <Box sx={{ flex: 1, minWidth: 200 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            {request.vehicleMake} {request.vehicleModel} ({request.licensePlate})
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: professionalColors.textSecondary }}>
+                            {request.requestType} • {format(request.requestDate, 'PP')}
+                          </Typography>
+                        </Box>
+                        <Box sx={{
+                          display: 'flex',
+                          gap: 1,
+                          flexWrap: 'wrap',
+                          [theme.breakpoints.down('sm')]: {
+                            width: '100%'
+                          }
+                        }}>
+                          <StatusBadge
+                            label={request.status}
+                            size="small"
+                            status={request.status}
+                            icon={getStatusIcon(request.status)}
+                          />
+                          <PriorityBadge
+                            label={request.priority}
+                            size="small"
+                            priority={request.priority}
+                            icon={getPriorityIcon(request.priority)}
+                          />
+                          <Chip
+                            label={request.currentStage}
+                            size="small"
+                            sx={{
+                              fontWeight: 500,
+                              backgroundColor: alpha(theme.palette.info.main, 0.1),
+                              color: theme.palette.info.main,
+                              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    </StyledPaper>
+                  ))}
+                </List>
+              ) : (
+                <Box sx={{
+                  textAlign: 'center',
+                  p: 6,
+                  border: `1px dashed ${professionalColors.border}`,
+                  borderRadius: '8px',
+                  backgroundColor: alpha(professionalColors.primary, 0.02)
+                }}>
+                  <AssignmentReturnedIcon sx={{
+                    fontSize: 80,
+                    color: alpha(professionalColors.textSecondary, 0.3),
+                    mb: 2
+                  }} />
+                  <Typography variant="h6" sx={{
+                    fontWeight: 500,
+                    color: professionalColors.textSecondary,
+                    mb: 1
+                  }}>
+                    No Requests Found
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    color: alpha(professionalColors.textSecondary, 0.7),
+                    maxWidth: 400,
+                    mx: 'auto'
+                  }}>
+                    You haven't created any maintenance requests yet.
+                  </Typography>
+                </Box>
+              )}
+            </>
+          )}
         </Box>
 
-        {/* New Request Dialog */}
         <Dialog
           open={openDialog}
           onClose={() => setOpenDialog(false)}
@@ -1497,46 +1876,9 @@ const MaintenanceRequestApp = () => {
                 </FormControl>
               </Box>
 
-
-
-
               <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
 
-              <FormControl fullWidth required>
-                  <InputLabel sx={{
-                    color: professionalColors.textSecondary,
-                    '&.Mui-focused': {
-                      color: professionalColors.primary
-                    }
-                  }}>
-                    Department
-                  </InputLabel>
-                  <StyledSelect
-                    name="department"
-                    value={formData.department}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <MenuItem value="HR">HR</MenuItem>
-                    <MenuItem value="Finance">Finance</MenuItem>
-                    <MenuItem value="Operations">SWD</MenuItem>
-                    <MenuItem value="IT">S.Iy</MenuItem>
-                  </StyledSelect>
-                </FormControl>
-                
-                <StyledTextField
-                  fullWidth
-                  name="estimatedCost"
-                  label="Estimated Cost ($)"
-                  type="number"
-                  value={formData.estimatedCost}
-                  onChange={handleInputChange}
-                  inputProps={{ min: 0, step: 0.01 }}
-                />
-
               </Box>
-
-
               <StyledTextField
                 fullWidth
                 margin="normal"
@@ -1548,7 +1890,6 @@ const MaintenanceRequestApp = () => {
                 multiline
                 rows={4}
               />
-
             </Box>
           </DialogContent>
           <DialogActions sx={{
@@ -1582,7 +1923,6 @@ const MaintenanceRequestApp = () => {
           </DialogActions>
         </Dialog>
 
-        {/* Request Details Dialog */}
         <Dialog
           open={openDetailsDialog}
           onClose={() => setOpenDetailsDialog(false)}
@@ -1623,7 +1963,6 @@ const MaintenanceRequestApp = () => {
           </DialogActions>
         </Dialog>
 
-        {/* Process Stage Dialog */}
         <Dialog
           open={openStageDialog}
           onClose={() => setOpenStageDialog(false)}
@@ -1688,7 +2027,6 @@ const MaintenanceRequestApp = () => {
           </DialogActions>
         </Dialog>
 
-        {/* History Dialog */}
         <Dialog
           open={openHistoryDialog}
           onClose={() => setOpenHistoryDialog(false)}
@@ -1725,6 +2063,10 @@ const MaintenanceRequestApp = () => {
                         boxShadow: `0 2px 12px ${alpha(professionalColors.primary, 0.1)}`
                       }
                     }}
+                    onClick={() => {
+                      setSelectedRequest(request);
+                      setOpenDetailsDialog(true);
+                    }}
                   >
                     <Box sx={{
                       display: 'flex',
@@ -1759,33 +2101,6 @@ const MaintenanceRequestApp = () => {
                           icon={getStatusIcon(request.status)}
                         />
                       </Box>
-                    </Box>
-                    <Box sx={{
-                      mt: 2,
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      [theme.breakpoints.down('sm')]: {
-                        justifyContent: 'flex-start'
-                      }
-                    }}>
-                      <StyledButton
-                        variant="outlined"
-                        size="small"
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setOpenDetailsDialog(true);
-                        }}
-                        sx={{
-                          color: professionalColors.text,
-                          borderColor: professionalColors.border,
-                          '&:hover': {
-                            borderColor: professionalColors.primary,
-                            color: professionalColors.primary
-                          }
-                        }}
-                      >
-                        View Details
-                      </StyledButton>
                     </Box>
                   </StyledPaper>
                 ))}

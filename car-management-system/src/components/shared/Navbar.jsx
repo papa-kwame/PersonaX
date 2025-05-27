@@ -57,10 +57,7 @@ export default function Navbar() {
               <div>
                 <Typography variant="subtitle1" fontWeight="bold">
                   {username || "John Doe"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {userEmail || "john.doe@example.com"}
-                </Typography>
+                </Typography>   
               </div>
             </Box>
             <Divider />

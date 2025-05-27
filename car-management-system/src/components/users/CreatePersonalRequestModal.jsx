@@ -285,7 +285,7 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
         return (
           <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
+              <FormControl fullWidth required sx={{ minWidth: '150px' }}>
                 <InputLabel id="department-label">Department</InputLabel>
                 <Select
                   labelId="department-label"
@@ -305,7 +305,7 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
+              <FormControl fullWidth required sx={{ minWidth: '150px' }}>
                 <InputLabel id="requestType-label">Request Type</InputLabel>
                 <Select
                   labelId="requestType-label"
@@ -325,7 +325,7 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
+              <FormControl fullWidth required sx={{ minWidth: '150px' }}>
                 <InputLabel id="priority-label">Priority</InputLabel>
                 <Select
                   labelId="priority-label"
@@ -344,25 +344,8 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                id="estimatedCost"
-                name="estimatedCost"
-                label="Estimated Cost (Optional)"
-                placeholder="0.00"
-                type="number"
-                value={formData.estimatedCost}
-                onChange={handleChange}
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                  inputProps: {
-                    min: 0,
-                    step: 0.01
-                  }
-                }}
-              />
-            </Grid>
+
+
           </Grid>
         );
       case 1:
@@ -371,6 +354,7 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
+                sx={{ minWidth: '850px' }}
                 id="description"
                 name="description"
                 label="Description"
@@ -383,19 +367,6 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
               />
             </Grid>
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                id="adminComments"
-                name="adminComments"
-                label="Additional Comments (Optional)"
-                placeholder="Any additional information or comments..."
-                value={formData.adminComments}
-                onChange={handleChange}
-                multiline
-                rows={3}
-              />
-            </Grid>
           </Grid>
         );
       case 2:
@@ -427,12 +398,6 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
               </Typography>
             </Box>
 
-            {formData.estimatedCost && (
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="body2" color="text.secondary">Estimated Cost:</Typography>
-                <Typography variant="body1">${parseFloat(formData.estimatedCost).toFixed(2)}</Typography>
-              </Box>
-            )}
           </Paper>
         );
       default:
