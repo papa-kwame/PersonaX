@@ -64,8 +64,7 @@ export default function QuickActions() {
           </Link>
         ))}
       </div>
-          <VehicleAssignedCard/>
-    
+      
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import VehicleAssignedCard from "../components/users/VehicleAssignedCard";
 import VehicleRequestForm from "../components/new components/VehicleRequestForm";
 import VehicleRequestsPage from "../components/new components/VehicleRequestsComponent";
+import FuelLogList from "../components/fuel/FuelLogList";
 
 const api = axios.create({
   baseURL:  'https://localhost:7092/api',
@@ -172,7 +173,7 @@ export default function Dashboard() {
           />
         </div>
 
-  <VehicleRequestForm/>
+ 
       </div>
     </div>
   );

@@ -196,7 +196,7 @@ const VehicleAssignedCard = () => {
     if (!authData || !authData.userId) return;
 
     try {
-      const response = await axios.post(`${API_URL}/personal?userId=${authData.userId}`, formData);
+      const response = await axios.post(`${API_URL}/MaintenanceRequest/personal?userId=${authData.userId}`, formData);
       console.log('Request submitted:', response.data);
       setShowRequestModal(false);
     } catch (error) {
@@ -208,10 +208,11 @@ const VehicleAssignedCard = () => {
     <Card
       sx={{
         width: '100%',
-        maxWidth: 600,
+        minWidth: 600,
+        maxWidth:600,
         minHeight: 460,
         borderRadius: 2,
-        boxShadow: ' rgba(6, 24, 44, 0.4) 0px 0px 0px 2px, rgba(6, 24, 44, 0.65) 0px 4px 6px -1px, rgba(255, 255, 255, 0.08) 0px 1px 0px inset;',
+        boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
         display: 'flex',
         flexDirection: 'column'
       }}
@@ -223,7 +224,7 @@ const VehicleAssignedCard = () => {
           alignItems: 'center',
           mb: 3
         }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant="h9"  sx={{ display: 'flex', alignItems: 'center' }}>
             <CarIcon color="primary" sx={{ mr: 1 }} />
             My Assigned Vehicles
           </Typography>

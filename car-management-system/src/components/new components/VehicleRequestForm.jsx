@@ -45,7 +45,6 @@ const VehicleRequestForm = () => {
     const fetchVehicles = async () => {
       try {
         const response = await api.get('/Vehicles'); // Use the same endpoint as in the Dashboard component
-        console.log('API Response:', response.data); // Log the API response
         setVehicles(response.data);
       } catch (err) {
         console.error('Failed to fetch vehicles:', err);
@@ -58,12 +57,10 @@ const VehicleRequestForm = () => {
 
   const availableVehicles = Array.isArray(vehicles)
     ? vehicles.filter(vehicle => {
-        console.log('Vehicle:', vehicle); // Log each vehicle
         return !vehicle?.userId;
       })
     : [];
 
-  console.log('Available Vehicles:', availableVehicles); 
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {

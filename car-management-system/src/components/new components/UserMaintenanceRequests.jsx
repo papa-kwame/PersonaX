@@ -355,7 +355,7 @@ const UserMaintenanceRequests = () => {
   }
 
   return (
-    <Box sx={{ width: 600, height: 460 ,  borderRadius: 3    ,    boxShadow: ' rgba(6, 24, 44, 0.4) 0px 0px 0px 2px, rgba(6, 24, 44, 0.65) 0px 4px 6px -1px, rgba(255, 255, 255, 0.08) 0px 1px 0px inset;',}}>
+    <Box sx={{ width: 850, height: 460 ,  borderRadius: 3    ,    boxShadow: ' rgba(6, 24, 44, 0.4) 0px 0px 0px 2px, rgba(6, 24, 44, 0.65) 0px 4px 6px -1px, rgba(255, 255, 255, 0.08) 0px 1px 0px inset;',}}>
       <CustomCard sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <CardHeader
           title="Your Maintenance Requests"
@@ -371,13 +371,7 @@ const UserMaintenanceRequests = () => {
               disabled={isLoading}
               aria-label="refresh"
               size="medium"
-              sx={{
-                '&:hover': { 
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                  color: theme.palette.primary.main
-                },
-                transition: 'all 0.3s ease'
-              }}
+
             >
               {isLoading ? <CircularProgress size={24} /> : <Refresh />}
             </IconButton>
@@ -400,15 +394,11 @@ const UserMaintenanceRequests = () => {
                 button
                 onClick={() => handleRequestClick(request)}
                 sx={{
-                  '&:hover': { 
-                    backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                    transform: 'translateX(4px)'
-                  },
                   borderBottom: '1px solid',
                   borderColor: alpha(theme.palette.divider, 0.3),
                   py: 2,
                   px: 2.5,
-                  mx: 1,
+                   
                   borderRadius: 2,
                   transition: 'all 0.3s ease'
                 }}

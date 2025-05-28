@@ -273,10 +273,7 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
             label: 'Request Date',
             value: request.requestDate
           },
-          {
-            label: 'Department',
-            value: request.department
-          },
+
           {
             label: 'Vehicle',
             value: request.vehicle ? `${request.vehicle.make} ${request.vehicle.model} (${request.vehicle.licensePlate})` : 'N/A'
