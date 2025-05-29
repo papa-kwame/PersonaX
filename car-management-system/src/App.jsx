@@ -34,6 +34,7 @@ import UserDashboard from './components/users/UserDashboard';
 import AssignmentHistory from './components/assignments/AssignmentHistory';
 import NotificationButton from './components/users/Notifications';
 import VehicleAssignmentApp from './components/assignments/UserAssignments';
+import AdminFuelLogger from './components/admin/AdminFuelLogger';
 
 
 function App() {
@@ -67,7 +68,7 @@ function App() {
               <Layout><VehicleNewPage /></Layout>
             </ProtectedRoute>
           } />
-        
+
           <Route path="/vehicles/:id" element={
             <ProtectedRoute requiredRoles={['Admin']}>
               <Layout><VehicleShowPage /></Layout>
@@ -141,6 +142,11 @@ function App() {
           <Route path="/admin/settings" element={
             <ProtectedRoute requiredRoles={['Admin']}>
               <Layout><AdminSettings /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/logger" element={
+            <ProtectedRoute requiredRoles={['Admin']}>
+              <Layout><AdminFuelLogger/></Layout>
             </ProtectedRoute>
           } />
           <Route path="/admin/audit" element={

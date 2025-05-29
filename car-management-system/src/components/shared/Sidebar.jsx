@@ -43,6 +43,7 @@ export default function Sidebar({ className = "" }) {
     { path: '/admin/users', icon: 'bi-people', label: 'User Management' },
     { path: '/admin/roles', icon: 'bi-person-badge', label: 'Role Management' },
     { path: '/admin/routes', icon: 'bi-signpost', label: 'Routes' },
+    { path: '/admin/logger', icon: 'bi-signpost', label: 'Fuel Logger'}
   ];
 
 

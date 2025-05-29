@@ -481,15 +481,14 @@ const UserMaintenanceRequests = () => {
         </Box>
       </CustomCard>
 
-      {/* Enhanced Request Details Modal */}
       <Modal open={!!selectedRequest} onClose={handleCloseDetails}>
         <Box sx={{
           position: 'absolute',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 800, // Increased width
-          height: 700, // Increased height
+          width: 1000, // Increased width
+          height: 700, 
           bgcolor: 'background.paper',
           boxShadow: '0 10px 40px 0 rgba(0,0,0,0.2)',
           borderRadius: 3,
@@ -564,51 +563,44 @@ const UserMaintenanceRequests = () => {
                 <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
                   <CustomCard sx={{ flex: 1 }} variant="outlined">
                     <CardContent sx={{ p: 3 }}>
-                      <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                      <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ mb: 2, display: 'flex', alignItems: 'center' ,justifyContent:'space-between'}}>
+                       <div>
                         <Info sx={{ mr: 1, color: 'primary.main' }} />
                         Request Information
+                       </div> 
+                                                  <Box sx={{ display: 'inline-block' }}>
+                            {getStatusChip(selectedRequest?.status)}
+                          </Box>
                       </Typography>
-                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 2fr', gap: 2 }}>
+ 
                         <Box>
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-                            Request ID
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedRequest?.id}</Typography>
-                        </Box>
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 ,border:'1px solid black', width:'fit-content',padding:'4px' ,borderRadius:'8px'}}>
                             Request Date
                           </Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>{formatDate(selectedRequest?.requestDate)}</Typography>
                         </Box>
-                        <Box sx={{ gridColumn: '1 / -1' }}>
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-                            Description
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 ,border:'1px solid black', width:'fit-content',padding:'4px' ,borderRadius:'8px'}}>
+                            Request Type
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedRequest?.description}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedRequest?.requestType}</Typography>
                         </Box>
-                        <Box sx={{ gridColumn: '1 / -1' }}>
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                        <Box >
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 ,border:'1px solid black', width:'fit-content',padding:'4px' ,borderRadius:'8px'}}>
                             Vehicle Details
                           </Typography>
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             {selectedRequest?.vehicleMake} {selectedRequest?.vehicleModel} ({selectedRequest?.licensePlate})
                           </Typography>
                         </Box>
-                        <Box>
+                        <Box >
                           <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-                            Request Type
+                            Description
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedRequest?.requestType}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{selectedRequest?.description}</Typography>
                         </Box>
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-                            Status
-                          </Typography>
-                          <Box sx={{ display: 'inline-block' }}>
-                            {getStatusChip(selectedRequest?.status)}
-                          </Box>
-                        </Box>
+
                       </Box>
                     </CardContent>
                   </CustomCard>

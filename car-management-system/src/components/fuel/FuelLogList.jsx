@@ -46,21 +46,25 @@ const FuelLogList = () => {
   const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && userId) {
+      console.log("User ID:", userId); 
       fetchFuelLogs();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userId]);
 
   const fetchFuelLogs = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/FuelLogs');
+      const response = await api.get('/api/FuelLogs', {
+        params: { userId }
+      });
+      console.log("API Response:", response.data);
       setFuelLogs(response.data);
       setLoading(false);
     } catch (err) {
+      console.error("Error fetching fuel logs:", err);
       setError('Failed to fetch fuel logs');
       setLoading(false);
-      console.error(err);
     }
   };
 
@@ -192,11 +196,11 @@ const FuelLogList = () => {
         <Typography variant="h6" color="error" gutterBottom>
           {error}
         </Typography>
-        <Button 
-          onClick={fetchFuelLogs} 
-          variant="contained" 
+        <Button
+          onClick={fetchFuelLogs}
+          variant="contained"
           color="primary"
-          sx={{ 
+          sx={{
             mt: 2,
             borderRadius: '8px',
             px: 3,
@@ -215,19 +219,19 @@ const FuelLogList = () => {
   }
 
   return (
-    <Box sx={{ 
-      p: isMobile ? 2 : 3, 
-      maxWidth: '450px', 
-      margin: '0 auto', 
+    <Box sx={{
+      p: isMobile ? 2 : 3,
+      maxWidth: '450px',
+      margin: '0 auto',
       border: '1px solid',
       borderColor: theme.palette.divider,
-      borderRadius: '12px', 
+      borderRadius: '12px',
       height: '320px',
       backgroundColor: theme.palette.background.paper,
       boxShadow: theme.shadows[1]
     }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h8" component="h7" sx={{ 
+        <Typography variant="h8" component="h7" sx={{
           fontWeight: 300,
           color: theme.palette.text.primary,
           letterSpacing: '0.5px'
@@ -273,7 +277,7 @@ const FuelLogList = () => {
                 }
               }}
             >
-              <CardContent sx={{ 
+              <CardContent sx={{
                 padding: '6px',
                 '&:last-child': { paddingBottom: '6px' },
                 width: '400px'
@@ -289,14 +293,14 @@ const FuelLogList = () => {
                     <LocalGasStation fontSize="small" />
                   </Avatar>
                   <Box flexGrow={1}>
-                    <Typography variant="h9" component="div" sx={{ 
+                    <Typography variant="h9" component="div" sx={{
                       fontWeight: 300,
                       color: theme.palette.text.primary,
                       lineHeight: 1.3
                     }}>
                       {log.fuelAmount}L
                     </Typography>
-                    <Typography variant="subtitle2" sx={{ 
+                    <Typography variant="subtitle2" sx={{
                       color: theme.palette.text.secondary,
                       fontWeight: 500,
                       letterSpacing: 0.2
@@ -305,24 +309,24 @@ const FuelLogList = () => {
                     </Typography>
                   </Box>
                   <Box textAlign="right">
-                    <Typography variant="subtitle1" sx={{ 
+                    <Typography variant="subtitle1" sx={{
                       fontWeight: 700,
                       color: theme.palette.text.primary,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'flex-end'
                     }}>
-                      <AttachMoney fontSize="small" sx={{ 
+                      <AttachMoney fontSize="small" sx={{
                         color: theme.palette.success.main,
                         mr: 0.5,
                         fontSize: '18px'
                       }} />
                       {log.cost.toFixed(2)}
                     </Typography>
-                    <Chip 
+                    <Chip
                       label={format(new Date(log.date), 'MMM d, yyyy')}
                       size="small"
-                      sx={{ 
+                      sx={{
                         backgroundColor: theme.palette.action.selected,
                         color: theme.palette.text.secondary,
                         fontWeight: 500,
@@ -343,7 +347,7 @@ const FuelLogList = () => {
           onClick={handlePrevPage}
           disabled={currentPage === 0}
           startIcon={<ArrowBack />}
-          sx={{ 
+          sx={{
             mr: 1,
             borderRadius: '8px',
             px: 2,
@@ -353,10 +357,10 @@ const FuelLogList = () => {
         >
           Previous
         </Button>
-        <Chip 
+        <Chip
           label={`${currentPage + 1} of ${Math.ceil(fuelLogs.length / logsPerPage)}`}
           size="small"
-          sx={{ 
+          sx={{
             backgroundColor: theme.palette.action.selected,
             color: theme.palette.text.primary,
             fontWeight: 500
@@ -366,12 +370,12 @@ const FuelLogList = () => {
           onClick={handleNextPage}
           disabled={(currentPage + 1) * logsPerPage >= fuelLogs.length}
           endIcon={<ArrowForward />}
-          sx={{ 
+          sx={{
             ml: 1,
             borderRadius: '8px',
             px: 2,
             textTransform: 'none',
-            color: (currentPage + 1) * logsPerPage >= fuelLogs.length ? 
+            color: (currentPage + 1) * logsPerPage >= fuelLogs.length ?
               theme.palette.text.disabled : theme.palette.primary.main
           }}
         >
@@ -423,9 +427,9 @@ const FuelLogList = () => {
             <DialogContent sx={{ p: 3 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ 
-                    p: 2, 
-                    borderRadius: 2, 
+                  <Paper elevation={0} sx={{
+                    p: 2,
+                    borderRadius: 2,
                     bgcolor: theme.palette.grey[50],
                     height: '100%'
                   }}>
@@ -459,9 +463,9 @@ const FuelLogList = () => {
                 </Grid>
 
                 <Grid item xs={12} sm={6}>
-                  <Paper elevation={0} sx={{ 
-                    p: 2, 
-                    borderRadius: 2, 
+                  <Paper elevation={0} sx={{
+                    p: 2,
+                    borderRadius: 2,
                     bgcolor: theme.palette.grey[50],
                     height: '100%'
                   }}>
@@ -499,7 +503,7 @@ const FuelLogList = () => {
             <DialogActions sx={{ p: 3, pt: 0 }}>
               <Button
                 onClick={() => setOpenDetailDialog(false)}
-                sx={{ 
+                sx={{
                   mr: 2,
                   borderRadius: '8px',
                   px: 3,
@@ -513,7 +517,7 @@ const FuelLogList = () => {
                 startIcon={<Edit />}
                 onClick={() => handleEdit(currentLog)}
                 variant="outlined"
-                sx={{ 
+                sx={{
                   mr: 1,
                   borderRadius: '8px',
                   px: 3,
@@ -649,7 +653,7 @@ const FuelLogList = () => {
         <DialogActions sx={{ p: 3, pt: 0 }}>
           <Button
             onClick={() => setOpenDialog(false)}
-            sx={{ 
+            sx={{
               mr: 2,
               borderRadius: '8px',
               px: 3,
@@ -781,7 +785,7 @@ const FuelLogList = () => {
         <DialogActions sx={{ p: 3, pt: 0 }}>
           <Button
             onClick={() => setOpenEditDialog(false)}
-            sx={{ 
+            sx={{
               mr: 2,
               borderRadius: '8px',
               px: 3,

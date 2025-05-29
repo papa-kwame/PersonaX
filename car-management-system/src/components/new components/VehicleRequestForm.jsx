@@ -119,7 +119,15 @@ const VehicleRequestForm = () => {
         Request Vehicle
       </Button>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth        
+      style={{
+                      background: 'transparent',
+                      color: 'white',
+                      padding: '8px 12px',
+                      fontSize: '0.575rem',
+                      borderRadius: '122px'
+                    }}
+      >
         <DialogTitle>Request Vehicle Assignment</DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent>

@@ -252,7 +252,7 @@ const VehicleRequestsComponent = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3,mixWidth:'400px'}}}>
+    <Box sx={{ p: { xs: 2, md: 3,minWidth:'400px', borderRadius: '12px', background :'white'}}}>
       <Typography variant="h8" component="h" gutterBottom sx={{
         fontWeight: 200,
         color: 'text.primary',
@@ -266,77 +266,106 @@ const VehicleRequestsComponent = () => {
         My Vehicle Requests
       </Typography>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <RequestPaper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
-            {requests.length === 0 ? (
-              <Box textAlign="center" py={4}>
-                <Typography variant="body1" color="text.secondary">
-                  No vehicle requests found.
-                </Typography>
-
-                <VehicleRequestForm/>
-              </Box>
-            ) : (
-              <List disablePadding>
-                {requests.map((request) => (
-                  <React.Fragment key={request.id}>
-                    <ListItem
-                      button
-                      onClick={() => handleRequestClick(request)}
-                      sx={{
-                        py: 1.5,
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          backgroundColor: 'action.hover'
-                        }
-                      }}
+ <Grid container spacing={2}>
+  <Grid item xs={12}>
+    {requests.length === 0 ? (
+      <Box 
+        textAlign="center" 
+        py={4}
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        gap={2}
+        width={550}
+      >
+        <Typography variant="body1" color="text.secondary">
+          No vehicle requests found.
+        </Typography>
+        <VehicleRequestForm />
+      </Box>
+    ) : (
+      <List disablePadding sx={{ width: '100%' }}>
+        {requests.map((request) => (
+          <React.Fragment key={request.id}>
+            <ListItem
+              button
+              onClick={() => handleRequestClick(request)}
+              sx={{
+                py: 2,
+                px: 2,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: 'action.hover'
+                },
+                display: 'flex',
+                alignItems: 'flex-start'
+              }}
+            >
+              <ListItemAvatar sx={{ minWidth: 48, mr: 1.5 }}>
+                <VehicleAvatar sx={{ width: 40, height: 40 }}>
+                  <DirectionsCarIcon fontSize="small" />
+                </VehicleAvatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Typography variant="subtitle1" fontWeight={500}>
+                    {request.vehicle?.make || 'No vehicle'} {request.vehicle?.model || ''}
+                  </Typography>
+                }
+                secondary={
+                  <>
+                    <Box 
+                      display="flex" 
+                      alignItems="center" 
+                      gap={1} 
+                      mb={1}
                     >
-                      <ListItemAvatar>
-                        <VehicleAvatar>
-                          <DirectionsCarIcon fontSize="small" />
-                        </VehicleAvatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Typography variant="subtitle1" fontWeight={500}>
-                            {request.vehicle?.make || 'No vehicle'} {request.vehicle?.model || ''}
-                          </Typography>
-                        }
-                        secondary={
-                          <>
-                            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                              <Typography
-                                component="span"
-                                variant="body2"
-                                color="text.primary"
-                                fontWeight={500}
-                              >
-                                {request.vehicle?.licensePlate || 'No license plate'}
-                              </Typography>
-                            </Box>
-                            <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
-                              {getStatusChip(request.status)}
-                              <Box display="flex" alignItems="center" gap={0.5}>
-                                <CalendarTodayIcon fontSize="small" color="action" />
-                                <Typography variant="caption" color="text.secondary">
-                                  {formatDate(request.requestDate)}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </>
-                        }
-                      />
-                    </ListItem>
-                    <Divider component="li" sx={{ mx: 2 }} />
-                  </React.Fragment>
-                ))}
-              </List>
-            )}
-          </RequestPaper>
-        </Grid>
-      </Grid>
-
+                      <Typography
+                        component="span"
+                        variant="body2"
+                        color="text.primary"
+                        fontWeight={500}
+                      >
+                        {request.vehicle?.licensePlate || 'No license plate'}
+                      </Typography>
+                    </Box>
+                    <Box 
+                      display="flex" 
+                      alignItems="center" 
+                      gap={1.5} 
+                      flexWrap="wrap"
+                    >
+                      {getStatusChip(request.status)}
+                      <Box 
+                        display="flex" 
+                        alignItems="center" 
+                        gap={0.8}
+                        sx={{ color: 'text.secondary' }}
+                      >
+                        <CalendarTodayIcon fontSize="inherit" />
+                        <Typography variant="caption">
+                          {formatDate(request.requestDate)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </>
+                }
+                sx={{ my: 0 }}
+              />
+            </ListItem>
+            <Divider 
+              component="li" 
+              sx={{ 
+                mx: 2,
+                my: 0.5
+              }} 
+            />
+          </React.Fragment>
+        ))}
+      </List>
+    )}
+  </Grid>
+</Grid>
       <Modal
         aria-labelledby="transition-modal-title"
         aria-describedby="transition-modal-description"
@@ -403,9 +432,7 @@ const VehicleRequestsComponent = () => {
                   )}
                 </Paper>
 
-                {/* Main Content Grid */}
                 <Grid container spacing={3} sx={{ mt: 1 }}>
-                  {/* Vehicle Information */}
                   <Grid item xs={12} md={9}>
                     <Paper variant="outlined" sx={{
                       p: 2,
@@ -457,7 +484,6 @@ const VehicleRequestsComponent = () => {
                     </Paper>
                   </Grid>
 
-                  {/* Request Information */}
                   <Grid item xs={12} md={6}>
                     <Paper variant="outlined" sx={{
                       p: 2,
