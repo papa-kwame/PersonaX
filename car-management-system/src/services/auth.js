@@ -4,24 +4,20 @@ const API_URL = 'https://localhost:7092/api';
 
 export const login = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/login`, {
-      email,
-      password
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
+    const response = await axios.post(`${API_URL}/auth/login`, { email, password }, {
+      headers: { 'Content-Type': 'application/json' }
     });
-    localStorage.setItem('authData', JSON.stringify({
+
+    const authData = {
       token: response.data.token,
       roles: response.data.roles,
-      userId: response.data.userId
-    }));
-    return {
-      token: response.data.token,
-      roles: response.data.roles,
-      userId :response.data.userId
+      routeRoles: response.data.routeRoles,
+      userId: response.data.userId,
+      mustChangePassword: response.data.mustChangePassword === true || response.data.mustChangePassword === 'true'
     };
+
+    localStorage.setItem('authData', JSON.stringify(authData));
+    return authData;
   } catch (error) {
     if (error.response) {
       throw new Error(error.response.data.message || 'Login failed');
@@ -33,13 +29,10 @@ export const login = async (email, password) => {
   }
 };
 
-
 export const verifyToken = async (token) => {
   try {
     const response = await axios.get(`${API_URL}/auth/verify`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
+      headers: { Authorization: `Bearer ${token}` },
       timeout: 5000
     });
 
@@ -56,18 +49,11 @@ export const verifyToken = async (token) => {
   }
 };
 
-// 🆕 Add this:
 export const register = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/register`, {
-      email,
-      password
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
+    const response = await axios.post(`${API_URL}/auth/register`, { email, password }, {
+      headers: { 'Content-Type': 'application/json' }
     });
-
     return response.data;
   } catch (error) {
     if (error.response) {
@@ -87,5 +73,10 @@ export const getAuthData = () => {
 
 export const getCurrentUserId = () => {
   const authData = getAuthData();
-  return authData?.userId;
+  return authData?.userId || null;
+};
+
+export const getRouteRoles = () => {
+  const authData = getAuthData();
+  return authData?.routeRoles || null;
 };

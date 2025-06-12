@@ -259,8 +259,7 @@ const UserMaintenanceRequests = () => {
         alignItems: 'center', 
         justifyContent: 'center',
         borderRadius: 3,
-        bgcolor: alpha(theme.palette.background.default, 0.6),
-        boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)'
+        bgcolor: alpha(theme.palette.background.default, 0.6)
       }}>
         <Typography variant="body1" color="text.secondary">
           Please sign in to view your maintenance requests.
@@ -321,47 +320,73 @@ const UserMaintenanceRequests = () => {
     );
   }
 
-  if (requests.length === 0) {
-    return (
-      <Paper sx={{ 
-        p: 3, 
-        textAlign: 'center', 
-        height: 460, 
-        display: 'flex', 
-        alignItems: 'center', 
+if (requests.length === 0) {
+  return (
+    <Paper sx={{ 
+      p: 3, 
+      textAlign: 'center', 
+      height: 460, 
+      display: 'flex', 
+      flexDirection: 'column',
+      alignItems: 'center', 
+      justifyContent: 'center',
+      borderRadius: 3,
+      bgcolor: alpha(theme.palette.background.paper, 0.8),
+      boxShadow: '0 8px 20px 0 rgba(0,0,0,0.05)',
+      border: `1px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
+      backgroundImage: 'linear-gradient(to bottom right, rgba(25, 118, 210, 0.02), rgba(25, 118, 210, 0.01))'
+    }}>
+      <Box sx={{
+        width: 120,
+        height: 120,
+        bgcolor: alpha(theme.palette.primary.main, 0.1),
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 3,
-        bgcolor: alpha(theme.palette.background.default, 0.6)
+        mb: 3
       }}>
-        <Box>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-            You have no maintenance requests.
-          </Typography>
-          <Button 
-            variant="outlined" 
-            onClick={fetchRequests}
-            startIcon={<Refresh />}
-            sx={{
-              mt: 1,
-              borderRadius: 2,
-              textTransform: 'none'
-            }}
-          >
-            Refresh
-          </Button>
-        </Box>
-      </Paper>
-    );
-  }
+        <Schedule 
+          sx={{ 
+            fontSize: 48, 
+            color: alpha(theme.palette.primary.main, 0.6) 
+          }} 
+        />
+      </Box>
+      <Typography 
+        variant="h6" 
+        sx={{ 
+          mb: 1, 
+          fontWeight: 600,
+          color: theme.palette.text.primary
+        }}
+      >
+        No Maintenance Requests Found
+      </Typography>
+      <Typography 
+        variant="body2" 
+        color="text.secondary" 
+        sx={{ 
+          maxWidth: 400,
+          mb: 3,
+          lineHeight: 1.6
+        }}
+      >
+        You have no pending  maintenance requests. When you do, they'll appear here with their current status and details.
+      </Typography>
+
+    </Paper>
+  );
+}
 
   return (
-    <Box sx={{ width: 850, height: 460 ,  borderRadius: 3    ,    boxShadow: ' rgba(6, 24, 44, 0.4) 0px 0px 0px 2px, rgba(6, 24, 44, 0.65) 0px 4px 6px -1px, rgba(255, 255, 255, 0.08) 0px 1px 0px inset;',}}>
+    <Box sx={{ width: 850, height: 460 ,  borderRadius: 3 }}>
       <CustomCard sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <CardHeader
-          title="Your Maintenance Requests"
+          title="My Maintenance Requests"
           titleTypographyProps={{ 
-            variant: 'h6', 
-            fontWeight: 700,
+            variant: 'h8  ', 
+            fontWeight: 300,
             letterSpacing: '0.2px',
             color: theme.palette.text.primary
           }}
@@ -383,7 +408,7 @@ const UserMaintenanceRequests = () => {
             px: 3,
             bgcolor: alpha(theme.palette.background.paper, 0.8),
             backdropFilter: 'blur(8px)'
-          }}
+          }}  
         />
         
         <Box sx={{ flex: 1, overflow: 'auto', p: 1 }}>
@@ -394,12 +419,12 @@ const UserMaintenanceRequests = () => {
                 button
                 onClick={() => handleRequestClick(request)}
                 sx={{
-                  borderBottom: '1px solid',
+                  border: '1px solid black',
                   borderColor: alpha(theme.palette.divider, 0.3),
                   py: 2,
                   px: 2.5,
                    
-                  borderRadius: 2,
+                  borderRadius: 3,
                   transition: 'all 0.3s ease'
                 }}
               >

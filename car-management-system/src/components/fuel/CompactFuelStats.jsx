@@ -12,11 +12,11 @@ import {
   MenuItem,
   useTheme
 } from '@mui/material';
-import { 
-  LineChart, 
+import {
+  LineChart,
   Line,
-  XAxis, 
-  YAxis, 
+  XAxis,
+  YAxis,
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
@@ -24,20 +24,22 @@ import { LocalGasStation } from '@mui/icons-material';
 
 const CompactFuelStats = () => {
   const theme = useTheme();
-  const { userId } = useAuth();
+  const { userId, isAuthenticated } = useAuth();
   const [fuelLogs, setFuelLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('month');
 
   useEffect(() => {
-    fetchFuelLogs();
-  }, []);
+    if (isAuthenticated && userId) {
+      fetchFuelLogs();
+    }
+  }, [isAuthenticated, userId]);
 
   const fetchFuelLogs = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/FuelLogs');
-      setFuelLogs(response.data);
+      const response = await api.get(`/api/FuelLogs/user/${userId}`);
+      setFuelLogs(Array.isArray(response.data) ? response.data : []);
       setLoading(false);
     } catch (err) {
       console.error('Failed to fetch fuel logs', err);
@@ -85,7 +87,7 @@ const CompactFuelStats = () => {
   const totalFuel = chartData.reduce((sum, item) => sum + item.totalFuel, 0).toFixed(1);
 
   return (
-    <Paper sx={{ 
+    <Paper sx={{
       width: 400,
       height: 245,
       p: 1.5,
@@ -97,16 +99,16 @@ const CompactFuelStats = () => {
       {/* Header Row */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
         <Box display="flex" alignItems="center">
-          <LocalGasStation sx={{ 
-            color: theme.palette.primary.main, 
+          <LocalGasStation sx={{
+            color: theme.palette.primary.main,
             fontSize: '20px',
-            mr: 1 
+            mr: 1
           }} />
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             Fuel Consumption
           </Typography>
         </Box>
-        
+
         <FormControl size="small" sx={{ minWidth: 80 }}>
           <InputLabel sx={{ fontSize: '0.8rem' }}>Range</InputLabel>
           <Select
@@ -120,7 +122,7 @@ const CompactFuelStats = () => {
           </Select>
         </FormControl>
       </Box>
-      
+
       {/* Main Content */}
       <Box display="flex" flexGrow={1} gap={1}>
         {/* Total Fuel Display */}
@@ -132,36 +134,36 @@ const CompactFuelStats = () => {
             Total
           </Typography>
         </Box>
-        
+
         {/* Mini Chart */}
         <Box width="70%" height="100%">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tick={{ fontSize: 10 }}
-                tickFormatter={(value) => timeRange === 'month' 
-                  ? value.split('-')[1] 
-                  : value.split('-')[2].substring(0,2)}
+                tickFormatter={(value) => timeRange === 'month'
+                  ? value.split('-')[1]
+                  : value.split('-')[2].substring(0, 2)}
               />
-              <YAxis 
+              <YAxis
                 width={25}
                 tick={{ fontSize: 10 }}
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{
                   fontSize: 10,
                   borderRadius: 4,
                   padding: '2px 6px'
                 }}
-                labelFormatter={(value) => timeRange === 'month' 
-                  ? `M${value.split('-')[1]}` 
+                labelFormatter={(value) => timeRange === 'month'
+                  ? `M${value.split('-')[1]}`
                   : `D${value.split('-')[2]}`}
               />
-              <Line 
-                type="monotone" 
-                dataKey="totalFuel" 
-                stroke={theme.palette.primary.main} 
+              <Line
+                type="monotone"
+                dataKey="totalFuel"
+                stroke={theme.palette.primary.main}
                 strokeWidth={1.5}
                 dot={{ r: 1.5 }}
                 activeDot={{ r: 3 }}
@@ -170,9 +172,9 @@ const CompactFuelStats = () => {
           </ResponsiveContainer>
         </Box>
       </Box>
-      
+
       {/* Footer */}
-      <Typography variant="caption" color="text.secondary" textAlign="center" sx={{ 
+      <Typography variant="caption" color="text.secondary" textAlign="center" sx={{
         fontSize: '0.6rem',
         mt: 0.5
       }}>

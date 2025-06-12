@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Link } from "react-router-dom";
 import {
   Box,
   Container,
@@ -13,7 +14,6 @@ import {
   CircularProgress,
   Pagination,
   Alert,
-  Stack,
   Tooltip,
   MenuItem,
   Select,
@@ -38,16 +38,18 @@ import {
   Paper,
   IconButton,
   Chip,
-  useTheme
+  useTheme,
+  Tabs,
+  Tab
 } from '@mui/material';
 import {
-  DirectionsCarFilledOutlined as CarIcon,
+  DirectionsCar as CarIcon,
   Person as PersonIcon,
   History as HistoryIcon,
   Info as InfoIcon,
   CheckCircle as CheckIcon,
   Cancel as CancelIcon,
-  AddCircle as AddIcon,
+  Add as AddIcon,
   Search as SearchIcon,
   ArrowBack as BackIcon,
   Assignment as AssignmentIcon,
@@ -55,18 +57,16 @@ import {
   PendingActions as PendingActionsIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Save as SaveIcon,
-  DirectionsCar as DirectionsCarIcon,
   Email as EmailIcon,
   Event as EventIcon,
-  Schedule as ScheduleIcon,
   LocalGasStation as LocalGasStationIcon,
   ColorLens as ColorLensIcon,
   CalendarToday as CalendarTodayIcon,
   Engineering as EngineeringIcon,
   Receipt as ReceiptIcon,
-  Money as MoneyIcon,
-  Notes as NotesIcon
+  MonetizationOn as MoneyIcon,
+  Notes as NotesIcon,
+  Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { format, parseISO, isBefore } from 'date-fns';
 
@@ -119,7 +119,8 @@ const Assignment = () => {
     showForm: false,
     validationErrors: {},
     isSubmitted: false,
-    formLoading: false
+    formLoading: false,
+    currentPage: 1
   });
 
   const api = axios.create({
@@ -317,8 +318,10 @@ const Assignment = () => {
       setState(prev => ({
         ...prev,
         vehicles: prev.vehicles.filter(v => v.id !== prev.vehicleToDelete.id),
-        showDeleteModal: false
+        showDeleteModal: false,
+        vehicleToDelete: null
       }));
+      fetchData();
     } catch (error) {
       console.error('Error deleting vehicle:', error);
     }
@@ -475,14 +478,21 @@ const Assignment = () => {
     return Object.keys(errors).length === 0;
   };
 
+  const handleTabChange = (event, newValue) => {
+    setState(prev => ({ ...prev, activeTab: newValue }));
+  };
+
   const renderHeader = () => (
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
       <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
         <CarIcon />
       </Avatar>
       <Box>
-        <Typography variant="h6" component="h1" fontWeight='300'>
+        <Typography variant="h5" component="h1" fontWeight='bold'>
           Vehicle Assignments
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Manage vehicle assignments and requests
         </Typography>
       </Box>
       <Box sx={{ ml: 'auto', display: 'flex', gap: 2 }}>
@@ -490,6 +500,7 @@ const Assignment = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setState(prev => ({ ...prev, showRequestModal: true }))}
+          sx={{ borderRadius: '8px' }}
         >
           New Request
         </Button>
@@ -517,7 +528,7 @@ const Assignment = () => {
         {
           title: 'Available',
           value: state.stats.availableVehicles,
-          icon: <DirectionsCarIcon fontSize="medium" />,
+          icon: <CarIcon fontSize="medium" />,
           color: theme.palette.info.main,
           bgColor: theme.palette.info.light
         },
@@ -533,7 +544,7 @@ const Assignment = () => {
           <Card
             sx={{
               height: '100%',
-              width : '270px',
+              width:'350px',
               borderRadius: '12px',
               boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
               transition: 'all 0.3s ease',
@@ -579,7 +590,7 @@ const Assignment = () => {
                 </Box>
               </Box>
               <Typography
-                variant="h3"
+                variant="h4"
                 fontWeight="bold"
                 sx={{
                   fontSize: '2rem',
@@ -616,15 +627,15 @@ const Assignment = () => {
   );
 
   const renderCurrentAssignments = () => (
-    <Card>
+    <Card sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
       <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Vehicle</TableCell>
-              <TableCell>User</TableCell>
-              <TableCell>Assignment Date</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Vehicle</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>User</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Assignment Date</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -718,17 +729,17 @@ const Assignment = () => {
   );
 
   const renderAvailableVehicles = () => (
-    <Card>
+    <Card sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
       <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Make/Model</TableCell>
-              <TableCell>Year</TableCell>
-              <TableCell>Plate</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Make/Model</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Year</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Plate</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Type</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -1178,10 +1189,10 @@ const Assignment = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>User</TableCell>
-                <TableCell>Assigned Date</TableCell>
-                <TableCell>Unassigned Date</TableCell>
-                <TableCell>Duration</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>User</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Assigned Date</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Unassigned Date</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -1243,21 +1254,25 @@ const Assignment = () => {
   const renderDeleteModal = () => (
     <Dialog
       open={state.showDeleteModal}
-      onClose={() => setState(prev => ({ ...prev, showDeleteModal: false }))}
+      onClose={() => setState(prev => ({ ...prev, showDeleteModal: false, vehicleToDelete: null }))}
     >
       <DialogTitle>Confirm Delete</DialogTitle>
       <DialogContent>
         Are you sure you want to delete {state.vehicleToDelete?.make} {state.vehicleToDelete?.model}?
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setState(prev => ({ ...prev, showDeleteModal: false }))}>Cancel</Button>
-        <Button onClick={confirmDelete} color="error">Delete</Button>
+        <Button onClick={() => setState(prev => ({ ...prev, showDeleteModal: false, vehicleToDelete: null }))}>
+          Cancel
+        </Button>
+        <Button onClick={confirmDelete} color="error" variant="contained">
+          Delete
+        </Button>
       </DialogActions>
     </Dialog>
   );
 
   const renderVehicleForm = () => (
-    <Card sx={{ mb: 4 }}>
+    <Card sx={{ mb: 4, boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
       <CardContent>
         <Typography variant="h5" gutterBottom>
           {state.formData.id ? 'Edit Vehicle' : 'Add New Vehicle'}
@@ -1551,13 +1566,20 @@ const Assignment = () => {
     const totalPages = Math.ceil(filteredVehicles.length / state.itemsPerPage);
 
     return (
-      <Card>
+      <Card sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">Vehicle List</Typography>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddVehicle}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Vehicle List</Typography>
+           <Link to='/vehicles/new'>
+            <Button 
+              variant="contained" 
+              startIcon={<AddIcon />}   
+              
+              sx={{ borderRadius: '8px' }}
+            >
               Add Vehicle
             </Button>
+            </Link>
           </Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
             <TextField
@@ -1566,9 +1588,16 @@ const Assignment = () => {
               value={state.searchQuery}
               onChange={(e) => setState(prev => ({ ...prev, searchQuery: e.target.value }))}
               sx={{ width: '300px' }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
             />
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl sx={{ minWidth: 120 }}>
+              <FormControl sx={{ minWidth: 120 }} size="small">
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={state.filters.status}
@@ -1581,7 +1610,7 @@ const Assignment = () => {
                   <MenuItem value="Out of Service">Out of Service</MenuItem>
                 </Select>
               </FormControl>
-              <FormControl sx={{ minWidth: 120 }}>
+              <FormControl sx={{ minWidth: 120 }} size="small">
                 <InputLabel>Vehicle Type</InputLabel>
                 <Select
                   value={state.filters.vehicleType}
@@ -1598,67 +1627,100 @@ const Assignment = () => {
               </FormControl>
             </Box>
           </Box>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell onClick={() => handleSort('licensePlate')}>
+                  <TableCell 
+                    onClick={() => handleSort('licensePlate')}
+                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+                  >
                     License Plate {state.sortConfig.key === 'licensePlate' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </TableCell>
-                  <TableCell onClick={() => handleSort('make')}>
+                  <TableCell 
+                    onClick={() => handleSort('make')}
+                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+                  >
                     Make {state.sortConfig.key === 'make' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </TableCell>
-                  <TableCell onClick={() => handleSort('model')}>
+                  <TableCell 
+                    onClick={() => handleSort('model')}
+                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+                  >
                     Model {state.sortConfig.key === 'model' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </TableCell>
-                  <TableCell onClick={() => handleSort('year')}>
+                  <TableCell 
+                    onClick={() => handleSort('year')}
+                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+                  >
                     Year {state.sortConfig.key === 'year' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </TableCell>
-                  <TableCell onClick={() => handleSort('currentMileage')}>
+                  <TableCell 
+                    onClick={() => handleSort('currentMileage')}
+                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+                  >
                     Mileage {state.sortConfig.key === 'currentMileage' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {currentVehicles.map(vehicle => (
-                  <TableRow key={vehicle.id}>
-                    <TableCell>{vehicle.licensePlate}</TableCell>
-                    <TableCell>{vehicle.make}</TableCell>
-                    <TableCell>{vehicle.model}</TableCell>
-                    <TableCell>{vehicle.year}</TableCell>
-                    <TableCell>{vehicle.currentMileage}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={vehicle.status}
-                        color={
-                          vehicle.status === 'Available' ? 'success' :
-                          vehicle.status === 'Assigned' ? 'primary' :
-                          vehicle.status === 'In Maintenance' ? 'warning' : 'error'
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <IconButton onClick={() => handleEditVehicle(vehicle)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton onClick={() => handleDeleteClick(vehicle)}>
-                        <DeleteIcon />
-                      </IconButton>
+                {currentVehicles.length > 0 ? (
+                  currentVehicles.map(vehicle => (
+                    <TableRow key={vehicle.id} hover>
+                      <TableCell>{vehicle.licensePlate}</TableCell>
+                      <TableCell>{vehicle.make}</TableCell>
+                      <TableCell>{vehicle.model}</TableCell>
+                      <TableCell>{vehicle.year}</TableCell>
+                      <TableCell>{vehicle.currentMileage?.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={vehicle.status}
+                          color={
+                            vehicle.status === 'Available' ? 'success' :
+                            vehicle.status === 'Assigned' ? 'primary' :
+                            vehicle.status === 'In Maintenance' ? 'warning' : 'error'
+                          }
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title="Edit vehicle">
+                          <IconButton onClick={() => handleEditVehicle(vehicle)}>
+                            <EditIcon color="primary" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete vehicle">
+                          <IconButton onClick={() => handleDeleteClick(vehicle)}>
+                            <DeleteIcon color="error" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography color="text.secondary">
+                        No vehicles found matching your criteria
+                      </Typography>
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </TableContainer>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <Pagination
-              count={totalPages}
-              page={state.currentPage}
-              onChange={(e, page) => setState(prev => ({ ...prev, currentPage: page }))}
-            />
-          </Box>
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Pagination
+                count={totalPages}
+                page={state.currentPage}
+                onChange={(e, page) => setState(prev => ({ ...prev, currentPage: page }))}
+                color="primary"
+              />
+            </Box>
+          )}
         </CardContent>
       </Card>
     );
@@ -1670,7 +1732,7 @@ const Assignment = () => {
 
   if (state.loading) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Container maxWidth="xl" sx={{ mt: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
           <Box sx={{ textAlign: 'center' }}>
             <CircularProgress size={60} />
@@ -1684,7 +1746,7 @@ const Assignment = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       {state.showForm ? (
         renderVehicleForm()
       ) : (
@@ -1693,29 +1755,40 @@ const Assignment = () => {
           {renderStatsCards()}
 
           <Box sx={{ mb: 3 }}>
-            <Button
-              variant={state.activeTab === 'current' ? 'contained' : 'outlined'}
-              onClick={() => setState(prev => ({ ...prev, activeTab: 'current' }))}
-              startIcon={<AssignmentIcon />}
-              sx={{ mr: 1 }}
+            <Tabs
+              value={state.activeTab}
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{
+                '& .MuiTabs-indicator': {
+                  height: 4,
+                  borderRadius: '4px 4px 0 0'
+                }
+              }}
             >
-              Current Assignments
-            </Button>
-            <Button
-              variant={state.activeTab === 'available' ? 'contained' : 'outlined'}
-              onClick={() => setState(prev => ({ ...prev, activeTab: 'available' }))}
-              startIcon={<DirectionsCarIcon />}
-              sx={{ mr: 1 ,borderRadius : '7px'}}
-            >
-              Available Vehicles
-            </Button>
-            <Button
-              variant={state.activeTab === 'vehicleList' ? 'contained' : 'outlined'}
-              onClick={() => setState(prev => ({ ...prev, activeTab: 'vehicleList' }))}
-              startIcon={<CarIcon />}
-            >
-              Vehicle List
-            </Button>
+              <Tab 
+                value="current" 
+                label="Current Assignments" 
+                icon={<AssignmentIcon />} 
+                iconPosition="start"
+                sx={{ textTransform: 'none' }}
+              />
+              <Tab 
+                value="available" 
+                label="Available Vehicles" 
+                icon={<CarIcon />} 
+                iconPosition="start"
+                sx={{ textTransform: 'none' }}
+              />
+              <Tab 
+                value="vehicleList" 
+                label="Vehicle List" 
+                icon={<CarIcon />} 
+                iconPosition="start"
+                sx={{ textTransform: 'none' }}
+              />
+            </Tabs>
           </Box>
 
           {state.activeTab === 'current' && renderCurrentAssignments()}

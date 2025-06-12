@@ -252,7 +252,7 @@ const VehicleRequestsComponent = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3,minWidth:'400px', borderRadius: '12px', background :'white'}}}>
+    <Box sx={{ p: { xs: 2, md: 3,minWidth:'400px',height: '245px', borderRadius: '12px', background :'white'}}}>
       <Typography variant="h8" component="h" gutterBottom sx={{
         fontWeight: 200,
         color: 'text.primary',

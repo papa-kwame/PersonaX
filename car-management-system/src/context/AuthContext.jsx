@@ -5,24 +5,16 @@ import { jwtDecode } from 'jwt-decode';
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return Boolean(localStorage.getItem('token'));
-  });
-
-  const [userRoles, setUserRoles] = useState(() => {
-    return JSON.parse(localStorage.getItem('roles')) || [];
-  });
-
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('token')));
+  const [userRoles, setUserRoles] = useState(() => JSON.parse(localStorage.getItem('roles')) || []);
   const [userId, setUserId] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
   const [username, setUsername] = useState(null);
-
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const hasRole = (role) => {
-    return userRoles.includes(role);
-  };
+  const hasRole = (role) => userRoles.includes(role);
 
   useEffect(() => {
     let active = true;
@@ -30,7 +22,6 @@ export function AuthProvider({ children }) {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token');
-
         if (token) {
           const isValid = await verifyToken(token);
           if (!active) return;
@@ -79,6 +70,9 @@ export function AuthProvider({ children }) {
     setUserId(userId);
     setUserEmail(email);
     setUsername(username);
+
+    // Set the mustChangePassword flag
+    setMustChangePassword(authData.mustChangePassword === true || authData.mustChangePassword === 'true');
   };
 
   const logout = () => {
@@ -89,21 +83,25 @@ export function AuthProvider({ children }) {
     setUserId(null);
     setUserEmail(null);
     setUsername(null);
+    setMustChangePassword(false);
   };
 
   return (
-    <AuthContext.Provider value={{
-      isAuthenticated,
-      userRoles,
-      hasRole,
-      isLoading,
-      error,
-      login,
-      logout,
-      userId,
-      userEmail,
-      username
-    }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        userRoles,
+        hasRole,
+        isLoading,
+        error,
+        login,
+        logout,
+        userId,
+        userEmail,
+        username,
+        mustChangePassword
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -112,5 +110,3 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
-
-export { AuthContext };

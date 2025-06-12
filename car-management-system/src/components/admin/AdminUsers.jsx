@@ -21,6 +21,8 @@ import {
   People,
   Search,
 } from 'react-bootstrap-icons';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const AdminUsers = () => {
@@ -42,7 +44,7 @@ const AdminUsers = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 10; // Updated to 10 users per page
+  const usersPerPage = 10;
 
   const loadUsers = async () => {
     try {
@@ -51,7 +53,9 @@ const AdminUsers = () => {
       const { data } = await api.get('/api/Auth/users');
       setUsers(data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch users');
+      const errorMsg = err.response?.data?.message || 'Failed to fetch users';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setBusy(false);
     }
@@ -109,7 +113,15 @@ const AdminUsers = () => {
         if (willLock || willUnlock) {
           await api.post(`/api/Auth/users/${editingUser.id}/lock`);
         }
-        alert('User updated');
+
+        await api.put(`/api/Auth/users/${editingUser.id}`, {
+          userName: form.userName,
+          email: form.email,
+          phoneNumber: form.phoneNumber,
+          department: form.department,
+        });
+
+        toast.success('User updated successfully');
       } else {
         await api.post('/api/Auth/register', {
           userName: form.userName,
@@ -118,7 +130,7 @@ const AdminUsers = () => {
           password: form.password,
           department: form.department,
         });
-        alert('User created');
+        toast.success('User created successfully');
       }
       await loadUsers();
       closeModal();
@@ -127,20 +139,25 @@ const AdminUsers = () => {
         err.response?.data?.errors?.[0]?.description ||
         err.response?.data?.message ||
         'Operation failed';
-      alert(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
   };
 
   const deleteUser = async (id) => {
-    if (!isAdmin || !window.confirm('Delete user?')) return;
+    if (!isAdmin) return;
+    
+    const confirmDelete = window.confirm('Are you sure you want to delete this user?');
+    if (!confirmDelete) return;
+
     try {
       setBusy(true);
       await api.delete(`/api/Auth/users/${id}`);
       await loadUsers();
+      toast.success('User deleted successfully');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete user');
+      toast.error(err.response?.data?.message || 'Failed to delete user');
     } finally {
       setBusy(false);
     }
@@ -152,8 +169,9 @@ const AdminUsers = () => {
       setBusy(true);
       await api.post(`/api/Auth/users/${id}/lock`);
       await loadUsers();
+      toast.success('User lock status updated');
     } catch {
-      alert('Failed to toggle lock status');
+      toast.error('Failed to toggle lock status');
     } finally {
       setBusy(false);
     }
@@ -161,7 +179,7 @@ const AdminUsers = () => {
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1);
   };
 
   const filteredUsers = users.filter((user) =>
@@ -188,11 +206,20 @@ const AdminUsers = () => {
       </div>
     );
 
-  if (error)
-    return <div className="alert alert-danger text-center">Error: {error}</div>;
-
   return (
     <div className="py-4 px-4">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      
       <div className="d-flex align-items-center mb-4">
         <div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
           <People size={28} className="text-primary" />
@@ -226,6 +253,10 @@ const AdminUsers = () => {
         </div>
       </div>
 
+      {error && (
+        <div className="alert alert-danger text-center">Error: {error}</div>
+      )}
+
       <div className="card shadow-sm border-0">
         <div className="card-body p-0">
           <div className="table-responsive rounded">
@@ -236,7 +267,6 @@ const AdminUsers = () => {
                   <th>Email</th>
                   <th>Phone</th>
                   <th>Department</th>
-      
                   <th className="text-end">Actions</th>
                 </tr>
               </thead>
@@ -251,13 +281,19 @@ const AdminUsers = () => {
                           </div>
                           <div>
                             <div className="fw-medium">{u.userName}</div>
+                            <div className="small text-muted">
+                              {u.isLocked ? (
+                                <span className="text-danger">Inactive</span>
+                              ) : (
+                                <span className="text-success">Active</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>
                       <td className="text-muted">{u.email}</td>
                       <td className="text-muted">{u.phoneNumber || '-'}</td>
                       <td className="text-muted">{u.department || '-'}</td>
-
                       <td className="text-end">
                         <div className="btn-group btn-group-sm">
                           <button

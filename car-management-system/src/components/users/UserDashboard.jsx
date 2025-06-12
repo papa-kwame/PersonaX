@@ -10,11 +10,17 @@ const UserDashboard = () => {
   const theme = useTheme();
 
   return (
-    <Box sx={{ 
-      p: { xs: 2, sm: 3, md: 4 },
-      maxWidth: '1800px',
-      margin: '0 auto'
-    }}>
+    <Box
+      sx={{
+        p: { xs: 2, sm: 3, md: 4 },
+        width: '100%',
+        maxWidth: '1800px', // constrain max width
+        margin: '0 auto', // center horizontally
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}
+    >
       <Grid container spacing={3}>
         {/* First Column Stack */}
         <Grid item xs={12} md={6}>

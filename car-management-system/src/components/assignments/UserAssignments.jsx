@@ -187,9 +187,9 @@ const priorityMap = {
 const statusMap = {
   'Pending': 0,
   'Approved': 1,
-  'InProgress': 2,
+  'Rejected': 2,
   'Completed': 3,
-  'Rejected': 4
+
 };
 
 const stageOrder = ['Create', 'Comment', 'Review', 'Commit', 'Approve', 'Complete'];
@@ -204,9 +204,8 @@ const reverseMappings = {
   status: {
     0: 'Pending',
     1: 'Approved',
-    2: 'In Progress',
+    2: 'Rejected',
     3: 'Completed',
-    4: 'Rejected'
   }
 };
 
@@ -240,7 +239,7 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 700, color: professionalColors.text }}>
-          Request Details
+         Requestor
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Avatar sx={{ width: 38, height: 38, bgcolor: professionalColors.primary }}>
@@ -249,6 +248,17 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
           <Typography variant="body2" sx={{ color: professionalColors.textSecondary, fontWeight: 500 }}>
             {request.requestedByUserEmail || 'Unknown User'}
           </Typography>
+                                    <StatusBadge
+                            label={request.status}
+                            size="small"
+                            status={request.status}
+                      
+                            sx={{
+                              px: 1.5,
+                              py: 0.5,
+                              fontSize: '0.8rem'
+                            }}
+                          />
         </Box>
       </Box>
 
@@ -669,7 +679,7 @@ const VehicleAssignmentApp = () => {
       status: reverseMappings.status[request.status] || request.status,
       requestedByUserName: request.userName || request.requestedByUserName,
       requestedByUserEmail: request.email || request.userEmail,
-      vehicle: request.vehicle || {}, // Ensure vehicle is not undefined
+      vehicle: request.vehicle || {}, 
     };
 
     if (request.requestDate) {
@@ -857,7 +867,7 @@ const VehicleAssignmentApp = () => {
       setOpenStageDialog(false);
       setStageComments('');
       fetchWorkflowStatus(selectedRequest.id);
-      fetchRequestComments(selectedRequest.id); // Fetch comments again to update the list
+      fetchRequestComments(selectedRequest.id); 
     } catch (error) {
       const errorMessage = error.response?.data?.title ||
                         error.response?.data?.message ||
@@ -979,12 +989,12 @@ const VehicleAssignmentApp = () => {
             gap: 2
           }}>
             <Typography variant="h4" sx={{
-              fontWeight: 700,
+              fontWeight: 300,
               color: professionalColors.text,
-              fontSize: { xs: '1.5rem', sm: '2rem' },
+              fontSize: { xs: '1rem', sm: '1.8rem' },
               letterSpacing: '-0.5px'
             }}>
-              Vehicle Assignment Requests
+              Vehicle  Requests
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <VehicleRequestForm/>

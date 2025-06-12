@@ -8,88 +8,38 @@ import {
   getVehicleById
 } from '../../services/vehicles';
 import {
-  Box,
   Button,
   Container,
-  IconButton,
-  Paper,
+  Row,
+  Col,
+  Modal,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  Pagination,
-  styled,
-  Grid,
-  TextField,
-  MenuItem,
-  Divider,
-  LinearProgress,
-  Alert,
-  Stack,
+  Form,
+  Spinner,
   Card,
-  CardHeader,
-  CardContent
-} from '@mui/material';
+  Badge,
+  Alert,
+  InputGroup,
+  ListGroup,
+  CloseButton
+} from 'react-bootstrap';
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Save as SaveIcon,
-  ArrowBack as ArrowBackIcon
-} from '@mui/icons-material';
-import DeleteModal from '../common/DeleteModal';
-import VehicleFilters from './VehicleFilters';
+  Plus,
+  PencilSquare,
+  X,
+  ArrowRepeat,
+  Search,
+  CheckCircle,
+  ShieldCheck,
+  ChatSquareText,
+  PersonCheck
+} from 'react-bootstrap-icons';
 
-const StyledContainer = styled(Container)(({ theme }) => ({
-  padding: theme.spacing(4),
-  maxWidth: '100%',
-  [theme.breakpoints.up('lg')]: {
-    maxWidth: '1200px'
-  }
-}));
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  borderRadius: '10px',
-  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
-  marginBottom: theme.spacing(3),
-  overflow: 'hidden'
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme, warning }) => ({
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    backgroundColor: 'rgba(0, 123, 255, 0.03)'
-  },
-  ...(warning && {
-    backgroundColor: '#fff3e0'
-  })
-}));
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  padding: theme.spacing(2),
-  borderBottom: '1px solid #e9ecef'
-}));
-
-const StyledTableHeadCell = styled(StyledTableCell)(({ theme }) => ({
-  backgroundColor: '#f8f9fa',
-  fontWeight: 600,
-  color: '#495057',
-  borderTop: 'none'
-}));
-
-const StyledButton = styled(Button)(({ theme }) => ({
-  textTransform: 'none',
-  fontWeight: 500,
-  padding: '8px 16px'
-}));
-
-export default function VehicleList() {
+const VehicleList = () => {
   const [vehicles, setVehicles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
   const [filters, setFilters] = useState({
@@ -133,6 +83,9 @@ export default function VehicleList() {
 
   useEffect(() => {
     const loadVehicles = async () => {
+      setLoading(true);
+      setError('');
+
       try {
         let data = await getVehicles();
 
@@ -180,6 +133,7 @@ export default function VehicleList() {
     try {
       await deleteVehicle(vehicleToDelete.id);
       setVehicles(vehicles.filter(v => v.id !== vehicleToDelete.id));
+      setSuccess('Vehicle deleted successfully');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -258,8 +212,10 @@ export default function VehicleList() {
     try {
       if (formData.id) {
         await updateVehicle(formData.id, formData);
+        setSuccess('Vehicle updated successfully');
       } else {
         await createVehicle(formData);
+        setSuccess('Vehicle created successfully');
       }
       const data = await getVehicles();
       setVehicles(data);
@@ -337,7 +293,7 @@ export default function VehicleList() {
   const currentVehicles = vehicles.slice(indexOfFirstVehicle, indexOfLastVehicle);
   const totalPages = Math.ceil(vehicles.length / vehiclesPerPage);
 
-  const paginate = (event, value) => setCurrentPage(value);
+  const paginate = (page) => setCurrentPage(page);
 
   const vehicleTypes = [
     { value: 'Sedan', label: 'Sedan' },
@@ -364,303 +320,463 @@ export default function VehicleList() {
   ];
 
   const fields = [
-    { name: 'make', label: 'Make *', required: true, xs: 12, sm: 6, md: 4 },
-    { name: 'model', label: 'Model *', required: true, xs: 12, sm: 6, md: 4 },
+    { name: 'make', label: 'Make *', required: true, md: 4 },
+    { name: 'model', label: 'Model *', required: true, md: 4 },
     { 
       name: 'year', 
       label: 'Year *', 
       type: 'number', 
       required: true,
-      inputProps: { min: 1900, max: new Date().getFullYear() + 1 },
-      xs: 12, sm: 6, md: 4 
+      md: 4 
     },
-    { name: 'licensePlate', label: 'License Plate *', required: true, xs: 12, sm: 6, md: 4 },
-    { name: 'vin', label: 'VIN *', required: true, xs: 12, sm: 6, md: 4 },
+    { name: 'licensePlate', label: 'License Plate *', required: true, md: 4 },
+    { name: 'vin', label: 'VIN *', required: true, md: 4 },
     { 
       name: 'currentMileage', 
       label: 'Current Mileage', 
       type: 'number',
-      inputProps: { min: 0 },
-      xs: 12, sm: 6, md: 4 
+      md: 4 
     },
-    { name: 'color', label: 'Color', xs: 12, sm: 6, md: 4 },
-    { name: 'purchaseDate', label: 'Purchase Date', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { name: 'color', label: 'Color', md: 4 },
+    { name: 'purchaseDate', label: 'Purchase Date', type: 'date', md: 4 },
     { 
       name: 'purchasePrice', 
       label: 'Purchase Price ($)', 
       type: 'number',
-      inputProps: { step: 0.01, min: 0 },
-      xs: 12, sm: 6, md: 4 
+      md: 4 
     },
-    { name: 'lastServiceDate', label: 'Last Service Date', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
-    { name: 'nextServiceDue', label: 'Next Service Due', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { name: 'lastServiceDate', label: 'Last Service Date', type: 'date', md: 4 },
+    { name: 'nextServiceDue', label: 'Next Service Due', type: 'date', md: 4 },
     { 
       name: 'serviceInterval', 
       label: 'Service Interval (miles)', 
       type: 'number',
-      inputProps: { min: 0 },
-      xs: 12, sm: 6, md: 4 
+      md: 4 
     },
     { 
       name: 'engineSize', 
       label: 'Engine Size (cc)', 
       type: 'number',
-      inputProps: { min: 0 },
-      xs: 12, sm: 6, md: 4 
+      md: 4 
     },
-    { name: 'roadworthyExpiry', label: 'Roadworthy Expiry', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
-    { name: 'registrationExpiry', label: 'Registration Expiry', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
-    { name: 'insuranceExpiry', label: 'Insurance Expiry', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { name: 'roadworthyExpiry', label: 'Roadworthy Expiry', type: 'date', md: 4 },
+    { name: 'registrationExpiry', label: 'Registration Expiry', type: 'date', md: 4 },
+    { name: 'insuranceExpiry', label: 'Insurance Expiry', type: 'date', md: 4 },
     { 
       name: 'seatingCapacity', 
       label: 'Seating Capacity', 
       type: 'number',
-      inputProps: { min: 1 },
-      xs: 12, sm: 6, md: 4 
+      md: 4 
     },
   ];
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (error) setError('');
+      if (success) setSuccess('');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [error, success]);
+
   return (
-    <StyledContainer maxWidth="lg">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" component="h2" sx={{ fontWeight: 600 }}>
-          Vehicle Inventory
-        </Typography>
-        <StyledButton
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleAddVehicle}
-        >
-          Add Vehicle
-        </StyledButton>
-      </Box>
+    <Container fluid className="py-4 px-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+      <Row className="mb-4 align-items-center">
+        <Col>
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center">
+              <div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3 d-flex align-items-center justify-content-center">
+                <ShieldCheck size={28} className="text-primary" />
+              </div>
+              <div>
+                <h2 className="fw-bold mb-0" style={{ color: '#2c3e50' }}>Vehicle Inventory</h2>
+                <p className="text-muted mb-0">Manage your fleet vehicles</p>
+              </div>
+            </div>
+            <Button 
+              variant="primary" 
+              onClick={handleAddVehicle}
+              className="d-flex align-items-center shadow-sm"
+              disabled={loading}
+              style={{ 
+                backgroundColor: '#4e73df',
+                borderColor: '#4e73df',
+                fontWeight: 500
+              }}
+            >
+              {loading ? (
+                <Spinner as="span" animation="border" size="sm" className="me-2" />
+              ) : (
+                <Plus size={18} className="me-2" />
+              )}
+              Add Vehicle
+            </Button>
+          </div>
+        </Col>
+      </Row>
+
+      {error && (
+        <Alert variant="danger" onClose={() => setError('')} dismissible className="mb-4 shadow-sm">
+          <div className="d-flex align-items-center">
+            <X size={20} className="me-2" />
+            <strong>Error:</strong> {error}
+          </div>
+        </Alert>
+      )}
+      
+      {success && (
+        <Alert variant="success" onClose={() => setSuccess('')} dismissible className="mb-4 shadow-sm">
+          <div className="d-flex align-items-center">
+            <CheckCircle size={20} className="me-2" />
+            <strong>Success:</strong> {success}
+          </div>
+        </Alert>
+      )}
 
       {showForm ? (
-        <Card elevation={3} sx={{ mb: 4 }}>
-          <CardHeader 
-            title={<Typography variant="h5">{formData.id ? 'Edit Vehicle' : 'Add New Vehicle'}</Typography>}
-            sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }}
-          />
-          <Divider />
-          <CardContent>
-            {formLoading && <LinearProgress />}
-            {error && <Alert severity="error" sx={{ mb: 3 }}>Error: {error}</Alert>}
-            <Box component="form" onSubmit={handleSubmit} noValidate>
-              <Grid container spacing={3}>
-                {/* Standard fields */}
+        <Card className="shadow-sm border-0 mb-4">
+          <Card.Header className="bg-primary text-white">
+            <h5 className="mb-0">{formData.id ? 'Edit Vehicle' : 'Add New Vehicle'}</h5>
+          </Card.Header>
+          <Card.Body>
+            {formLoading && <div className="mb-3"><div className="progress" style={{ height: '4px' }}><div className="progress-bar progress-bar-striped progress-bar-animated" style={{ width: '100%' }}></div></div></div>}
+            <Form onSubmit={handleSubmit}>
+              <Row className="g-3">
                 {fields.map((field) => (
-                  <Grid item key={field.name} xs={field.xs} sm={field.sm} md={field.md}>
-                    <TextField
-                      fullWidth
-                      label={field.label}
-                      name={field.name}
-                      value={formData[field.name]}
-                      onChange={handleChange}
-                      type={field.type || 'text'}
-                      error={!!validationErrors[field.name]}
-                      helperText={validationErrors[field.name]}
-                      required={field.required}
-                      InputLabelProps={field.InputLabelProps}
-                      inputProps={field.inputProps}
-                      disabled={formLoading}
-                    />
-                  </Grid>
+                  <Col md={field.md} key={field.name}>
+                    <Form.Group controlId={field.name}>
+                      <Form.Label>{field.label}</Form.Label>
+                      <Form.Control
+                        type={field.type || 'text'}
+                        name={field.name}
+                        value={formData[field.name]}
+                        onChange={handleChange}
+                        isInvalid={!!validationErrors[field.name]}
+                        disabled={formLoading}
+                        {...(field.type === 'date' ? { placeholder: 'YYYY-MM-DD' } : {})}
+                        {...(field.type === 'number' ? { min: field.inputProps?.min } : {})}
+                      />
+                      {validationErrors[field.name] && (
+                        <Form.Control.Feedback type="invalid">
+                          {validationErrors[field.name]}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+                  </Col>
                 ))}
 
-                {/* Status dropdown */}
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Status *"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    error={!!validationErrors.status}
-                    helperText={validationErrors.status}
-                    disabled={formLoading}
-                  >
-                    {statusOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
+                <Col md={4}>
+                  <Form.Group controlId="status">
+                    <Form.Label>Status *</Form.Label>
+                    <Form.Select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleChange}
+                      isInvalid={!!validationErrors.status}
+                      disabled={formLoading}
+                    >
+                      {statusOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    {validationErrors.status && (
+                      <Form.Control.Feedback type="invalid">
+                        {validationErrors.status}
+                      </Form.Control.Feedback>
+                    )}
+                  </Form.Group>
+                </Col>
 
-                {/* Vehicle Type dropdown */}
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Vehicle Type"
-                    name="vehicleType"
-                    value={formData.vehicleType}
-                    onChange={handleChange}
-                    error={!!validationErrors.vehicleType}
-                    helperText={validationErrors.vehicleType}
-                    disabled={formLoading}
-                  >
-                    {vehicleTypes.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
+                <Col md={4}>
+                  <Form.Group controlId="vehicleType">
+                    <Form.Label>Vehicle Type</Form.Label>
+                    <Form.Select
+                      name="vehicleType"
+                      value={formData.vehicleType}
+                      onChange={handleChange}
+                      isInvalid={!!validationErrors.vehicleType}
+                      disabled={formLoading}
+                    >
+                      {vehicleTypes.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
 
-                {/* Fuel Type dropdown */}
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Fuel Type"
-                    name="fuelType"
-                    value={formData.fuelType}
-                    onChange={handleChange}
-                    error={!!validationErrors.fuelType}
-                    helperText={validationErrors.fuelType}
-                    disabled={formLoading}
-                  >
-                    {fuelTypes.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
+                <Col md={4}>
+                  <Form.Group controlId="fuelType">
+                    <Form.Label>Fuel Type</Form.Label>
+                    <Form.Select
+                      name="fuelType"
+                      value={formData.fuelType}
+                      onChange={handleChange}
+                      isInvalid={!!validationErrors.fuelType}
+                      disabled={formLoading}
+                    >
+                      {fuelTypes.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
 
-                {/* Notes textarea */}
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={4}
-                    label="Notes"
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleChange}
-                    error={!!validationErrors.notes}
-                    helperText={validationErrors.notes}
-                    disabled={formLoading}
-                  />
-                </Grid>
-              </Grid>
+                <Col md={12}>
+                  <Form.Group controlId="notes">
+                    <Form.Label>Notes</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={4}
+                      name="notes"
+                      value={formData.notes}
+                      onChange={handleChange}
+                      disabled={formLoading}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
 
-              <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 4 }}>
+              <div className="d-flex justify-content-end mt-4">
                 <Button
-                  variant="outlined"
-                  startIcon={<ArrowBackIcon />}
+                  variant="outline-secondary"
                   onClick={handleCancel}
                   disabled={formLoading}
+                  className="me-2"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  variant="contained"
-                  color="primary"
-                  startIcon={formData.id ? <SaveIcon /> : <AddIcon />}
+                  variant="primary"
                   disabled={formLoading}
+                  style={{ 
+                    backgroundColor: '#4e73df',
+                    borderColor: '#4e73df',
+                    fontWeight: 500
+                  }}
                 >
-                  {formData.id ? 'Update Vehicle' : 'Add Vehicle'}
+                  {formLoading ? (
+                    <>
+                      <Spinner as="span" animation="border" size="sm" className="me-2" />
+                      {formData.id ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : formData.id ? 'Update Vehicle' : 'Add Vehicle'}
                 </Button>
-              </Stack>
-            </Box>
-          </CardContent>
+              </div>
+            </Form>
+          </Card.Body>
         </Card>
       ) : (
         <>
-          <VehicleFilters
-            filters={filters}
-            setFilters={setFilters}
-            vehicleCount={vehicles.length}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-          />
+          <Card className="shadow-sm mb-4">
+            <Card.Body>
+              <Row className="g-3">
+                <Col md={4}>
+                  <Form.Group controlId="search">
+                    <Form.Label>Search Vehicles</Form.Label>
+                    <InputGroup>
+                      <InputGroup.Text>
+                        <Search />
+                      </InputGroup.Text>
+                      <Form.Control
+                        type="text"
+                        placeholder="Search by make, model, license plate..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </InputGroup>
+                  </Form.Group>
+                </Col>
+                <Col md={4}>
+                  <Form.Group controlId="statusFilter">
+                    <Form.Label>Status</Form.Label>
+                    <Form.Select
+                      value={filters.status}
+                      onChange={(e) => setFilters({...filters, status: e.target.value})}
+                    >
+                      <option value="">All Statuses</option>
+                      {statusOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={4}>
+                  <Form.Group controlId="typeFilter">
+                    <Form.Label>Vehicle Type</Form.Label>
+                    <Form.Select
+                      value={filters.vehicleType}
+                      onChange={(e) => setFilters({...filters, vehicleType: e.target.value})}
+                    >
+                      <option value="">All Types</option>
+                      {vehicleTypes.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
 
-          {loading && <LinearProgress />}
-          {error && <Alert severity="error" sx={{ mb: 3 }}>Error: {error}</Alert>}
-          {!loading && vehicles.length === 0 && (
-            <Typography>No vehicles found matching your criteria</Typography>
+          {loading && (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-2 text-muted">Loading vehicles...</p>
+            </div>
           )}
 
-          <StyledPaper>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <StyledTableHeadCell>License Plate</StyledTableHeadCell>
-                    <StyledTableHeadCell onClick={() => handleSort('model')}>
-                      Model {sortConfig.key === 'model' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                    </StyledTableHeadCell>
-                    <StyledTableHeadCell onClick={() => handleSort('year')}>
-                      Year {sortConfig.key === 'year' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                    </StyledTableHeadCell>
-                    <StyledTableHeadCell onClick={() => handleSort('make')}>
-                      Make {sortConfig.key === 'make' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                    </StyledTableHeadCell>
-                    <StyledTableHeadCell onClick={() => handleSort('currentMileage')}>
-                      Mileage {sortConfig.key === 'currentMileage' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                    </StyledTableHeadCell>
-                    <StyledTableHeadCell>Roadworthy</StyledTableHeadCell>
-                    <StyledTableHeadCell>Registration</StyledTableHeadCell>
-                    <StyledTableHeadCell>Next Service</StyledTableHeadCell>
-                    <StyledTableHeadCell>Actions</StyledTableHeadCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {currentVehicles.map((vehicle) => (
-                    <StyledTableRow
-                      key={vehicle.id}
-                      warning={isExpired(vehicle.roadworthyExpiry) || isExpired(vehicle.registrationExpiry)}
-                    >
-                      <StyledTableCell>
-                        <Link to={`/vehicles/${vehicle.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                          {vehicle.licensePlate}
-                        </Link>
-                      </StyledTableCell>
-                      <StyledTableCell>{vehicle.make}</StyledTableCell>
-                      <StyledTableCell>{vehicle.model}</StyledTableCell>
-                      <StyledTableCell>{vehicle.year}</StyledTableCell>
-                      <StyledTableCell>{vehicle.currentMileage.toLocaleString()}</StyledTableCell>
-                      <StyledTableCell sx={{ color: isExpired(vehicle.roadworthyExpiry) ? 'error.main' : 'inherit' }}>
-                        {vehicle.roadworthyExpiry ? new Date(vehicle.roadworthyExpiry).toLocaleDateString() : 'N/A'}
-                      </StyledTableCell>
-                      <StyledTableCell sx={{ color: isExpired(vehicle.registrationExpiry) ? 'error.main' : 'inherit' }}>
-                        {vehicle.registrationExpiry ? new Date(vehicle.registrationExpiry).toLocaleDateString() : 'N/A'}
-                      </StyledTableCell>
-                      <StyledTableCell sx={{ color: isExpired(vehicle.nextServiceDue) ? 'error.main' : 'inherit' }}>
-                        {vehicle.nextServiceDue ? new Date(vehicle.nextServiceDue).toLocaleDateString() : 'N/A'}
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <IconButton onClick={() => handleEditVehicle(vehicle)} color="primary">
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton onClick={() => handleDeleteClick(vehicle)} color="error">
-                          <DeleteIcon />
-                        </IconButton>
-                      </StyledTableCell>
-                    </StyledTableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </StyledPaper>
+          {!loading && vehicles.length === 0 ? (
+            <div className="text-center py-5">
+              <div className="bg-primary bg-opacity-10 p-4 rounded-circle d-inline-block mb-3">
+                <ShieldCheck size={32} className="text-primary" />
+              </div>
+              <h4 style={{ color: '#2c3e50' }}>No vehicles found</h4>
+              <p className="text-muted mb-4">Add your first vehicle to get started</p>
+              <Button 
+                variant="primary" 
+                onClick={handleAddVehicle}
+                className="d-inline-flex align-items-center shadow-sm"
+                style={{ 
+                  backgroundColor: '#4e73df',
+                  borderColor: '#4e73df',
+                  fontWeight: 500
+                }}
+              >
+                <Plus size={18} className="me-2" />
+                Add Vehicle
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Card className="shadow-sm border-0">
+                <Card.Body className="p-0">
+                  <div className="table-responsive">
+                    <Table hover className="mb-0">
+                      <thead>
+                        <tr>
+                          <th className="small text-uppercase text-muted">License Plate</th>
+                          <th className="small text-uppercase text-muted" onClick={() => handleSort('make')}>
+                            Make {sortConfig.key === 'make' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="small text-uppercase text-muted" onClick={() => handleSort('model')}>
+                            Model {sortConfig.key === 'model' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="small text-uppercase text-muted" onClick={() => handleSort('year')}>
+                            Year {sortConfig.key === 'year' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="small text-uppercase text-muted" onClick={() => handleSort('currentMileage')}>
+                            Mileage {sortConfig.key === 'currentMileage' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="small text-uppercase text-muted">Roadworthy</th>
+                          <th className="small text-uppercase text-muted">Registration</th>
+                          <th className="small text-uppercase text-muted">Next Service</th>
+                          <th className="small text-uppercase text-muted">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentVehicles.map((vehicle) => (
+                          <tr 
+                            key={vehicle.id} 
+                            className={isExpired(vehicle.roadworthyExpiry) || isExpired(vehicle.registrationExpiry) ? 'table-warning' : ''}
+                          >
+                            <td>
+                              <Link to={`/vehicles/${vehicle.id}`} className="text-decoration-none text-dark">
+                                {vehicle.licensePlate}
+                              </Link>
+                            </td>
+                            <td>{vehicle.make}</td>
+                            <td>{vehicle.model}</td>
+                            <td>{vehicle.year}</td>
+                            <td>{vehicle.currentMileage.toLocaleString()}</td>
+                            <td className={isExpired(vehicle.roadworthyExpiry) ? 'text-danger' : ''}>
+                              {vehicle.roadworthyExpiry ? new Date(vehicle.roadworthyExpiry).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td className={isExpired(vehicle.registrationExpiry) ? 'text-danger' : ''}>
+                              {vehicle.registrationExpiry ? new Date(vehicle.registrationExpiry).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td className={isExpired(vehicle.nextServiceDue) ? 'text-danger' : ''}>
+                              {vehicle.nextServiceDue ? new Date(vehicle.nextServiceDue).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td>
+                              <Button 
+                                variant="outline-primary" 
+                                size="sm" 
+                                onClick={() => handleEditVehicle(vehicle)}
+                                className="me-2"
+                              >
+                                <PencilSquare size={16} />
+                              </Button>
+                              <Button 
+                                variant="outline-danger" 
+                                size="sm" 
+                                onClick={() => handleDeleteClick(vehicle)}
+                              >
+                                <X size={16} />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                </Card.Body>
+              </Card>
 
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-            <Pagination count={totalPages} page={currentPage} onChange={paginate} color="primary" />
-          </Box>
+              {vehicles.length > vehiclesPerPage && (
+                <div className="d-flex justify-content-center mt-3">
+                  <div className="btn-group">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? 'primary' : 'outline-secondary'}
+                        onClick={() => paginate(page)}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </>
       )}
 
-      <DeleteModal
-        show={showDeleteModal}
-        onHide={() => setShowDeleteModal(false)}
-        onConfirm={confirmDelete}
-        itemName={`${vehicleToDelete?.make} ${vehicleToDelete?.model} (${vehicleToDelete?.licensePlate})`}
-      />
-    </StyledContainer>
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Delete</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete {vehicleToDelete?.make} {vehicleToDelete?.model} ({vehicleToDelete?.licensePlate})?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={confirmDelete}
+            style={{ 
+              backgroundColor: '#e74a3b',
+              borderColor: '#e74a3b'
+            }}
+          >
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </Container>
   );
-}
+};
+
+export default VehicleList;

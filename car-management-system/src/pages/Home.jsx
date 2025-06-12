@@ -73,15 +73,14 @@ export default function Home() {
     }}>
       <NavbarHome />
       
-      {/* Hero Section */}
       <Box sx={{
-        minHeight: '90vh',
+        minHeight: '100vh',
         display: 'flex',
         flexDirection: isMobile ? 'column-reverse' : 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: isMobile ? theme.spacing(4) : theme.spacing(8),
-        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+        background: ` #3498db`,
         color: 'common.white',
         position: 'relative',
         overflow: 'hidden'
@@ -104,7 +103,7 @@ export default function Home() {
             }}
           >
             <Box component="span" sx={{ color: 'primary.light' }}>Fleet</Box>
-            <Box component="span" sx={{ color: 'secondary.main' }}>Management</Box>
+            <Box component="span" sx={{ color: 'white' }}>Management</Box>
             <Box component="span">System</Box>
           </Typography>
           
@@ -133,9 +132,10 @@ export default function Home() {
               size="large"
               endIcon={<ArrowForwardIcon />}
               sx={{
-                px: 4,
+                px: 2,
                 py: 1.5,
-                borderRadius: '50px',
+                backgroundColor: 'rgb(0, 0, 0)',
+                borderRadius: '10px',
                 fontWeight: 600,
                 boxShadow: theme.shadows[4],
                 '&:hover': {
@@ -152,13 +152,15 @@ export default function Home() {
               component={Link}
               to="/register"
               variant="outlined"
-              color="inherit"
+              color="white"
               size="large"
               sx={{
-                px: 4,
+                px: 2,
                 py: 1.5,
-                borderRadius: '50px',
+                borderRadius: '10px',
                 fontWeight: 600,
+                color:'black',
+                backgroundColor: 'rgba(255, 255, 255, 0.6)',
                 borderWidth: '2px',
                 '&:hover': {
                   borderWidth: '2px',
@@ -208,198 +210,7 @@ export default function Home() {
         }} />
       </Box>
 
-      {/* Features Section */}
-      <Box sx={{ py: 8, backgroundColor: 'background.default' }}>
-        <Container maxWidth="lg">
-          <Typography 
-            variant="h3" 
-            align="center" 
-            sx={{ 
-              mb: 6,
-              fontWeight: 700,
-              color: 'text.primary',
-              position: 'relative',
-              '&:after': {
-                content: '""',
-                display: 'block',
-                width: '80px',
-                height: '4px',
-                backgroundColor: 'secondary.main',
-                margin: '16px auto 0',
-                borderRadius: '2px'
-              }
-            }}
-          >
-            Key Features
-          </Typography>
-          
-          <Grid container spacing={4} justifyContent="center">
-            {[
-              {
-                icon: <DirectionsCarFilledIcon fontSize="large" />,
-                title: "Vehicle Tracking",
-                description: "Real-time monitoring of all your fleet vehicles with detailed analytics.",
-                color: theme.palette.primary.main
-              },
-              {
-                icon: <SettingsBackupRestoreIcon fontSize="large" />,
-                title: "Maintenance Scheduling",
-                description: "Automated service reminders and maintenance history tracking.",
-                color: theme.palette.success.main
-              },
-              {
-                icon: <InsertChartOutlinedIcon fontSize="large" />,
-                title: "Performance Reports",
-                description: "Comprehensive reporting on fuel usage, mileage, and operational costs.",
-                color: theme.palette.secondary.main
-              }
-            ].map((feature, index) => (
-              <Grid item key={index} xs={12} sm={6} md={4}>
-                <Card sx={{
-                  height: '100%',
-                  borderRadius: 3,
-                  boxShadow: theme.shadows[4],
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: theme.shadows[8]
-                  }
-                }}>
-                  <CardContent sx={{
-                    textAlign: 'center',
-                    p: 4,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center'
-                  }}>
-                    <Avatar sx={{ 
-                      bgcolor: feature.color, 
-                      mb: 3,
-                      width: 70,
-                      height: 70,
-                      '& svg': {
-                        fontSize: '2rem'
-                      }
-                    }}>
-                      {feature.icon}
-                    </Avatar>
-                    <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-                      {feature.title}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      {feature.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* Testimonials Section */}
-      <Box sx={{ 
-        py: 8,
-        backgroundColor: 'primary.light',
-        backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))'
-      }}>
-        <Container maxWidth="md">
-          <Typography 
-            variant="h3" 
-            align="center" 
-            sx={{ 
-              mb: 6,
-              fontWeight: 700,
-              color: 'common.white',
-              position: 'relative',
-              '&:after': {
-                content: '""',
-                display: 'block',
-                width: '80px',
-                height: '4px',
-                backgroundColor: 'secondary.main',
-                margin: '16px auto 0',
-                borderRadius: '2px'
-              }
-            }}
-          >
-            Trusted by Fleet Managers
-          </Typography>
-          
-          <Slider {...settings}>
-            {testimonials.map((item, index) => (
-              <Box key={index} sx={{ px: isMobile ? 1 : 4 }}>
-                <Card sx={{
-                  borderRadius: 3,
-                  boxShadow: theme.shadows[6],
-                  backgroundColor: 'background.paper',
-                  p: 4,
-                  textAlign: 'center'
-                }}>
-                  <CardContent>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        mb: 4,
-                        fontStyle: 'italic',
-                        fontWeight: 400,
-                        color: 'text.primary',
-                        position: 'relative',
-                        '&:before, &:after': {
-                          content: '"\\201C"',
-                          fontSize: '4rem',
-                          color: theme.palette.primary.light,
-                          opacity: 0.3,
-                          position: 'absolute'
-                        },
-                        '&:before': {
-                          top: -20,
-                          left: -10
-                        },
-                        '&:after': {
-                          content: '"\\201D"',
-                          bottom: -40,
-                          right: -10
-                        }
-                      }}
-                    >
-                      {item.text}
-                    </Typography>
-                    
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      gap: 2,
-                      mt: 3
-                    }}>
-                      <Avatar 
-                        src={item.avatar} 
-                        alt={item.name} 
-                        sx={{ 
-                          width: 60, 
-                          height: 60,
-                          border: `2px solid ${theme.palette.primary.main}`
-                        }} 
-                      />
-                      <Box>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                          {item.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {item.role}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Box>
-            ))}
-          </Slider>
-        </Container>
-      </Box>
-
-      <Footer />
+     
     </Box>
   );
 }

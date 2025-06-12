@@ -21,9 +21,6 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
       <div className="stats-content">
         {Object.entries(stats).map(([key, value]) => (
           <div key={key} className="stat-item">
-            <span className="stat-label">
-              {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}:
-            </span>
             <span className="stat-value" style={{ color }}>
               {value}
             </span>

@@ -6,6 +6,7 @@ export default function Register() {
     username: '',
     email: '',
     phoneNumber: '',
+    department:'',
     password: '',
     confirmPassword: '',
   });
@@ -33,6 +34,7 @@ export default function Register() {
           email: formData.email,
           phoneNumber: formData.phoneNumber,
           password: formData.password,
+          department: formData.department
         }),
       });
 
@@ -75,15 +77,15 @@ export default function Register() {
 
         <input
           type="tel"
-          name="phoneNumber"
-          placeholder="Phone number"
-          value={formData.phoneNumber}
+          name="department"
+          placeholder="Department"
+          value={formData.department}
           onChange={handleChange}
           required
         />
         
         <input
-          type="tel"
+          type="text"
           name="phoneNumber"
           placeholder="Phone number"
           value={formData.phoneNumber}

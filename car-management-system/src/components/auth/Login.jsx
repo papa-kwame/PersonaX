@@ -22,11 +22,18 @@ export default function Login() {
     setShowToast(false);
 
     try {
-      const { token, roles } = await apiLogin(formData.email, formData.password);
-      login({ token, roles });
+      const response = await apiLogin(formData.email, formData.password);
+      const { token, roles, mustChangePassword } = response;
 
-      // Role-based redirection
-      if (roles.includes('Admin') || roles.includes('Mechanic')) {
+      login({ token, roles, mustChangePassword });
+
+      // Save email and password for auto-fill on ChangePasswordOnFirstLogin page
+      sessionStorage.setItem('loginEmail', formData.email);
+      sessionStorage.setItem('loginPassword', formData.password);
+
+      if (mustChangePassword === true || mustChangePassword === 'true') {
+        navigate('/change-password', { replace: true });
+      } else if (roles.includes('Admin') || roles.includes('Mechanic')) {
         navigate('/dashboard', { replace: true });
       } else if (roles.includes('User')) {
         navigate('/userdashboard', { replace: true });
@@ -97,9 +104,7 @@ export default function Login() {
           <Toast.Header closeButton>
             <strong className="me-auto text-danger">Login Error</strong>
           </Toast.Header>
-          <Toast.Body className="text-white">
-            {toastMessage}
-          </Toast.Body>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
         </Toast>
       </ToastContainer>
     </>

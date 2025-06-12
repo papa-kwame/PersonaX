@@ -1,126 +1,122 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Tab, Tabs, Table, Button, Modal, Form, 
-  Badge, Alert, Spinner, Card, Container,
+import {
+  Tab, Tabs, Table, Button, Modal, Form,
+  Badge, Spinner, Card, Container,
   Row, Col, InputGroup, FloatingLabel,
-  ListGroup, Dropdown
+  Dropdown, Pagination, ListGroup
 } from 'react-bootstrap';
-import { 
-  PlusCircle, Trash, PencilSquare, 
+import {
+  PlusCircle, Trash, PencilSquare,
   PersonCheck, PersonX, ShieldCheck, Shield,
   Search, People, Building,
-  Check, X, ChevronDown, ChevronUp, ThreeDotsVertical
+  Check, X, ThreeDotsVertical
 } from 'react-bootstrap-icons';
-
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const API_BASE = 'https://localhost:7092/api';
 const API_ENDPOINTS = {
   USERS: `${API_BASE}/Auth/users`,
   ROLES: `${API_BASE}/Auth/roles`,
   USER_ROLES: (userId) => `${API_BASE}/Auth/users/${userId}/roles`,
-  USER_LOCK: (userId) => `${API_BASE}/Auth/users/${userId}/lock`
+  USER_LOCK: (userId) => `${API_BASE}/Auth/users/${userId}/lock`,
+  DEPARTMENTS: `${API_BASE}/Routes/departments`
+};
+
+const getRandomColor = () => {
+  const colors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info'];
+  return colors[Math.floor(Math.random() * colors.length)];
 };
 
 const RoleManagementPage = () => {
-  const [data, setData] = useState({
-    roles: [],
-    users: [],
-    departments: []
-  });
+  const [data, setData] = useState({ roles: [], users: [], departments: [] });
   const [activeTab, setActiveTab] = useState('users');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [newRole, setNewRole] = useState({ name: '', description: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
+  const [showAddRoleModal, setShowAddRoleModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedRoles, setSelectedRoles] = useState([]);
 
-  // Load initial data
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        setError(null);
-        
         const [usersResponse, rolesResponse, deptsResponse] = await Promise.all([
           axios.get(API_ENDPOINTS.USERS),
           axios.get(API_ENDPOINTS.ROLES),
           axios.get(API_ENDPOINTS.DEPARTMENTS)
         ]);
 
+        const formattedRoles = rolesResponse.data.map(role => {
+          const roleName = typeof role === 'string' ? role : role?.name || 'Unknown';
+          return {
+            id: roleName,
+            name: roleName,
+            description: `${roleName} role`,
+            color: getRandomColor()
+          };
+        });
+
         setData({
           users: usersResponse.data,
-          roles: rolesResponse.data.map(role => ({
-            id: role,
-            name: role,
-            description: `${role} role`,
-            color: getRandomColor()
-          })),
+          roles: formattedRoles,
           departments: deptsResponse.data
         });
       } catch (err) {
-        setError('Failed to load data. Please try again later.');
+        toast.error('Failed to load data. Please try again later.');
         console.error('API Error:', err);
       } finally {
         setLoading(false);
       }
     };
-
     loadData();
   }, []);
 
-  const getRandomColor = () => {
-    const colors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info'];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
-
   const handleCreateRole = async () => {
     if (!newRole.name) {
-      setError('Role name is required');
+      toast.error('Role name is required');
       return;
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-
       const createdRole = {
         id: `role-${Date.now()}`,
         name: newRole.name,
         description: newRole.description,
         color: getRandomColor()
       };
-
-      setData(prev => ({
-        ...prev,
-        roles: [...prev.roles, createdRole]
-      }));
-
+      setData(prev => ({ ...prev, roles: [...prev.roles, createdRole] }));
       setShowRoleModal(false);
       setNewRole({ name: '', description: '' });
-      setSuccess('Role created successfully');
+      toast.success('Role created successfully');
     } catch (err) {
-      setError('Failed to create role');
+      toast.error('Failed to create role');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteRole = async (roleId) => {
-    if (!window.confirm('Are you sure you want to delete this role?')) return;
+    if (roleId === 'Admin') {
+      toast.warning('Cannot delete Admin role');
+      return;
+    }
 
+    const confirmDelete = window.confirm('Are you sure you want to delete this role?');
+    if (!confirmDelete) return;
+
+    setLoading(true);
     try {
-      setLoading(true);
-      // In a real app, you would call your API to delete the role
-      // await axios.delete(`${API_ENDPOINTS.ROLES}/${roleId}`);
-      
-      setData(prev => ({
-        ...prev,
-        roles: prev.roles.filter(r => r.id !== roleId)
-      }));
-      
-      setSuccess('Role deleted successfully');
+      setData(prev => ({ ...prev, roles: prev.roles.filter(r => r.id !== roleId) }));
+      toast.success('Role deleted successfully');
     } catch (err) {
-      setError('Failed to delete role');
+      toast.error('Failed to delete role');
     } finally {
       setLoading(false);
     }
@@ -130,17 +126,13 @@ const RoleManagementPage = () => {
     try {
       setLoading(true);
       await axios.post(API_ENDPOINTS.USER_ROLES(userId), { roles: newRoles });
-      
       setData(prev => ({
         ...prev,
-        users: prev.users.map(user => 
-          user.id === userId ? { ...user, roles: newRoles } : user
-        )
+        users: prev.users.map(user => user.id === userId ? { ...user, roles: newRoles } : user)
       }));
-      
-      setSuccess('User roles updated successfully');
+      toast.success('User roles updated successfully');
     } catch (err) {
-      setError('Failed to update user roles');
+      toast.error('Failed to update user roles');
     } finally {
       setLoading(false);
     }
@@ -150,37 +142,84 @@ const RoleManagementPage = () => {
     try {
       setLoading(true);
       await axios.post(API_ENDPOINTS.USER_LOCK(userId));
-      
       setData(prev => ({
         ...prev,
-        users: prev.users.map(user => 
-          user.id === userId 
-            ? { ...user, isLocked: !user.isLocked } 
-            : user
-        )
+        users: prev.users.map(user => user.id === userId ? { ...user, isLocked: !user.isLocked } : user)
       }));
-      
-      setSuccess(`User ${user.isLocked ? 'unlocked' : 'locked'} successfully`);
+      toast.success('User lock status updated');
     } catch (err) {
-      setError('Failed to toggle user lock status');
+      toast.error('Failed to toggle user lock status');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredUsers = data.users.filter(user => 
+  const filteredUsers = data.users.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (user.name && user.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    user.roles.some(role => role.toLowerCase().includes(searchTerm.toLowerCase()))
+    user.roles.some(role => typeof role === 'string' && role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const filteredRoles = data.roles.filter(role => 
+  const filteredRoles = data.roles.filter(role =>
+    typeof role.name === 'string' &&
     role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     role.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+  const currentRoles = filteredRoles.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(
+    activeTab === 'users' 
+      ? filteredUsers.length / itemsPerPage 
+      : filteredRoles.length / itemsPerPage
+  );
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const handleOpenAddRoleModal = (user) => {
+    setSelectedUser(user);
+    setSelectedRoles([...user.roles]);
+    setShowAddRoleModal(true);
+  };
+
+  const handleRoleSelection = (roleName) => {
+    setSelectedRoles(prev => {
+      if (prev.includes(roleName)) {
+        return prev.filter(r => r !== roleName);
+      } else {
+        return [...prev, roleName];
+      }
+    });
+  };
+
+  const handleSaveRoles = () => {
+    if (selectedUser) {
+      handleUpdateUserRoles(selectedUser.id, selectedRoles);
+      setShowAddRoleModal(false);
+    }
+  };
+
+  const availableRoles = data.roles
+    .map(role => role.name)
+    .filter(roleName => !selectedUser?.roles.includes(roleName));
+
   return (
     <Container fluid className="py-4 px-4">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      
       <Row className="mb-4 align-items-center">
         <Col>
           <div className="d-flex align-items-center">
@@ -195,23 +234,14 @@ const RoleManagementPage = () => {
         </Col>
       </Row>
 
-      {error && (
-        <Alert variant="danger" onClose={() => setError(null)} dismissible className="mb-4">
-          <strong>Error:</strong> {error}
-        </Alert>
-      )}
-      
-      {success && (
-        <Alert variant="success" onClose={() => setSuccess(null)} dismissible className="mb-4">
-          <strong>Success:</strong> {success}
-        </Alert>
-      )}
-
       <Card className="shadow-sm border-0">
         <Card.Body className="p-0">
           <Tabs 
             activeKey={activeTab} 
-            onSelect={(k) => setActiveTab(k)} 
+            onSelect={(k) => {
+              setActiveTab(k);
+              setCurrentPage(1);
+            }} 
             className="px-3 pt-2 border-bottom-0"
             fill
           >
@@ -233,7 +263,10 @@ const RoleManagementPage = () => {
                   <Form.Control
                     placeholder="Search users..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="border-start-0"
                   />
                 </InputGroup>
@@ -245,102 +278,123 @@ const RoleManagementPage = () => {
                   <p className="mt-2">Loading users...</p>
                 </div>
               ) : (
-                <div className="table-responsive rounded">
-                  <Table hover className="align-middle mb-0">
-                    <thead className="bg-light">
-                      <tr>
-                        <th>User</th>
-                        <th>Email</th>
-                        <th>Status</th>
-                        <th>Roles</th>
-                        <th className="text-end">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredUsers.map(user => (
-                        <tr key={user.id}>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
-                                <PersonCheck size={18} className="text-primary" />
-                              </div>
-                              <div>
-                                <div className="fw-medium">{user.name || user.email.split('@')[0]}</div>
-                                <div className="text-muted small">
-                                  {user.lastLogin ? `Last login: ${new Date(user.lastLogin).toLocaleString()}` : 'Never logged in'}
+                <>
+                  <div className="table-responsive rounded">
+                    <Table hover className="align-middle mb-0">
+                      <thead className="bg-light">
+                        <tr>
+                          <th>User</th>
+                          <th>Email</th>
+                          <th>Status</th>
+                          <th>Roles</th>
+                          <th className="text-end">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentUsers.map(user => (
+                          <tr key={user.id}>
+                            <td>
+                              <div className="d-flex align-items-center">
+                                <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                                  <PersonCheck size={18} className="text-primary" />
+                                </div>
+                                <div className="fw-medium">
+                                  {user.name || user.email.split('@')[0]}
                                 </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="text-muted">{user.email}</td>
-                          <td>
-                            <Badge bg={user.isLocked ? 'danger' : 'success'}>
-                              {user.isLocked ? 'Locked' : 'Active'}
-                            </Badge>
-                          </td>
-                          <td>
-                            <div className="d-flex flex-wrap gap-1">
-                              {user.roles.map(role => (
-                                <Badge 
-                                  key={role} 
-                                  bg="light" 
-                                  text="dark" 
-                                  className="fw-normal border d-flex align-items-center"
-                                >
-                                  {role}
-                                  <X 
-                                    size={12} 
-                                    className="ms-1 cursor-pointer" 
-                                    onClick={() => handleUpdateUserRoles(
-                                      user.id, 
-                                      user.roles.filter(r => r !== role)
-                                    )}
-                                  />
-                                </Badge>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="text-end">
-                            <Dropdown>
-                              <Dropdown.Toggle variant="outline-primary" size="sm">
-                                Actions
-                              </Dropdown.Toggle>
-                              <Dropdown.Menu>
-                                <Dropdown.Item 
-                                  onClick={() => {
-                                    const newRole = prompt('Enter role to add:');
-                                    if (newRole) {
-                                      handleUpdateUserRoles(
+                            </td>
+                            <td className="text-muted">{user.email}</td>
+                            <td>
+                              <Badge bg={user.isLocked ? 'danger' : 'success'}>
+                                {user.isLocked ? 'Locked' : 'Active'}
+                              </Badge>
+                            </td>
+                            <td>
+                              <div className="d-flex flex-wrap gap-1">
+                                {user.roles.map(role => (
+                                  <Badge 
+                                    key={role} 
+                                    bg="light" 
+                                    text="dark" 
+                                    className="fw-normal border d-flex align-items-center"
+                                  >
+                                    {role}
+                                    <X 
+                                      size={12} 
+                                      className="ms-1 cursor-pointer" 
+                                      onClick={() => handleUpdateUserRoles(
                                         user.id, 
-                                        [...new Set([...user.roles, newRole])]
-                                      );
-                                    }
-                                  }}
-                                >
-                                  <PlusCircle className="me-2" /> Add Role
-                                </Dropdown.Item>
-                                <Dropdown.Item onClick={() => handleToggleLock(user.id)}>
-                                  {user.isLocked ? (
-                                    <><Check className="me-2" /> Unlock User</>
-                                  ) : (
-                                    <><X className="me-2" /> Lock User</>
-                                  )}
-                                </Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredUsers.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="text-center py-4 text-muted">
-                            {searchTerm ? 'No users match your search' : 'No users found'}
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </Table>
-                </div>
+                                        user.roles.filter(r => r !== role)
+                                      )}
+                                    />
+                                  </Badge>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="text-end">
+                              <Dropdown>
+                                <Dropdown.Toggle variant="outline-primary" size="sm">
+                                  Actions
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu>
+                                  <Dropdown.Item onClick={() => handleOpenAddRoleModal(user)}>
+                                    <PlusCircle className="me-2" /> Add Role
+                                  </Dropdown.Item>
+                                  <Dropdown.Item onClick={() => handleToggleLock(user.id)}>
+                                    {user.isLocked ? (
+                                      <><Check className="me-2" /> Unlock User</>
+                                    ) : (
+                                      <><X className="me-2" /> Lock User</>
+                                    )}
+                                  </Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
+                            </td>
+                          </tr>
+                        ))}
+                        {currentUsers.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="text-center py-4 text-muted">
+                              {searchTerm ? 'No users match your search' : 'No users found'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </Table>
+                  </div>
+                  
+                  {filteredUsers.length > itemsPerPage && (
+                    <div className="d-flex justify-content-center mt-3">
+                      <Pagination>
+                        <Pagination.First 
+                          onClick={() => paginate(1)} 
+                          disabled={currentPage === 1} 
+                        />
+                        <Pagination.Prev 
+                          onClick={() => paginate(currentPage - 1)} 
+                          disabled={currentPage === 1} 
+                        />
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                          <Pagination.Item
+                            key={number}
+                            active={number === currentPage}
+                            onClick={() => paginate(number)}
+                          >
+                            {number}
+                          </Pagination.Item>
+                        ))}
+                        <Pagination.Next 
+                          onClick={() => paginate(currentPage + 1)} 
+                          disabled={currentPage === totalPages} 
+                        />
+                        <Pagination.Last 
+                          onClick={() => paginate(totalPages)} 
+                          disabled={currentPage === totalPages} 
+                        />
+                      </Pagination>
+                    </div>
+                  )}
+                </>
               )}
             </Tab>
             
@@ -363,7 +417,10 @@ const RoleManagementPage = () => {
                     <Form.Control
                       placeholder="Search roles..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                      }}
                       className="border-start-0"
                     />
                   </InputGroup>
@@ -383,55 +440,88 @@ const RoleManagementPage = () => {
                   <p className="mt-2">Loading roles...</p>
                 </div>
               ) : (
-                <div className="table-responsive rounded">
-                  <Table hover className="align-middle mb-0">
-                    <thead className="bg-light">
-                      <tr>
-                        <th>Role</th>
-                        <th>Description</th>
-                        <th className="text-end">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredRoles.map(role => (
-                        <tr key={role.id}>
-                          <td>
-                            <Badge pill bg={role.color} className="fs-6 py-2 px-3 text-uppercase">
-                              {role.name}
-                            </Badge>
-                          </td>
-                          <td className="text-muted">{role.description}</td>
-                          <td className="text-end">
-                            <Button 
-                              variant="outline-danger" 
-                              size="sm"
-                              onClick={() => handleDeleteRole(role.id)}
-                              className="rounded-circle"
-                              style={{ width: '32px', height: '32px' }}
-                              disabled={role.name === 'Admin'}
-                            >
-                              <Trash size={14} />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredRoles.length === 0 && (
+                <>
+                  <div className="table-responsive rounded">
+                    <Table hover className="align-middle mb-0">
+                      <thead className="bg-light">
                         <tr>
-                          <td colSpan={3} className="text-center py-4 text-muted">
-                            {searchTerm ? 'No roles match your search' : 'No roles found'}
-                          </td>
+                          <th>Role</th>
+                          <th>Description</th>
+                          <th className="text-end">Actions</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </Table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {currentRoles.map(role => (
+                          <tr key={role.id}>
+                            <td>
+                              <Badge pill bg={role.color} className="fs-6 py-2 px-3 text-uppercase">
+                                {role.name}
+                              </Badge>
+                            </td>
+                            <td className="text-muted">{role.description}</td>
+                            <td className="text-end">
+                              <Button 
+                                variant="outline-danger" 
+                                size="sm"
+                                onClick={() => handleDeleteRole(role.id)}
+                                className="rounded-circle"
+                                style={{ width: '32px', height: '32px' }}
+                                disabled={role.name === 'Admin'}
+                              >
+                                <Trash size={14} />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                        {currentRoles.length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="text-center py-4 text-muted">
+                              {searchTerm ? 'No roles match your search' : 'No roles found'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </Table>
+                  </div>
+                  
+                  {filteredRoles.length > itemsPerPage && (
+                    <div className="d-flex justify-content-center mt-3">
+                      <Pagination>
+                        <Pagination.First 
+                          onClick={() => paginate(1)} 
+                          disabled={currentPage === 1} 
+                        />
+                        <Pagination.Prev 
+                          onClick={() => paginate(currentPage - 1)} 
+                          disabled={currentPage === 1} 
+                        />
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                          <Pagination.Item
+                            key={number}
+                            active={number === currentPage}
+                            onClick={() => paginate(number)}
+                          >
+                            {number}
+                          </Pagination.Item>
+                        ))}
+                        <Pagination.Next 
+                          onClick={() => paginate(currentPage + 1)} 
+                          disabled={currentPage === totalPages} 
+                        />
+                        <Pagination.Last 
+                          onClick={() => paginate(totalPages)} 
+                          disabled={currentPage === totalPages} 
+                        />
+                      </Pagination>
+                    </div>
+                  )}
+                </>
               )}
             </Tab>
           </Tabs>
         </Card.Body>
       </Card>
 
-      {/* Create Role Modal */}
       <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)} centered>
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">Create New Role</Modal.Title>
@@ -473,9 +563,70 @@ const RoleManagementPage = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <Modal show={showAddRoleModal} onHide={() => setShowAddRoleModal(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">
+            Manage Roles for {selectedUser?.name || selectedUser?.email.split('@')[0]}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <h5 className="mb-3">Current Roles</h5>
+          <div className="d-flex flex-wrap gap-2 mb-4">
+            {selectedUser?.roles.map(role => (
+              <Badge 
+                key={role} 
+                pill 
+                bg="primary" 
+                className="fs-6 py-2 px-3 d-flex align-items-center"
+              >
+                {role}
+              </Badge>
+            ))}
+            {selectedUser?.roles.length === 0 && (
+              <span className="text-muted">No roles assigned</span>
+            )}
+          </div>
+
+          {availableRoles.length > 0 && (
+            <>
+              <h5 className="mb-3">Available Roles</h5>
+              <ListGroup>
+                {availableRoles.map(role => (
+                  <ListGroup.Item 
+                    key={role}
+                    action
+                    active={selectedRoles.includes(role)}
+                    onClick={() => handleRoleSelection(role)}
+                    className="d-flex justify-content-between align-items-center"
+                  >
+                    {role}
+                    {selectedRoles.includes(role) ? (
+                      <Check size={16} className="text-success" />
+                    ) : (
+                      <PlusCircle size={16} className="text-muted" />
+                    )}
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <Button variant="outline-secondary" onClick={() => setShowAddRoleModal(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={handleSaveRoles}
+            disabled={loading}
+          >
+            {loading ? <Spinner size="sm" /> : 'Save Changes'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };
 
 export default RoleManagementPage;
-

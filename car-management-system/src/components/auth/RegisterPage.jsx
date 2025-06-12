@@ -12,11 +12,13 @@ const Register = () => {
     email: '',
     phoneNumber: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    department: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('danger'); // 'danger' or 'success'
 
   const navigate = useNavigate();
 
@@ -35,6 +37,7 @@ const Register = () => {
 
     if (formData.password !== formData.confirmPassword) {
       setToastMessage('Passwords do not match.');
+      setToastType('danger');
       setShowToast(true);
       setIsSubmitting(false);
       return;
@@ -47,17 +50,28 @@ const Register = () => {
         phoneNumber: formData.phoneNumber,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
-        department:formData.department
+        department: formData.department
       };
 
       // Replace with your actual API endpoint
       const response = await axios.post('https://localhost:7092/api/Auth/register', registrationData);
       console.log('Registration successful:', response.data);
-      navigate('/login');
+      
+      // Show success toast
+      setToastMessage('Registration successful! Redirecting to login page...');
+      setToastType('success');
+      setShowToast(true);
+      
+      // Redirect after 5 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 5000);
+      
     } catch (err) {
       console.error('Registration error:', err.response || err);
       const msg = err?.response?.data?.message || err.message || 'Registration failed. Please try again.';
       setToastMessage(msg);
+      setToastType('danger');
       setShowToast(true);
     } finally {
       setIsSubmitting(false);
@@ -111,13 +125,13 @@ const Register = () => {
               />
             </div>
             <div className="mb-3">
-              <label htmlFor="department" className="form-label">Departments</label>
+              <label htmlFor="department" className="form-label">Department</label>
               <input
                 type="text"
                 className="form-control"
                 id="department"
                 placeholder="Enter your Department"
-                value={formData.phoneNumber}
+                value={formData.department}
                 onChange={handleChange}
                 required
                 disabled={isSubmitting}
@@ -165,13 +179,21 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Toast Error Notification */}
+      {/* Toast Notification */}
       <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1055 }}>
-        <Toast onClose={() => setShowToast(false)} show={showToast} bg="danger" delay={5000} autohide>
+        <Toast 
+          onClose={() => setShowToast(false)} 
+          show={showToast} 
+          bg={toastType} 
+          delay={5000} 
+          autohide
+        >
           <Toast.Header closeButton>
-            <strong className="me-auto text-danger">Registration Error</strong>
+            <strong className="me-auto">
+              {toastType === 'success' ? 'Registration Success' : 'Registration Error'}
+            </strong>
           </Toast.Header>
-          <Toast.Body className="text-white">
+          <Toast.Body className={toastType === 'success' ? 'text-white' : 'text-white'}>
             {toastMessage}
           </Toast.Body>
         </Toast>

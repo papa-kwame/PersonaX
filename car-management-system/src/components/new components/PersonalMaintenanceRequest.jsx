@@ -16,7 +16,7 @@ const PersonalMaintenanceRequest = () => {
   const { userId, isAuthenticated } = useAuth();
 
   const handleChange = (e) => {
-    setFormData({
+    setFormData({   
       ...formData,
       [e.target.name]: e.target.value,
     });
@@ -38,7 +38,7 @@ const PersonalMaintenanceRequest = () => {
     <Container maxWidth="sm">
       <Paper elevation={3} style={{ padding: '20px', margin: '20px' }}>
         <Typography variant="h4" gutterBottom>
-          Create Personal Maintenance Request
+          Create Maintenance Request
         </Typography>
         <form onSubmit={handleSubmit}>
           <TextField

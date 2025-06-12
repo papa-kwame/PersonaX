@@ -1,0 +1,233 @@
+.vehicle-assignment-container {
+  padding: 20px;
+  max-width: 100%;
+  background-color: white;
+  margin-top: 20px;
+  border-radius: 12px;
+box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px;
+}
+
+.assignment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.assignment-header h2 {
+  font-weight: 300;
+  color: #ffffff;
+  font-size:12px;
+  padding:8px;
+  border-radius:7px;
+  background-color: #3983ce;
+}
+
+.assign-button {
+  padding: 8px 20px;
+  font-weight: 500;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  color: #3498db;
+}
+
+/* Cards container */
+.horizontal-cards-container {
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+  gap: 20px;
+  scrollbar-width: thin;
+}
+
+/* Custom scrollbar */
+.horizontal-cards-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.horizontal-cards-container::-webkit-scrollbar-track {
+  background: #615f5f;
+  border-radius: 10px;
+}
+
+.horizontal-cards-container::-webkit-scrollbar-thumb {
+  background: #bdc3c7;
+  border-radius: 10px;
+}
+
+.horizontal-cards-container::-webkit-scrollbar-thumb:hover {
+  background: #95a5a6;
+}
+
+.assignment-card {
+  min-width: 280px;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: #dddddd;
+}
+
+.assignment-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.license-badge {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+}
+.license-badgeh5 {
+ font-size: 13px;
+} 
+
+.license-badgediv {
+display: flex;
+align-items: center;
+gap: 20px;
+}
+
+
+.license-badge .badge {
+  font-size: 0.75rem;
+  font-weight: 200;
+  padding: 5px 10px;
+  letter-spacing: 0.5px;
+}
+
+.vehicle-header {
+  display: flex;
+  align-items: center;
+}
+
+.vehicle-icon {
+  background: rgba(52, 152, 219, 0.1);
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3498db;
+  font-size: 1.4rem;
+}
+
+
+.vehicle-icons{
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+
+
+.vehicle-info h5 {
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: #2c3e50;
+}
+
+.model-text {
+  color: #7f8c8d;
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+
+
+
+
+.card-footer {
+  background: #f8f9fa;
+  border-top: 1px solid #ecf0f1;
+  font-size: 0.75rem;
+  color: #95a5a6;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 50px 20px;
+  color: #bdc3c7;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+}
+
+/* Modal styles */
+.assignment-modal .modal-header {
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.assignment-modal .modal-title {
+  font-weight: 600;
+}
+
+.search-input {
+  border-radius: 8px;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+}
+
+.search-input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.search-loading {
+  padding: 10px 0;
+  text-align: center;
+}
+
+.search-results {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 5px;
+  border-radius: 8px;
+}
+
+.search-results .list-group-item {
+  border: none;
+  padding: 10px 15px;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.search-results .list-group-item:last-child {
+  border-bottom: none;
+}
+
+.modal-footer-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .assignment-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .assignment-card {
+    min-width: 260px;
+  }
+}

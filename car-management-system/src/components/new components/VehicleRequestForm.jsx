@@ -44,7 +44,7 @@ const VehicleRequestForm = () => {
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const response = await api.get('/Vehicles'); // Use the same endpoint as in the Dashboard component
+        const response = await api.get('/Vehicles');
         setVehicles(response.data);
       } catch (err) {
         console.error('Failed to fetch vehicles:', err);
@@ -56,11 +56,8 @@ const VehicleRequestForm = () => {
   }, [enqueueSnackbar]);
 
   const availableVehicles = Array.isArray(vehicles)
-    ? vehicles.filter(vehicle => {
-        return !vehicle?.userId;
-      })
+    ? vehicles.filter(vehicle => !vehicle?.userId)
     : [];
-
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -109,25 +106,17 @@ const VehicleRequestForm = () => {
         variant="contained"
         color="primary"
         onClick={handleOpen}
-          style={{
-                      background: '#4caf50',
-                      color: 'white',
-                      padding: '8px 12px',
-                      fontSize: '0.575rem'
-                    }}
+        style={{
+          background: '#4caf50',
+          color: 'white',
+          padding: '8px 12px',
+          fontSize: '0.575rem'
+        }}
       >
         Request Vehicle
       </Button>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth        
-      style={{
-                      background: 'transparent',
-                      color: 'white',
-                      padding: '8px 12px',
-                      fontSize: '0.575rem',
-                      borderRadius: '122px'
-                    }}
-      >
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Request Vehicle Assignment</DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent>
@@ -143,10 +132,14 @@ const VehicleRequestForm = () => {
                 label="Vehicle"
                 onChange={handleChange}
                 disabled={availableVehicles.length === 0}
+                renderValue={(value) => {
+                  if (!value) {
+                    return <em>{availableVehicles.length === 0 ? 'No vehicles available' : 'Select a vehicle'}</em>;
+                  }
+                  const selectedVehicle = availableVehicles.find(v => v.id === value);
+                  return selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.licensePlate})` : '';
+                }}
               >
-                <MenuItem value="">
-                  <em>{availableVehicles.length === 0 ? 'No vehicles available' : 'Select a vehicle'}</em>
-                </MenuItem>
                 {availableVehicles.map(vehicle => (
                   <MenuItem key={vehicle.id} value={vehicle.id}>
                     {vehicle.make} {vehicle.model} ({vehicle.licensePlate})

@@ -301,9 +301,9 @@ const MaintenanceRequestApp = () => {
       try {
         setLoading(true);
         const [requestsRes, vehiclesRes, historyRes] = await Promise.all([
-          api.get('/api/MaintenanceRequest'),
+          api.get('/api/MaintenanceRequest/active-requests'),
           api.get('/api/Vehicles'),
-          api.get('/api/MaintenanceRequest/history')
+          api.get('/api/MaintenanceRequest/approved-rejected')
         ]);
 
         setRequests(requestsRes.data.map(formatRequestData));
@@ -344,6 +344,10 @@ const MaintenanceRequestApp = () => {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    console.log('Selected Request State:', selectedRequest);
+  }, [selectedRequest]);
+
   const fetchWorkflowStatus = async (requestId) => {
     try {
       const response = await api.get(`/api/MaintenanceRequest/${requestId}/workflow-status`, {
@@ -351,8 +355,10 @@ const MaintenanceRequestApp = () => {
           Authorization: `Bearer ${token}`
         }
       });
+      console.log('Workflow Status:', response.data);
       setWorkflowStatus(response.data);
     } catch (error) {
+      console.error('Failed to fetch workflow status:', error);
       showNotification('Failed to fetch workflow status', 'error');
     }
   };
@@ -360,8 +366,10 @@ const MaintenanceRequestApp = () => {
   const fetchRequestComments = async (requestId) => {
     try {
       const response = await api.get(`/api/MaintenanceRequest/${requestId}/comments`);
+      console.log('Request Comments:', response.data.comments);
       setRequestComments(response.data.comments);
     } catch (error) {
+      console.error('Failed to fetch request comments:', error);
       showNotification('Failed to fetch request comments', 'error');
     }
   };
@@ -369,8 +377,10 @@ const MaintenanceRequestApp = () => {
   const fetchRequestDocuments = async (requestId) => {
     try {
       const response = await api.get(`/api/MaintenanceRequest/${requestId}/documents`);
+      console.log('Request Documents:', response.data.documents);
       setRequestDocuments(response.data.documents);
     } catch (error) {
+      console.error('Failed to fetch request documents:', error);
       showNotification('Failed to fetch request documents', 'error');
     }
   };
@@ -522,28 +532,35 @@ const MaintenanceRequestApp = () => {
       const rejectionReason = prompt("Please enter the reason for rejection:");
       if (rejectionReason === null) return;
 
-      await api.post(`/api/MaintenanceRequest/${id}/reject?userId=${userId}`, rejectionReason, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      await api.post(
+        `/api/MaintenanceRequest/${id}/reject?userId=${userId}`,
+        rejectionReason,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
+
       showNotification('Request rejected successfully!');
 
       const [requestsRes, pendingRes] = await Promise.all([
-        api.get('/api/MaintenanceRequest'),
+        api.get('/api/MaintenanceRequest/AllRequests'),
         api.get(`/api/MaintenanceRequest/my-pending-actions?userId=${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         })
       ]);
+
       setRequests(requestsRes.data.map(formatRequestData));
       setPendingActions(pendingRes.data.map(formatRequestData));
     } catch (error) {
       const errorMessage = error.response?.data?.title ||
-                        error.response?.data?.message ||
-                        error.message ||
-                        'Failed to reject request';
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to reject request';
       showNotification(errorMessage, 'error');
     }
   };
@@ -1313,27 +1330,15 @@ const MaintenanceRequestApp = () => {
             gap: 2
           }}>
             <Typography variant="h4" sx={{
-              fontWeight: 700,
+              fontWeight: 300,
               color: professionalColors.text,
-              fontSize: { xs: '1.5rem', sm: '2rem' },
+              fontSize: { xs: '1.5rem', sm: '1.7rem' },
               letterSpacing: '-0.5px'
             }}>
               Requests
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <StyledButton
-                variant="contained"
-                onClick={() => setOpenDialog(true)}
-                startIcon={<AddIcon />}
-                sx={{
-                  backgroundColor: professionalColors.primary,
-                  '&:hover': {
-                    backgroundColor: alpha(professionalColors.primary, 0.9)
-                  }
-                }}
-              >
-                New Request
-              </StyledButton>
+
               <StyledButton
                 variant="outlined"
                 onClick={() => setOpenHistoryDialog(true)}
@@ -1480,6 +1485,7 @@ const MaintenanceRequestApp = () => {
                       key={request.id}
                       elevation={0}
                       onClick={() => {
+                        console.log('Selected Request:', request);
                         setSelectedRequest(request);
                         setOpenDetailsDialog(true);
                         fetchWorkflowStatus(request.id);
@@ -1561,13 +1567,7 @@ const MaintenanceRequestApp = () => {
                   }}>
                     No Maintenance Requests
                   </Typography>
-                  <Typography variant="body2" sx={{
-                    color: alpha(professionalColors.textSecondary, 0.7),
-                    maxWidth: 400,
-                    mx: 'auto'
-                  }}>
-                    There are currently no maintenance requests. Click "New Request" to create one.
-                  </Typography>
+
                 </Box>
               )}
             </>
@@ -1588,6 +1588,7 @@ const MaintenanceRequestApp = () => {
                         }
                       }}
                       onClick={() => {
+                        console.log('Selected Request:', request);
                         setSelectedRequest(request);
                         setOpenDetailsDialog(true);
                         fetchWorkflowStatus(request.id);
@@ -1606,13 +1607,12 @@ const MaintenanceRequestApp = () => {
                           alignItems: 'flex-start'
                         }
                       }}>
-                        <Box sx={{ flex: 1, minWidth: 200 }} >
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}  >
+                        <Box sx={{ flex: 1, minWidth: 200 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                             {request.vehicleMake} {request.vehicleModel} ({request.licensePlate})
                           </Typography>
                           <Typography variant="body2" sx={{ color: professionalColors.textSecondary }}>
-                            {request.requestType}
-                             {format(request.requestDate, 'PP')}
+                            {request.requestType} • {format(request.requestDate, 'PP')}
                           </Typography>
                         </Box>
                         <Box sx={{
@@ -1695,6 +1695,7 @@ const MaintenanceRequestApp = () => {
                         }
                       }}
                       onClick={() => {
+                        console.log('Selected Request:', request);
                         setSelectedRequest(request);
                         setOpenDetailsDialog(true);
                         fetchWorkflowStatus(request.id);
@@ -1876,9 +1877,6 @@ const MaintenanceRequestApp = () => {
                 </FormControl>
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-
-              </Box>
               <StyledTextField
                 fullWidth
                 margin="normal"
@@ -1914,8 +1912,8 @@ const MaintenanceRequestApp = () => {
               sx={{
                 backgroundColor: professionalColors.primary,
                 '&:hover': {
-                  backgroundColor: alpha(professionalColors.primary, 0.9)
-                }
+                  backgroundColor: alpha(professionalColors.primary, 0.9),
+                },
               }}
             >
               Submit Request
@@ -1946,7 +1944,7 @@ const MaintenanceRequestApp = () => {
             {selectedRequest && (
               <>
                 {renderRequestDetails(selectedRequest)}
-                {renderActionButtons(selectedRequest)}
+                {activeTab === 'myRequests' && renderActionButtons(selectedRequest)}
               </>
             )}
           </DialogContent>
@@ -2064,8 +2062,12 @@ const MaintenanceRequestApp = () => {
                       }
                     }}
                     onClick={() => {
+                      console.log('Selected Request:', request);
                       setSelectedRequest(request);
                       setOpenDetailsDialog(true);
+                      fetchWorkflowStatus(request.id);
+                      fetchRequestComments(request.id);
+                      fetchRequestDocuments(request.id);
                     }}
                   >
                     <Box sx={{
