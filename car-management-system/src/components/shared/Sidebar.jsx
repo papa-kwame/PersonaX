@@ -54,7 +54,7 @@ export default function Sidebar({ className = "" }) {
     { path: '/admin/roles', icon: 'bi-shield-lock', label: 'Role Management' },
     { path: '/admin/routes', icon: 'bi-signpost-split-fill', label: 'Routes' },
     { path: '/admin/logger', icon: 'bi-fuel-pump', label: 'Fuel Logger' },
-     { path: '/schedule', icon: 'bi-schedule', label: 'Schedule' },
+     { path: '/schedule', icon: 'bi-calendar', label: 'Schedule' },
   ];
 
   const authData = JSON.parse(localStorage.getItem('authData'));

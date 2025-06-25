@@ -167,9 +167,9 @@
 }
 
 .day-cell.current-month {
-  background-color: white;
+    background-color: white;
+    border: 1px solid black;
 }
-
 .day-cell.other-month {
   background-color: #f8f9fa;
   color: #adb5bd;
@@ -214,22 +214,22 @@
 }
 
 .activity-count {
-  background-color: rgba(66, 153, 225, 0.1);
+  background-color: rgb(66, 153, 225);
   border: 1px solid rgba(66, 153, 225, 0.3);
-  height: 90%;
+  height: 70%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 1.25rem;
   font-weight: 500;
-  color: #4299e1;
+  color: #000000;
   border-radius: 4px;
   transition: all 0.2s ease;
-  margin-top: 10px;
+  margin-top: 30px;
 }
 
 .activity-count:hover {
-  background-color: rgba(66, 153, 225, 0.2);
+  background-color: rgb(66, 153, 225);
   transform: scale(1.02);
 }
 
@@ -346,6 +346,8 @@
 }
 
 .activity-title {
+  display: flex;
+  justify-content: space-between;
   font-weight: 600;
   color: #212529;
   font-size: 0.95rem;
@@ -379,6 +381,21 @@
   font-weight: 600;
 }
 
+.me22{
+  display: flex;
+  gap: 10px;
+}
+.me333{
+  border-radius: 50%;
+  height: 20px;
+  width: 20px;
+  background-color: #259dffe8;
+  font-size: 22px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .modal-icon {
   background-color: #0d6efd;
   color: white;
@@ -389,7 +406,7 @@
   align-items: center;
   justify-content: center;
   margin-right: 15px;
-}
+  font-size: 18px;}
 
 .modal-footer {
   background-color: #f8f9fa;
@@ -399,7 +416,6 @@
   border-bottom-right-radius: 12px;
 }
 
-/* Day Modal */
 .day-modal .modal-content {
   border-radius: 12px;
   overflow: hidden;
@@ -419,6 +435,7 @@
 
 .activity-time-badge {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
 }
@@ -436,14 +453,14 @@
 
 
 .activity-details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+display: flex;
   gap: 15px;
   margin-bottom: 20px;
 }
 
 .detail-item {
   display: flex;
+  flex-direction: column;
 }
 
 .detail-label {
@@ -503,9 +520,12 @@
 }
 
 .empty-state {
-  padding: 30px;
+    padding: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction:column
 }
-
 .empty-state i {
   color: #adb5bd;
 }

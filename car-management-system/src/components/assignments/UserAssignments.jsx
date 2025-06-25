@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import {
   Container,
@@ -65,7 +65,6 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { format, parseISO } from 'date-fns';
-import VehicleRequestForm from '../new components/VehicleRequestForm';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
@@ -189,10 +188,9 @@ const statusMap = {
   'Approved': 1,
   'Rejected': 2,
   'Completed': 3,
-
 };
 
-const stageOrder = ['Create', 'Comment', 'Review', 'Commit', 'Approve', 'Complete'];
+const stageOrder = ['Comment', 'Review', 'Commit', 'Approve', 'Complete'];
 
 const reverseMappings = {
   priority: {
@@ -211,12 +209,12 @@ const reverseMappings = {
 
 // Function to safely format a date
 const safeFormat = (date, formatStr) => {
-  if (!date) return 'N/A'; // Return a placeholder if the date is invalid
+  if (!date) return 'N/A';
   try {
     return format(parseISO(date), formatStr);
   } catch (error) {
     console.error("Error formatting date:", error);
-    return 'N/A'; // Return a placeholder if formatting fails
+    return 'N/A';
   }
 };
 
@@ -239,7 +237,7 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 700, color: professionalColors.text }}>
-         Requestor
+          Requestor
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Avatar sx={{ width: 38, height: 38, bgcolor: professionalColors.primary }}>
@@ -248,17 +246,16 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
           <Typography variant="body2" sx={{ color: professionalColors.textSecondary, fontWeight: 500 }}>
             {request.requestedByUserEmail || 'Unknown User'}
           </Typography>
-                                    <StatusBadge
-                            label={request.status}
-                            size="small"
-                            status={request.status}
-                      
-                            sx={{
-                              px: 1.5,
-                              py: 0.5,
-                              fontSize: '0.8rem'
-                            }}
-                          />
+          <StatusBadge
+            label={request.status}
+            size="small"
+            status={request.status}
+            sx={{
+              px: 1.5,
+              py: 0.5,
+              fontSize: '0.8rem'
+            }}
+          />
         </Box>
       </Box>
 
@@ -283,7 +280,6 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
             label: 'Request Date',
             value: request.requestDate
           },
-
           {
             label: 'Vehicle',
             value: request.vehicle ? `${request.vehicle.make} ${request.vehicle.model} (${request.vehicle.licensePlate})` : 'N/A'
@@ -364,7 +360,6 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
             border: '1px solid',
             borderColor: 'divider'
           }}>
-            {/* Completed Actions Section */}
             <Box sx={{ mb: 4 }}>
               <Box sx={{
                 display: 'flex',
@@ -490,7 +485,6 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
               ))}
             </Box>
 
-            {/* Pending Actions Section */}
             <Box>
               <Box sx={{
                 display: 'flex',
@@ -588,22 +582,18 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
           </Box>
         </StyledPaper>
       )}
-     
     </Box>
   );
 };
 
-// Action Buttons Component
 const ActionButtons = ({ request, onProcessStage, onRejectRequest, currentTab }) => {
-  const canProcessStage = currentTab === 'myRequests'; 
+  const canProcessStage = currentTab === 'myRequests';
   const isFinalStage = request.currentStage === 'Approve';
-  const processStageButtonRef = useRef(null);
 
   return (
     <Box sx={{ mt: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
       {canProcessStage && (
         <StyledButton
-          ref={processStageButtonRef}
           variant="contained"
           startIcon={<CheckCircleIcon />}
           onClick={onProcessStage}
@@ -642,7 +632,6 @@ const ActionButtons = ({ request, onProcessStage, onRejectRequest, currentTab })
   );
 };
 
-// Main Component
 const VehicleAssignmentApp = () => {
   const theme = useTheme();
   const { isAuthenticated, userId, token } = useAuth();
@@ -651,17 +640,19 @@ const VehicleAssignmentApp = () => {
   const [vehicles, setVehicles] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('inbox');
+  const [activeTab, setActiveTab] = useState('myRequests');
   const [openDialog, setOpenDialog] = useState(false);
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const [openStageDialog, setOpenStageDialog] = useState(false);
   const [openHistoryDialog, setOpenHistoryDialog] = useState(false);
+  const [openRejectDialog, setOpenRejectDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [workflowStatus, setWorkflowStatus] = useState(null);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
   const [pendingActions, setPendingActions] = useState([]);
   const [stageComments, setStageComments] = useState('');
   const [requestComments, setRequestComments] = useState([]);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   const [formData, setFormData] = useState({
     vehicleId: '',
@@ -679,7 +670,7 @@ const VehicleAssignmentApp = () => {
       status: reverseMappings.status[request.status] || request.status,
       requestedByUserName: request.userName || request.requestedByUserName,
       requestedByUserEmail: request.email || request.userEmail,
-      vehicle: request.vehicle || {}, 
+      vehicle: request.vehicle || {},
     };
 
     if (request.requestDate) {
@@ -700,7 +691,7 @@ const VehicleAssignmentApp = () => {
       try {
         setLoading(true);
         const [requestsRes, vehiclesRes, historyRes, myRequestsRes] = await Promise.all([
-          api.get('/api/VehicleAssignment/AllRequests'),
+          api.get('/api/VehicleAssignment/RequestsBeforeApproval'),
           api.get('/api/Vehicles'),
           api.get('/api/VehicleAssignment/AllAssignments'),
           api.get(`/api/VehicleAssignment/MyVehicleRequests/${userId}`, {
@@ -788,7 +779,7 @@ const VehicleAssignmentApp = () => {
       showNotification('Request submitted successfully!');
 
       const [requestsRes, pendingRes] = await Promise.all([
-        api.get('/api/VehicleAssignment/AllRequests'),
+        api.get('/api/VehicleAssignment/RequestsBeforeApproval'),
         api.get(`/api/VehicleAssignment/my-pending-actions?userId=${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -867,7 +858,7 @@ const VehicleAssignmentApp = () => {
       setOpenStageDialog(false);
       setStageComments('');
       fetchWorkflowStatus(selectedRequest.id);
-      fetchRequestComments(selectedRequest.id); 
+      fetchRequestComments(selectedRequest.id);
     } catch (error) {
       const errorMessage = error.response?.data?.title ||
                         error.response?.data?.message ||
@@ -877,40 +868,59 @@ const VehicleAssignmentApp = () => {
     }
   };
 
-  const handleRejectRequest = async (id) => {
+  const handleRejectRequest = (id) => {
+    const request = requests.find(r => r.id === id);
+    if (!request) {
+      showNotification('Request not found', 'error');
+      return;
+    }
+
+    if (request.currentStage !== 'Approve') {
+      showNotification('Only the final role can reject the request', 'error');
+      return;
+    }
+
+    setSelectedRequest(request);
+    setOpenRejectDialog(true);
+  };
+
+  const confirmRejectRequest = async () => {
+    if (!rejectionReason.trim()) {
+      showNotification('Please provide a reason for rejection', 'error');
+      return;
+    }
+
     try {
-      const request = requests.find(r => r.id === id);
-      if (!request) {
-        showNotification('Request not found', 'error');
-        return;
-      }
+      const payload = JSON.stringify(rejectionReason);
 
-      if (request.currentStage !== 'Approve') {
-        showNotification('Only the final role can reject the request', 'error');
-        return;
-      }
-
-      const rejectionReason = prompt("Please enter the reason for rejection:");
-      if (rejectionReason === null) return;
-
-      await api.post(`/api/VehicleAssignment/vehicle-requests/${id}/reject?userId=${userId}`, { comments: rejectionReason }, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      const response = await api.post(
+        `/api/VehicleAssignment/${selectedRequest.id}/reject?userId=${userId}`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
+
       showNotification('Request rejected successfully!');
 
       const [requestsRes, pendingRes] = await Promise.all([
-        api.get('/api/VehicleAssignment/AllRequests'),
+        api.get('/api/VehicleAssignment/RequestsBeforeApproval'),
         api.get(`/api/VehicleAssignment/my-pending-actions?userId=${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         })
       ]);
+
       setRequests(requestsRes.data.map(formatRequestData));
       setPendingActions(pendingRes.data.map(formatRequestData));
+      setOpenRejectDialog(false);
+      setRejectionReason('');
     } catch (error) {
+      console.error('Error rejecting request:', error);
       const errorMessage = error.response?.data?.title ||
                         error.response?.data?.message ||
                         error.message ||
@@ -994,11 +1004,24 @@ const VehicleAssignmentApp = () => {
               fontSize: { xs: '1rem', sm: '1.8rem' },
               letterSpacing: '-0.5px'
             }}>
-              Vehicle  Requests
+              Vehicle Requests
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <VehicleRequestForm/>
-            </Box>
+            <StyledButton
+              variant="outlined"
+              startIcon={<HistoryIcon />}
+              onClick={() => setOpenHistoryDialog(true)}
+              sx={{
+                minWidth: 150,
+                borderColor: professionalColors.primary,
+                color: professionalColors.primary,
+                '&:hover': {
+                  backgroundColor: alpha(professionalColors.primary, 0.05),
+                  borderColor: professionalColors.primary
+                }
+              }}
+            >
+              History
+            </StyledButton>
           </Box>
         </Box>
 
@@ -1237,14 +1260,6 @@ const VehicleAssignmentApp = () => {
                               height: 24
                             }}
                           />
-                          <IconButton size="small" sx={{
-                            color: 'text.secondary',
-                            '&:hover': {
-                              color: 'primary.main',
-                              backgroundColor: alpha(theme.palette.primary.main, 0.1)
-                            }
-                          }}>
-                          </IconButton>
                         </Box>
                       </Box>
                     </StyledPaper>
@@ -1419,14 +1434,6 @@ const VehicleAssignmentApp = () => {
                               height: 24
                             }}
                           />
-                          <IconButton size="small" sx={{
-                            color: 'text.secondary',
-                            '&:hover': {
-                              color: 'primary.main',
-                              backgroundColor: alpha(theme.palette.primary.main, 0.1)
-                            }
-                          }}>
-                          </IconButton>
                         </Box>
                       </Box>
                     </StyledPaper>
@@ -1601,14 +1608,6 @@ const VehicleAssignmentApp = () => {
                               height: 24
                             }}
                           />
-                          <IconButton size="small" sx={{
-                            color: 'text.secondary',
-                            '&:hover': {
-                              color: 'primary.main',
-                              backgroundColor: alpha(theme.palette.primary.main, 0.1)
-                            }
-                          }}>
-                          </IconButton>
                         </Box>
                       </Box>
                     </StyledPaper>
@@ -1792,7 +1791,6 @@ const VehicleAssignmentApp = () => {
           </DialogActions>
         </Dialog>
 
-        {/* Request Details Dialog */}
         <Dialog
           open={openDetailsDialog}
           onClose={() => setOpenDetailsDialog(false)}
@@ -2030,6 +2028,64 @@ const VehicleAssignmentApp = () => {
               onClick={() => setOpenHistoryDialog(false)}
             >
               Close
+            </StyledButton>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={openRejectDialog}
+          onClose={() => setOpenRejectDialog(false)}
+          PaperProps={{
+            sx: {
+              borderRadius: '12px'
+            }
+          }}
+        >
+          <DialogTitle sx={{
+            fontWeight: 600,
+            borderBottom: `1px solid ${professionalColors.border}`,
+            backgroundColor: professionalColors.surface
+          }}>
+            Reject Request
+          </DialogTitle>
+          <DialogContent sx={{ py: 3 }}>
+            <StyledTextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Rejection Reason"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions sx={{
+            p: 2,
+            borderTop: `1px solid ${professionalColors.border}`,
+            backgroundColor: professionalColors.surface
+          }}>
+            <StyledButton
+              onClick={() => setOpenRejectDialog(false)}
+              sx={{
+                color: professionalColors.textSecondary,
+                '&:hover': {
+                  backgroundColor: alpha(professionalColors.textSecondary, 0.05)
+                }
+              }}
+            >
+              Cancel
+            </StyledButton>
+            <StyledButton
+              onClick={confirmRejectRequest}
+              variant="contained"
+              color="error"
+              sx={{
+                backgroundColor: professionalColors.error,
+                '&:hover': {
+                  backgroundColor: alpha(professionalColors.error, 0.9)
+                }
+              }}
+            >
+              Reject
             </StyledButton>
           </DialogActions>
         </Dialog>

@@ -32,7 +32,6 @@ export default function ChangePasswordOnFirstLogin() {
       }));
     }
 
-    // Show loader for 2 seconds before revealing form
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 5000);

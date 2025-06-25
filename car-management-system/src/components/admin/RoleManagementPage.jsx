@@ -287,7 +287,7 @@ const RoleManagementPage = () => {
                           <th>Email</th>
                           <th>Status</th>
                           <th>Roles</th>
-                          <th className="text-end">Actions</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -339,13 +339,6 @@ const RoleManagementPage = () => {
                                 <Dropdown.Menu>
                                   <Dropdown.Item onClick={() => handleOpenAddRoleModal(user)}>
                                     <PlusCircle className="me-2" /> Add Role
-                                  </Dropdown.Item>
-                                  <Dropdown.Item onClick={() => handleToggleLock(user.id)}>
-                                    {user.isLocked ? (
-                                      <><Check className="me-2" /> Unlock User</>
-                                    ) : (
-                                      <><X className="me-2" /> Lock User</>
-                                    )}
                                   </Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
@@ -447,7 +440,7 @@ const RoleManagementPage = () => {
                         <tr>
                           <th>Role</th>
                           <th>Description</th>
-                          <th className="text-end">Actions</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>

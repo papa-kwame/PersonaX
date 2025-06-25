@@ -8,7 +8,6 @@ const api = axios.create({
   }
 });
 
-// Request interceptor for adding auth token if needed
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('authToken');
   if (token) {
@@ -19,14 +18,10 @@ api.interceptors.request.use(config => {
   return Promise.reject(error);
 });
 
-// Response interceptor for error handling
 api.interceptors.response.use(response => response, error => {
   if (error.response) {
-    // Handle specific status codes
     if (error.response.status === 401) {
-      // Handle unauthorized
     }
-    // Transform error message from API if available
     if (error.response.data && error.response.data.title) {
       error.message = error.response.data.title;
     }

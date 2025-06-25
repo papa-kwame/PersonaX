@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Grid, Paper, Typography, useTheme } from '@mui/material';
+import { Box, Grid } from '@mui/material';
 import VehicleAssignedCard from './VehicleAssignedCard';
 import UserMaintenanceRequests from '../new components/UserMaintenanceRequests';
 import CompactFuelStats from '../fuel/CompactFuelStats';
@@ -7,18 +7,17 @@ import FuelLogList from '../fuel/FuelLogList';
 import VehicleRequestsComponent from '../new components/VehicleRequestsComponent';
 
 const UserDashboard = () => {
-  const theme = useTheme();
-
   return (
     <Box
       sx={{
         p: { xs: 2, sm: 3, md: 4 },
         width: '100%',
-        maxWidth: '1800px', // constrain max width
-        margin: '0 auto', // center horizontally
+        maxWidth: '1800px',
+        margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center'
+        alignItems: 'center',
+        backgroundColor: 'transparent', 
       }}
     >
       <Grid container spacing={3}>

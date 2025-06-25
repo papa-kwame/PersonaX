@@ -39,64 +39,84 @@ const SchedulePage = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [progressUpdates, setProgressUpdates] = useState([]);
 
   const [scheduleData, setScheduleData] = useState({
     assignedMechanicId: '',
     maintenanceRequestId: '',
-    scheduledDate: new Date().toISOString().split('T')[0],
     reason: '',
     comments: ''
   });
 
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(prev => ({ ...prev, schedules: true, requests: true, mechanics: true }));
-      setError(null);
-
-      const [schedulesResponse, approvedRequestsResponse, mechanicsResponse] = await Promise.all([
-        api.get('api/MaintenanceRequest/schedules'),
-        api.get('api/MaintenanceRequest/approved-requests'),
-        api.get('api/Auth/mechanics')
-      ]);
-
-      const activitiesData = schedulesResponse.data.reduce((acc, schedule) => {
-        const date = new Date(schedule.scheduledDate).toISOString().split('T')[0];
-        if (!acc[date]) acc[date] = [];
-
-        acc[date].push({
-          id: schedule.id,
-          title: schedule.reason,
-          time: formatTime(schedule.scheduledDate),
-          type: 'maintenance',
-          licensePlate: schedule.licensePlate || 'N/A',
-          vehicleMake: schedule.vehicleMake || 'N/A',
-          vehicleModel: schedule.vehicleModel || 'N/A',
-          reason: schedule.reason || 'N/A',
-          priority: schedule.priority || 'Medium',
-          status: schedule.status || 'Scheduled',
-          mechanic: schedule.assignedMechanicName || 'Unassigned',
-          comments: schedule.comments || 'No comments',
-          requestId: schedule.maintenanceRequestId,
-          repairType: schedule.repairType || 'N/A' 
-        });
-        return acc;
-      }, {});
-
-      setActivities(activitiesData);
-      setSchedules(schedulesResponse.data);
-      setApprovedRequests(approvedRequestsResponse.data);
-      setMechanics(mechanicsResponse.data);
-    } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Failed to load data. Please try again later.');
-    } finally {
-      setLoading(prev => ({ ...prev, schedules: false, requests: false, mechanics: false }));
+  const formatDateString = (dateString) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date string:', dateString);
+      return new Date().toISOString();
     }
+    return date.toISOString();
   };
 
-  fetchData();
-}, []);
+  const isToday = (date) => {
+    const today = new Date();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(prev => ({ ...prev, schedules: true, requests: true, mechanics: true }));
+        setError(null);
+
+        const [schedulesResponse, approvedRequestsResponse, mechanicsResponse, progressUpdatesResponse] = await Promise.all([
+          api.get('api/MaintenanceRequest/schedules'),
+          api.get('api/MaintenanceRequest/approved-requests'),
+          api.get('api/Auth/mechanics'),
+          api.get('api/MaintenanceRequest/progress-updates')
+        ]);
+
+        const activitiesData = schedulesResponse.data.reduce((acc, schedule) => {
+          const date = new Date(formatDateString(schedule.scheduledDate)).toISOString().split('T')[0];
+          if (!acc[date]) acc[date] = [];
+
+          acc[date].push({
+            id: schedule.id,
+            title: schedule.reason,
+            time: formatTime(schedule.scheduledDate),
+            type: 'maintenance',
+            licensePlate: schedule.licensePlate || 'N/A',
+            vehicleMake: schedule.vehicleMake || 'N/A',
+            vehicleModel: schedule.vehicleModel || 'N/A',
+            reason: schedule.reason || 'N/A',
+            priority: schedule.priority || 'Medium',
+            status: schedule.status || 'Scheduled',
+            mechanic: schedule.assignedMechanicName || 'Unassigned',
+            comments: schedule.comments || 'No comments',
+            requestId: schedule.maintenanceRequestId,
+            repairType: schedule.repairType || 'N/A'
+          });
+          return acc;
+        }, {});
+
+        setActivities(activitiesData);
+        setSchedules(schedulesResponse.data);
+        setApprovedRequests(approvedRequestsResponse.data);
+        setMechanics(mechanicsResponse.data);
+        setProgressUpdates(progressUpdatesResponse.data);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setLoading(prev => ({ ...prev, schedules: false, requests: false, mechanics: false }));
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const filteredActivities = Object.entries(activities).reduce((acc, [date, activities]) => {
     const filtered = activities.filter(activity => {
@@ -114,7 +134,8 @@ useEffect(() => {
   }, {});
 
   const formatTime = (dateString) => {
-    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const date = new Date(formatDateString(dateString));
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const getDayActivityCount = (date) => {
@@ -217,7 +238,7 @@ useEffect(() => {
         scheduledDate: new Date(scheduleData.scheduledDate).toISOString()
       };
 
-      const response = await api.post(
+      await api.post(
         `api/MaintenanceRequest/${scheduleData.maintenanceRequestId}/schedule`,
         payload
       );
@@ -228,7 +249,7 @@ useEffect(() => {
       ]);
 
       const activitiesData = schedulesResponse.data.reduce((acc, schedule) => {
-        const date = new Date(schedule.scheduledDate).toISOString().split('T')[0];
+        const date = new Date(formatDateString(schedule.scheduledDate)).toISOString().split('T')[0];
         if (!acc[date]) acc[date] = [];
 
         acc[date].push({
@@ -245,7 +266,7 @@ useEffect(() => {
           mechanic: schedule.assignedMechanicName || 'Unassigned',
           comments: schedule.comments || 'No comments',
           requestId: schedule.maintenanceRequestId,
-          repairType:schedule.repairType
+          repairType: schedule.repairType || 'N/A'
         });
         return acc;
       }, {});
@@ -264,7 +285,6 @@ useEffect(() => {
     }
   };
 
-  // UI rendering functions
   const getPriorityBadgeColor = (priority) => {
     switch ((priority || '').toLowerCase()) {
       case 'high': return 'danger';
@@ -285,119 +305,114 @@ useEffect(() => {
     }
   };
 
-const renderWeekView = () => {
-  const weekDates = getWeekDates(currentDate);
-  const today = new Date().toDateString();
+  const renderWeekView = () => {
+    const weekDates = getWeekDates(currentDate);
 
-  return (
-    <div className="week-view-container">
-      <div className="week-header">
-        {weekDates.map((date, index) => {
-          const isToday = date.toDateString() === today;
-          const isWeekend = [0, 6].includes(date.getDay());
-          
-          return (
-            <div 
-              key={`header-${index}`}
-              className={`day-header ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''}`}
-            >
-              <div className="weekday-name">
-                {date.toLocaleDateString('en-US', { weekday: 'short' })}
-              </div>
-              <div className="date-number">
-                {date.getDate()}
-                {isToday && <div className="today-indicator"></div>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    return (
+      <div className="week-view-container">
+        <div className="week-header">
+          {weekDates.map((date, index) => {
+            const isWeekend = [0, 6].includes(date.getDay());
 
-      <div className="week-grid">
-        {weekDates.map((date, index) => {
-          const dateString = date.toISOString().split('T')[0];
-          const isToday = date.toDateString() === today;
-          const isCurrentMonth = date.getMonth() === currentDate.getMonth();
-          const isWeekend = [0, 6].includes(date.getDay());
-          const activityCount = getDayActivityCount(date);
-          const dayActivities = filteredActivities[dateString] || [];
-          const getPriorityColor = (priority) => {
-  switch (priority) {
-    case 'high':
-      return '#ff0000'; // Red for high priority
-    case 'medium':
-      return '#ffa500'; // Orange for medium priority
-    case 'low':
-      return '#008000'; // Green for low priority
-    default:
-      return '#000000'; // Default color
-  }
-};
-
-          return (
-            <div 
-              key={`day-${index}`}
-              className={`day-column ${isToday ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${!isCurrentMonth ? 'other-month' : ''}`}
-              onClick={() => handleDayClick(date)}
-            >
-              {/* Activity preview */}
-              {loading.schedules ? (
-                <div className="loading-indicator">
-                  <Spinner animation="border" size="sm" variant="primary" />
+            return (
+              <div
+                key={`header-${index}`}
+                className={`day-header ${isToday(date) ? 'today' : ''} ${isWeekend ? 'weekend' : ''}`}
+              >
+                <div className="weekday-name">
+                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
                 </div>
-              ) : (
-                <>
-                  {activityCount > 0 && (
-                    <div className="activities-preview">
-                      {/* Show up to 3 activity previews */}
-                      {dayActivities.slice(0, 3).map((activity, i) => (
-                        <div 
-                          key={i}
-                          className={`activity-preview ${activity.priority.toLowerCase()}`}
-                          style={{ borderLeft: `3px solid ${getPriorityColor(activity.priority)}` }}
+                <div className="date-number">
+                  {date.getDate()}
+                  {isToday(date) && <div className="today-indicator"></div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="week-grid">
+          {weekDates.map((date, index) => {
+            const dateString = date.toISOString().split('T')[0];
+            const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+            const isWeekend = [0, 6].includes(date.getDay());
+            const activityCount = getDayActivityCount(date);
+            const dayActivities = filteredActivities[dateString] || [];
+
+            const getPriorityColor = (priority) => {
+              switch (priority) {
+                case 'high':
+                  return '#ff0000';
+                case 'medium':
+                  return '#ffa500';
+                case 'low':
+                  return '#008000';
+                default:
+                  return '#000000';
+              }
+            };
+
+            return (
+              <div
+                key={`day-${index}`}
+                className={`day-column ${isToday(date) ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${!isCurrentMonth ? 'other-month' : ''}`}
+                onClick={() => handleDayClick(date)}
+              >
+                {loading.schedules ? (
+                  <div className="loading-indicator">
+                    <Spinner animation="border" size="sm" variant="primary" />
+                  </div>
+                ) : (
+                  <>
+                    {activityCount > 0 && (
+                      <div className="activities-preview">
+                        {dayActivities.slice(0, 3).map((activity, i) => (
+                          <div
+                            key={i}
+                            className={`activity-preview ${activity.priority.toLowerCase()}`}
+                            style={{ borderLeft: `3px solid ${getPriorityColor(activity.priority)}` }}
+                          >
+                            <div className="activity-title">
+                              {activity.repairType}
+                            </div>
+                            <div className="activity-vehicle">
+                              {activity.licensePlate}
+                            </div>
+                          </div>
+                        ))}
+
+                        {activityCount > 3 && (
+                          <div className="more-activities">
+                            +{activityCount - 3} more
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activityCount === 0 && isCurrentMonth && (
+                      <div className="empty-day">
+                        <button
+                          className="add-activity-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowRequestModal(true);
+                          }}
                         >
-                          <div className="activity-title">
-                            {activity.repairType}
-                          </div>
-                          <div className="activity-vehicle">
-                            {activity.licensePlate}
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {/* Show "+X more" if there are additional activities */}
-                      {activityCount > 3 && (
-                        <div className="more-activities">
-                          +{activityCount - 3} more
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Empty state */}
-                  {activityCount === 0 && isCurrentMonth && (
-                    <div className="empty-day">
-                      <button 
-                        className="add-activity-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowRequestModal(true);
-                        }}
-                      >
-                        <i className="bi bi-plus-lg"></i>
-                        <span>Schedule</span>
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          );
-        })}
+                          <i className="bi bi-plus-lg"></i>
+                          <span>Schedule</span>
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
+
   const renderMonthView = () => {
     const monthDates = getMonthDates(currentDate);
     const weeks = [];
@@ -422,7 +437,7 @@ const renderWeekView = () => {
                 <Col
                   key={dayIndex}
                   className={`day-cell ${isCurrentMonth ? 'current-month' : 'other-month'} ${
-                    date.toDateString() === new Date().toDateString() ? 'today' : ''
+                    isToday(date) ? 'today' : ''
                   }`}
                   onClick={() => isCurrentMonth && handleDayClick(date)}
                 >
@@ -447,144 +462,154 @@ const renderWeekView = () => {
     );
   };
 
-const renderDayModal = () => {
-  if (!selectedDay) return null;
+  const renderDayModal = () => {
+    if (!selectedDay) return null;
 
-  const dateString = selectedDay.toISOString().split('T')[0];
-  const dayActivities = filteredActivities[dateString] || [];
-  const formattedDate = selectedDay.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+    const dateString = selectedDay.toISOString().split('T')[0];
+    const dayActivities = filteredActivities[dateString] || [];
+    const formattedDate = selectedDay.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
 
-  return (
-    <Modal
-      show={showDayModal}
-      onHide={() => setShowDayModal(false)}
-      size="lg"
-      centered
-      className="day-modal"
-    >
-      <Modal.Header closeButton className="modal-header">
-        <Modal.Title className="d-flex align-items-center">
-          <div className="modal-icon">
-            <i className="bi bi-calendar-event"></i>
-          </div>
-          <div>
-            <h4 className="mb-0 fw-bold">{formattedDate}</h4>
-            <small className="opacity-80">
-              {dayActivities.length} scheduled {dayActivities.length === 1 ? 'activity' : 'activities'}
-            </small>
-          </div>
-        </Modal.Title>
-      </Modal.Header>
+    return (
+      <Modal
+        show={showDayModal}
+        onHide={() => setShowDayModal(false)}
+        size="lg"
+        centered
+        className="day-modal"
+      >
+        <Modal.Header closeButton className="modal-header">
+          <Modal.Title className="d-flex align-items-center">
+            <div className="modal-icon">
+              <i className="bi bi-calendar-event"></i>
+            </div>
+            <div>
+              <h4 className="mb-0 fw-bold">{formattedDate}</h4>
+              <small className="opacity-80">
+                {dayActivities.length} scheduled {dayActivities.length === 1 ? 'activity' : 'activities'}
+              </small>
+            </div>
+          </Modal.Title>
+        </Modal.Header>
 
-      <Modal.Body className="p-0">
-        {dayActivities.length > 0 ? (
-          <div className="activity-list">
-            {dayActivities.map(activity => (
-              <div key={activity.id} className={`activity-card activity-${activity.type}`}>
-                <div className="activity-time-badge">
-                  <span className="time">{activity.time}</span>
-                  <Badge pill bg={getPriorityBadgeColor(activity.priority)} className="ms-2">
-                    {activity.priority}
-                  </Badge>
-                  <Badge pill bg={getStatusBadgeColor(activity.status)} className="ms-2">
-                    {activity.status}
-                  </Badge>
-                </div>
+        <Modal.Body className="p-0">
+          {dayActivities.length > 0 ? (
+            <div className="activity-list">
+              {dayActivities.map(activity => {
+                const activityProgress = progressUpdates.find(update => update.scheduleId === activity.id);
 
-                <div className="activity-main">
-                  <h5 className="activity-title">
-                    <i className={`bi ${
-                      activity.type === 'maintenance' ? 'bi-tools' :
-                      activity.type === 'meeting' ? 'bi-people-fill' :
-                      activity.type === 'meal' ? 'bi-egg-fried' :
-                      'bi-exclamation-triangle'
-                    } me-2`}></i>
-                    {activity.repairType} {/* Display repairType here */}
-                  </h5>
-
-                  <div className="activity-details-grid">
-                    <div className="detail-item">
-                      <span className="detail-label">Vehicle:</span>
-                      <span className="detail-value">
-                        {activity.vehicleMake} {activity.vehicleModel}
-                      </span>
-                    </div>
-
-                    <div className="detail-item">
-                      <span className="detail-label">License Plate:</span>
-                      <span className="detail-value">{activity.licensePlate}</span>
-                    </div>
-
-                    <div className="detail-item">
-                      <span className="detail-label">Request ID:</span>
-                      <span className="detail-value">{activity.requestId}</span>
-                    </div>
-
-                    <div className="detail-item">
-                      <span className="detail-label">Assigned Mechanic:</span>
-                      <span className="detail-value">{activity.mechanic}</span>
-                    </div>
-                  </div>
-
-                  <div className="activity-reason">
-                    <h6>Reason:</h6>
-                    <p>{activity.reason}</p>
-                  </div>
-
-                  {activity.comments && (
-                    <div className="activity-comments">
-                      <h6>Mechanic Notes:</h6>
-                      <div className="comments-box">
-                        <i className="bi bi-chat-left-quote"></i>
-                        <p>{activity.comments}</p>
+                return (
+                  <div key={activity.id} className={`activity-card activity-${activity.type}`}>
+                    <div className="activity-time-badge">
+                      <h5 className="activity-title">
+                        <i className={`bi ${
+                          activity.type === 'maintenance' ? 'bi-tools' :
+                          activity.type === 'meeting' ? 'bi-people-fill' :
+                          activity.type === 'meal' ? 'bi-egg-fried' :
+                          'bi-exclamation-triangle'
+                        } me-2`}></i>
+                        {activity.repairType}
+                      </h5>
+                      <div>
+                        <Badge pill bg={getPriorityBadgeColor(activity.priority)} className="ms-2">
+                          {activity.priority}
+                        </Badge>
+                        <Badge pill bg={getStatusBadgeColor(activity.status)} className="ms-2">
+                          {activity.status}
+                        </Badge>
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state text-center py-5">
-            <i className="bi bi-calendar-x text-muted" style={{ fontSize: '3rem' }}></i>
-            <h4 className="mt-3">No maintenance scheduled</h4>
-            <p className="text-muted">
-              There are no activities scheduled for {formattedDate}
-            </p>
-            <Button
-              variant="primary"
-              className="mt-3"
-              onClick={() => {
-                setShowDayModal(false);
-                setShowRequestModal(true);
-              }}
-            >
-              <i className="bi bi-plus-circle me-2"></i>
-              Schedule Maintenance
-            </Button>
-          </div>
-        )}
-      </Modal.Body>
 
-      <Modal.Footer className="modal-footer">
-        <Button
-          variant="outline-secondary"
-          onClick={() => setShowDayModal(false)}
-          className="d-flex align-items-center"
-        >
-          <i className="bi bi-x-lg me-2"></i>
-          Close
-        </Button>
-      </Modal.Footer>
-    </Modal>
-  );
-};
+                    <div className="activity-main">
+                      <div className="activity-details-grid">
+                        <div className="detail-item">
+                          <span className="detail-label">Vehicle:</span>
+                          <span className="detail-value">
+                            {activity.vehicleMake} {activity.vehicleModel}
+                          </span>
+                        </div>
 
+                        <div className="detail-item">
+                          <span className="detail-label">License Plate:</span>
+                          <span className="detail-value">{activity.licensePlate}</span>
+                        </div>
+
+                        <div className="detail-item-mechanic">
+                          <span className="detail-label">Assigned Mechanic:</span>
+                          <span className="detail-value"> {activity.mechanic}</span>
+                        </div>
+                      </div>
+
+                      <div className="activity-reason">
+                        <h6>Reason:</h6>
+                        <p>{activity.reason}</p>
+                      </div>
+
+                      {activity.comments && (
+                        <div className="activity-comments">
+                          <h6>Mechanic Notes:</h6>
+                          <div className="comments-box">
+                            <i className="bi bi-chat-left-quote"></i>
+                            <p>{activity.comments}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {activityProgress && (
+                        <div className="activity-progress">
+                       
+                          <div className="progress-box">
+                          
+                            <p><strong>Expected Completion:</strong> {new Date(activityProgress.expectedCompletionDate).toLocaleString()}</p>
+
+                          </div>
+                        </div>
+                      )}
+                                            {activityProgress && (
+                        <div className="activity-progress">
+                       
+                          <div className="progress-box">
+                          
+             
+                            <p><strong>Comment:</strong> {activityProgress.comment}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-state text-center py-5">
+              <i className="bi bi-calendar-x text-muted" style={{ fontSize: '3rem' }}></i>
+              <h4 className="mt-3">No maintenance scheduled</h4>
+              <p className="text-muted">
+                There are no activities scheduled for {formattedDate}
+              </p>
+              <Button
+                variant="primary"
+                className="mt-3"
+                onClick={() => {
+                  setShowDayModal(false);
+                  setShowRequestModal(true);
+                }}
+              >
+                <i className="bi bi-plus-circle me-2"></i>
+                Schedule Maintenance
+              </Button>
+            </div>
+          )}
+        </Modal.Body>
+
+
+      </Modal>
+    );
+  };
 
   const renderScheduleModal = () => {
     if (!selectedRequest) return null;
@@ -643,7 +668,7 @@ const renderDayModal = () => {
             <Form.Group className="mb-3">
               <Form.Label>
                 <i className="bi bi-person-wrench me-2"></i>
-                Assigned Mechanic *
+                Assigned Mechanic 
               </Form.Label>
               <Form.Control
                 as="select"
@@ -662,25 +687,6 @@ const renderDayModal = () => {
               </Form.Control>
               <Form.Text className="text-muted">
                 Select the mechanic responsible for this maintenance
-              </Form.Text>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>
-                <i className="bi bi-calendar-date me-2"></i>
-                Scheduled Date *
-              </Form.Label>
-              <Form.Control
-                type="date"
-                name="scheduledDate"
-                value={scheduleData.scheduledDate}
-                onChange={handleInputChange}
-                min={new Date().toISOString().split('T')[0]}
-                required
-                className="form-control-lg"
-              />
-              <Form.Text className="text-muted">
-                Select the date when maintenance should be performed
               </Form.Text>
             </Form.Group>
 
@@ -743,8 +749,10 @@ const renderDayModal = () => {
       >
         <Modal.Header closeButton className="modal-header">
           <Modal.Title>
-            <i className="bi bi-list-check me-2"></i>
-            Approved Maintenance Requests ({approvedRequests.length})
+            <div className='me22'>
+              <i className="bi bi-list-check me-2 me333"></i>
+              Approved Requests ({approvedRequests.length})
+            </div>
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -824,7 +832,6 @@ const renderDayModal = () => {
 
   return (
     <Container className="schedule-container">
-      {/* Success Alert */}
       {success && (
         <Alert variant="success" onClose={() => setSuccess(null)} dismissible className="mt-3">
           <i className="bi bi-check-circle-fill me-2"></i>
@@ -832,7 +839,6 @@ const renderDayModal = () => {
         </Alert>
       )}
 
-      {/* Error Alert */}
       {error && !showScheduleModal && (
         <Alert variant="danger" onClose={() => setError(null)} dismissible className="mt-3">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -845,7 +851,7 @@ const renderDayModal = () => {
           <div className='divider'>
             <h2 className="page-title">
               <i className="bi bi-calendar-week me-2"></i>
-             Schedule
+              Schedule
             </h2>
           </div>
         </Col>
@@ -900,7 +906,6 @@ const renderDayModal = () => {
         </Col>
       </Row>
 
-      {/* Current View Display */}
       <div className="current-view-display mb-3">
         <h5 className="text-muted">
           {viewMode === 'week' ? (
@@ -911,7 +916,6 @@ const renderDayModal = () => {
         </h5>
       </div>
 
-      {/* Main Calendar View */}
       {loading.schedules ? (
         <div className="text-center py-5 loading-state">
           <Spinner animation="border" variant="primary" />
@@ -919,7 +923,6 @@ const renderDayModal = () => {
         </div>
       ) : viewMode === 'week' ? renderWeekView() : renderMonthView()}
 
-      {/* Modals */}
       {renderDayModal()}
       {renderRequestListModal()}
       {renderScheduleModal()}

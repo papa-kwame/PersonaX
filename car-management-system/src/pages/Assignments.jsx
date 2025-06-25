@@ -77,7 +77,7 @@ const Assignment = () => {
 
   const [state, setState] = useState({
     loading: true,
-    activeTab: view === 'history' ? 'history' : 'current',
+    activeTab: view === 'history' ? 'history' : 'vehicleList',
     currentAssignments: [],
     allAssignments: [],
     users: [],
@@ -495,16 +495,7 @@ const Assignment = () => {
           Manage vehicle assignments and requests
         </Typography>
       </Box>
-      <Box sx={{ ml: 'auto', display: 'flex', gap: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setState(prev => ({ ...prev, showRequestModal: true }))}
-          sx={{ borderRadius: '8px' }}
-        >
-          New Request
-        </Button>
-      </Box>
+
     </Box>
   );
 
@@ -531,20 +522,13 @@ const Assignment = () => {
           icon: <CarIcon fontSize="medium" />,
           color: theme.palette.info.main,
           bgColor: theme.palette.info.light
-        },
-        {
-          title: 'Pending Requests',
-          value: state.stats.pendingRequests,
-          icon: <PendingActionsIcon fontSize="medium" />,
-          color: theme.palette.warning.main,
-          bgColor: theme.palette.warning.light
         }
       ].map((stat, index) => (
-        <Grid item xs={12} sm={6} md={3} key={index}>
+        <Grid item xs={12} sm={9} md={7} key={index}>
           <Card
             sx={{
               height: '100%',
-              width:'350px',
+              width:'480px',
               borderRadius: '12px',
               boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
               transition: 'all 0.3s ease',
@@ -634,7 +618,6 @@ const Assignment = () => {
             <TableRow>
               <TableCell sx={{ fontWeight: 'bold' }}>Vehicle</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>User</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Assignment Date</TableCell>
               <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -670,9 +653,7 @@ const Assignment = () => {
                       </Box>
                     </Box>
                   </TableCell>
-                  <TableCell>
-                    {safeFormat(assignment.assignmentDate, 'PP')}
-                  </TableCell>
+
                   <TableCell align="right">
                     <Tooltip title="View vehicle details">
                       <IconButton
@@ -1768,6 +1749,13 @@ const Assignment = () => {
               }}
             >
               <Tab 
+                value="vehicleList" 
+                label="Vehicle List" 
+                icon={<CarIcon />} 
+                iconPosition="start"
+                sx={{ textTransform: 'none' }}
+              />
+              <Tab 
                 value="current" 
                 label="Current Assignments" 
                 icon={<AssignmentIcon />} 
@@ -1781,13 +1769,7 @@ const Assignment = () => {
                 iconPosition="start"
                 sx={{ textTransform: 'none' }}
               />
-              <Tab 
-                value="vehicleList" 
-                label="Vehicle List" 
-                icon={<CarIcon />} 
-                iconPosition="start"
-                sx={{ textTransform: 'none' }}
-              />
+
             </Tabs>
           </Box>
 

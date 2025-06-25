@@ -1567,7 +1567,6 @@ const MaintenanceRequestApp = () => {
                   }}>
                     No Maintenance Requests
                   </Typography>
-
                 </Box>
               )}
             </>

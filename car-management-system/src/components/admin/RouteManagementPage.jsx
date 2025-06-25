@@ -3,7 +3,7 @@ import {
   Button, Badge, Alert, Card, Container,
   Row, Col, Modal, Table, InputGroup,
   Dropdown, Form, Spinner, ListGroup, Tab, Tabs,
-  FloatingLabel, CloseButton
+  FloatingLabel, CloseButton, Toast, ToastContainer
 } from 'react-bootstrap';
 import {
   PersonCheck, Search, PencilSquare,
@@ -13,11 +13,8 @@ import {
 import axios from 'axios';
 
 const RouteManagementPage = () => {
-  // State management
   const [showRouteModal, setShowRouteModal] = useState(false);
   const [showUserPanel, setShowUserPanel] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('routes');
   const [currentRoute, setCurrentRoute] = useState({
@@ -25,11 +22,15 @@ const RouteManagementPage = () => {
     name: '',
     department: '',
     description: '',
-    users: []
+    users: [],
+    isDefault: false
   });
   const [userSearch, setUserSearch] = useState('');
   const [selectedUserRole, setSelectedUserRole] = useState('Comment');
   const [isEditing, setIsEditing] = useState(false);
+
+  // Toast notifications
+  const [toasts, setToasts] = useState([]);
 
   // Data from API
   const [users, setUsers] = useState([]);
@@ -46,6 +47,22 @@ const RouteManagementPage = () => {
     ROLES: `${API_BASE}/Routes/roles`
   };
 
+  // Add a new toast
+  const addToast = (message, variant = 'success') => {
+    const id = Date.now();
+    setToasts(toasts => [...toasts, { id, message, variant }]);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      removeToast(id);
+    }, 5000);
+  };
+
+  // Remove a toast
+  const removeToast = (id) => {
+    setToasts(toasts => toasts.filter(toast => toast.id !== id));
+  };
+
   // Safe API fetch function
   const fetchData = async (endpoint, defaultValue = []) => {
     try {
@@ -53,6 +70,7 @@ const RouteManagementPage = () => {
       return Array.isArray(response?.data) ? response.data : defaultValue;
     } catch (err) {
       console.error(`Error fetching ${endpoint}:`, err);
+      addToast(`Failed to load data from ${endpoint}`, 'danger');
       return defaultValue;
     }
   };
@@ -61,7 +79,6 @@ const RouteManagementPage = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
-      setError('');
 
       try {
         const [usersData, routesData, deptsData] = await Promise.all([
@@ -74,7 +91,7 @@ const RouteManagementPage = () => {
         setRoutes(routesData);
         setDepartmentOptions(deptsData);
       } catch (err) {
-        setError('Failed to load application data. Please try again later.');
+        addToast('Failed to load application data. Please try again later.', 'danger');
       } finally {
         setLoading(false);
       }
@@ -104,7 +121,6 @@ const RouteManagementPage = () => {
   // Route operations handler
   const handleRouteOperation = async (operation, routeData, routeId = null) => {
     setLoading(true);
-    setError('');
 
     try {
       let response;
@@ -128,9 +144,9 @@ const RouteManagementPage = () => {
       setRoutes(updatedRoutes);
       return response.data;
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 
+      const errorMsg = err.response?.data?.message ||
                      `Failed to ${operation} route. Please try again.`;
-      setError(errorMsg);
+      addToast(errorMsg, 'danger');
       throw err;
     } finally {
       setLoading(false);
@@ -143,7 +159,8 @@ const RouteManagementPage = () => {
       name: '',
       department: '',
       description: '',
-      users: []
+      users: [],
+      isDefault: false
     });
     setIsEditing(false);
     setShowRouteModal(true);
@@ -162,7 +179,8 @@ const RouteManagementPage = () => {
         role: user.role || 'Comment',
         email: user.userEmail || '',
         name: user.userName || user.userEmail?.split('@')[0] || 'Unknown'
-      }))
+      })),
+      isDefault: route.isDefault || false
     });
     setIsEditing(true);
     setShowRouteModal(true);
@@ -172,9 +190,9 @@ const RouteManagementPage = () => {
     // Check all required roles are assigned
     const assignedRoles = currentRoute.users.map(u => u.role);
     const missingRoles = requiredRolesInOrder.filter(r => !assignedRoles.includes(r));
-    
+
     if (missingRoles.length > 0) {
-      setError(`All roles must be assigned. Missing: ${missingRoles.join(', ')}`);
+      addToast(`All roles must be assigned. Missing: ${missingRoles.join(', ')}`, 'danger');
       return false;
     }
 
@@ -189,7 +207,7 @@ const RouteManagementPage = () => {
       .map(([role]) => role);
 
     if (duplicateRoles.length > 0) {
-      setError(`Each role must have exactly one user. Duplicates found for: ${duplicateRoles.join(', ')}`);
+      addToast(`Each role must have exactly one user. Duplicates found for: ${duplicateRoles.join(', ')}`, 'danger');
       return false;
     }
 
@@ -204,9 +222,9 @@ const RouteManagementPage = () => {
     for (let i = 0; i < requiredRolesInOrder.length - 1; i++) {
       const currentRole = requiredRolesInOrder[i];
       const nextRole = requiredRolesInOrder[i + 1];
-      
+
       if (rolePositions[currentRole] > rolePositions[nextRole]) {
-        setError('Roles must be in order: Comment → Review → Commit → Approve');
+        addToast('Roles must be in order: Comment → Review → Commit → Approve', 'danger');
         return false;
       }
     }
@@ -216,7 +234,7 @@ const RouteManagementPage = () => {
 
   const saveRoute = async () => {
     if (!currentRoute.name?.trim() || !currentRoute.department) {
-      setError('Route name and department are required');
+      addToast('Route name and department are required', 'danger');
       return;
     }
 
@@ -232,14 +250,14 @@ const RouteManagementPage = () => {
       name: currentRoute.name.trim(),
       department: currentRoute.department,
       description: currentRoute.description?.trim() || '',
-      users: usersToSend
+      users: usersToSend,
+      isDefault: currentRoute.isDefault
     };
 
     try {
       setLoading(true);
-      setError('');
 
-      const endpoint = isEditing 
+      const endpoint = isEditing
         ? `${API_ENDPOINTS.ROUTES}/${currentRoute.id}`
         : API_ENDPOINTS.ROUTES;
 
@@ -250,13 +268,14 @@ const RouteManagementPage = () => {
       const updatedRoutes = await fetchData(API_ENDPOINTS.ROUTES);
       setRoutes(updatedRoutes);
 
-      setSuccess(`Route ${isEditing ? 'updated' : 'created'} successfully`);
+      addToast(`Route ${isEditing ? 'updated' : 'created'} successfully`);
       setShowRouteModal(false);
     } catch (err) {
-      setError(
+      addToast(
         err.response?.data?.message ||
         err.response?.data?.title ||
-        'Failed to save route. Please check the data and try again.'
+        'Failed to save route. Please check the data and try again.',
+        'danger'
       );
     } finally {
       setLoading(false);
@@ -269,7 +288,7 @@ const RouteManagementPage = () => {
 
     try {
       await handleRouteOperation('delete', null, routeId);
-      setSuccess('Route deleted successfully');
+      addToast('Route deleted successfully');
     } catch (err) {
       // Error is already handled in handleRouteOperation
     }
@@ -281,7 +300,7 @@ const RouteManagementPage = () => {
     // Find the user in the users list
     const user = users.find(u => u.id === userId);
     if (!user) {
-      setError('User not found');
+      addToast('User not found', 'danger');
       return;
     }
 
@@ -291,7 +310,7 @@ const RouteManagementPage = () => {
       // Update the existing user's role
       setCurrentRoute(prev => ({
         ...prev,
-        users: prev.users.map(u => 
+        users: prev.users.map(u =>
           u.id === userId ? { ...u, role } : u
         )
       }));
@@ -310,8 +329,6 @@ const RouteManagementPage = () => {
         ]
       }));
     }
-
-    setError('');
   };
 
   const removeUserFromRoute = (userId) => {
@@ -364,8 +381,8 @@ const RouteManagementPage = () => {
         className="shadow-sm"
       >
         {requiredRolesInOrder.map(role => (
-          <option 
-            key={role} 
+          <option
+            key={role}
             value={role}
             disabled={currentRoute.users.some(u => u.role === role && u.id !== user.id)}
           >
@@ -386,16 +403,32 @@ const RouteManagementPage = () => {
     }
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (error) setError('');
-      if (success) setSuccess('');
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [error, success]);
-
   return (
     <Container fluid className="py-4 px-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+      {/* Toast Notifications */}
+      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 11 }}>
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            onClose={() => removeToast(toast.id)}
+            show={true}
+            delay={5000}
+            autohide
+            bg={toast.variant}
+            className="shadow"
+          >
+            <Toast.Header className={`bg-${toast.variant} text-white`}>
+              <strong className="me-auto">
+                {toast.variant === 'success' ? 'Success' : 'Error'}
+              </strong>
+            </Toast.Header>
+            <Toast.Body className="text-white">
+              {toast.message}
+            </Toast.Body>
+          </Toast>
+        ))}
+      </ToastContainer>
+
       <Row className="mb-4 align-items-center">
         <Col>
           <div className="d-flex align-items-center justify-content-between">
@@ -408,12 +441,12 @@ const RouteManagementPage = () => {
                 <p className="text-muted mb-0">Create and manage approval routes</p>
               </div>
             </div>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={openNewRouteModal}
               className="d-flex align-items-center shadow-sm"
               disabled={loading}
-              style={{ 
+              style={{
                 backgroundColor: '#4e73df',
                 borderColor: '#4e73df',
                 fontWeight: 500
@@ -429,24 +462,6 @@ const RouteManagementPage = () => {
           </div>
         </Col>
       </Row>
-
-      {error && (
-        <Alert variant="danger" onClose={() => setError('')} dismissible className="mb-4 shadow-sm">
-          <div className="d-flex align-items-center">
-            <X size={20} className="me-2" />
-            <strong>Error:</strong> {error}
-          </div>
-        </Alert>
-      )}
-      
-      {success && (
-        <Alert variant="success" onClose={() => setSuccess('')} dismissible className="mb-4 shadow-sm">
-          <div className="d-flex align-items-center">
-            <CheckCircle size={20} className="me-2" />
-            <strong>Success:</strong> {success}
-          </div>
-        </Alert>
-      )}
 
       <Card className="shadow-sm border-0">
         <Card.Body className="p-0">
@@ -481,13 +496,14 @@ const RouteManagementPage = () => {
                                   <Building size={12} className="me-1" />
                                   {route.department || 'No Department'}
                                 </Badge>
+                                {route.isDefault && <Badge bg="info" text="white" className="mb-2 ms-1">Default</Badge>}
                                 <p className="text-muted mb-2 small">
                                   {route.description || 'No description provided'}
                                 </p>
                               </div>
                               <div>
-                                <Button 
-                                  variant="outline-secondary" 
+                                <Button
+                                  variant="outline-secondary"
                                   size="sm"
                                   onClick={() => openEditRouteModal(route)}
                                   className="me-2"
@@ -495,8 +511,8 @@ const RouteManagementPage = () => {
                                 >
                                   <PencilSquare size={16} />
                                 </Button>
-                                <Button 
-                                  variant="outline-danger" 
+                                <Button
+                                  variant="outline-danger"
                                   size="sm"
                                   onClick={() => deleteRoute(route.id)}
                                   disabled={loading}
@@ -505,7 +521,7 @@ const RouteManagementPage = () => {
                                 </Button>
                               </div>
                             </div>
-                            
+
                             <div className="mb-3 flex-grow-1">
                               <h6 className="small text-uppercase text-muted mb-2 d-flex align-items-center">
                                 <ChatSquareText size={14} className="me-2" />
@@ -514,7 +530,7 @@ const RouteManagementPage = () => {
                               <div className="table-responsive">
                                 <Table hover className="mb-0">
                                   <thead>
-                                    <tr>                                
+                                    <tr>
                                       <th className="small text-uppercase text-muted">Role</th>
                                       <th className="small text-uppercase text-muted">User</th>
                                     </tr>
@@ -524,13 +540,12 @@ const RouteManagementPage = () => {
                                       .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
                                       .map((user, index) => (
                                         <tr key={`${route.id}-${user.userId}`}>
-                                            <td>{renderUserCell(user)}</td>
-
+                                          <td>{renderUserCell(user)}</td>
                                           <td>
-                                            <Badge 
-                                              bg="info" 
+                                            <Badge
+                                              bg="info"
                                               className="text-capitalize"
-                                              style={{ 
+                                              style={{
                                                 backgroundColor: getRoleColor(user.role),
                                                 color: 'white'
                                               }}
@@ -556,12 +571,12 @@ const RouteManagementPage = () => {
                     </div>
                     <h4 style={{ color: '#2c3e50' }}>No routes created yet</h4>
                     <p className="text-muted mb-4">Create your first approval route to get started</p>
-                    <Button 
-                      variant="primary" 
+                    <Button
+                      variant="primary"
                       onClick={openNewRouteModal}
                       className="d-inline-flex align-items-center shadow-sm"
                       disabled={loading}
-                      style={{ 
+                      style={{
                         backgroundColor: '#4e73df',
                         borderColor: '#4e73df',
                         fontWeight: 500
@@ -582,12 +597,12 @@ const RouteManagementPage = () => {
         </Card.Body>
       </Card>
 
-      <Modal 
-        show={showRouteModal} 
+      <Modal
+        show={showRouteModal}
         onHide={() => {
           setShowRouteModal(false);
           setShowUserPanel(false);
-        }} 
+        }}
         centered
         backdrop="static"
         size="lg"
@@ -597,7 +612,7 @@ const RouteManagementPage = () => {
           <Modal.Title className="fw-bold" style={{ color: '#2c3e50' }}>
             {isEditing ? 'Edit Approval Route' : 'Create New Route'}
           </Modal.Title>
-          <CloseButton 
+          <CloseButton
             onClick={() => {
               setShowRouteModal(false);
               setShowUserPanel(false);
@@ -612,8 +627,8 @@ const RouteManagementPage = () => {
                 <Row className="g-3">
                   <Col md={6}>
                     <FloatingLabel controlId="routeName" label="Route Name" className="mb-3">
-                      <Form.Control 
-                        type="text" 
+                      <Form.Control
+                        type="text"
                         value={currentRoute.name}
                         onChange={(e) => setCurrentRoute({...currentRoute, name: e.target.value})}
                         placeholder="e.g. Payroll Approval"
@@ -621,7 +636,7 @@ const RouteManagementPage = () => {
                         className="shadow-sm"
                       />
                       <Form.Control.Feedback type="invalid">
-                        Workflow name is required
+                      Route name is required
                       </Form.Control.Feedback>
                     </FloatingLabel>
                   </Col>
@@ -629,7 +644,12 @@ const RouteManagementPage = () => {
                     <FloatingLabel controlId="routeDepartment" label="Department">
                       <Form.Select
                         value={currentRoute.department}
-                        onChange={(e) => setCurrentRoute({...currentRoute, department: e.target.value})}
+                        onChange={(e) => {
+                          if (!currentRoute.isDefault) {
+                            setCurrentRoute({ ...currentRoute, department: e.target.value });
+                          }
+                        }}
+                        disabled={currentRoute.isDefault}
                         isInvalid={!currentRoute.department}
                         className="shadow-sm"
                       >
@@ -646,15 +666,31 @@ const RouteManagementPage = () => {
                 </Row>
 
                 <FloatingLabel controlId="routeDescription" label="Description" className="mt-3">
-                  <Form.Control 
-                    as="textarea" 
+                  <Form.Control
+                    as="textarea"
                     style={{ height: '100px' }}
                     value={currentRoute.description}
                     onChange={(e) => setCurrentRoute({...currentRoute, description: e.target.value})}
-                    placeholder="Describe what this workflow is for"
+                    placeholder="Describe what this Route is for"
                     className="shadow-sm"
                   />
                 </FloatingLabel>
+
+                <Form.Group controlId="defaultRoute" className="mb-3 mt-3">
+                  <Form.Check
+                    type="checkbox"
+                    label="Set this as the default fallback route"
+                    checked={currentRoute.isDefault}
+                    onChange={(e) => {
+                      const isDefault = e.target.checked;
+                      setCurrentRoute({
+                        ...currentRoute,
+                        isDefault,
+                        department: isDefault ? 'Default' : currentRoute.department
+                      });
+                    }}
+                  />
+                </Form.Group>
 
                 <div className="mt-4">
                   <div className="d-flex justify-content-between align-items-center mb-3">
@@ -662,13 +698,13 @@ const RouteManagementPage = () => {
                       <ChatSquareText size={16} className="me-2" />
                       Approval Flow ({currentRoute.users.length}/4)
                     </h6>
-                    <Button 
+                    <Button
                       variant={showUserPanel ? 'primary' : 'outline-primary'}
                       size="sm"
                       onClick={() => setShowUserPanel(!showUserPanel)}
                       className="d-flex align-items-center shadow-sm"
                       disabled={currentRoute.users.length >= 4}
-                      style={{ 
+                      style={{
                         backgroundColor: showUserPanel ? '#4e73df' : 'transparent',
                         borderColor: '#4e73df',
                         color: showUserPanel ? 'white' : '#4e73df'
@@ -678,7 +714,7 @@ const RouteManagementPage = () => {
                       {showUserPanel ? 'Hide Users' : 'Add Users'}
                     </Button>
                   </div>
-                  
+
                   {currentRoute.users.length > 0 ? (
                     <div className="table-responsive">
                       <Table hover className="mb-0">
@@ -694,14 +730,13 @@ const RouteManagementPage = () => {
                             .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
                             .map((user, index) => (
                               <tr key={user.id}>
- 
                                 <td>
                                   {renderRoleDropdown(user)}
                                 </td>
                                 <td>{renderUserCell(user)}</td>
                                 <td className="text-center">
-                                  <Button 
-                                    variant="outline-danger" 
+                                  <Button
+                                    variant="outline-danger"
                                     size="sm"
                                     onClick={() => removeUserFromRoute(user.id)}
                                     className="shadow-sm"
@@ -717,7 +752,7 @@ const RouteManagementPage = () => {
                   ) : (
                     <div className="border rounded p-4 text-center bg-white shadow-sm">
                       <PersonCheck size={24} className="text-muted mb-2" />
-                      <p className="text-muted mb-0">No users assigned to this workflow</p>
+                      <p className="text-muted mb-0">No users assigned to this Route</p>
                     </div>
                   )}
 
@@ -726,7 +761,7 @@ const RouteManagementPage = () => {
                       <div className="d-flex align-items-center">
                         <ArrowRepeat size={16} className="me-2" />
                         <div>
-                          <strong>Note:</strong> All 4 roles must be assigned in order: 
+                          <strong>Note:</strong> All 4 roles must be assigned in order:
                           <ol className="mt-2 mb-0">
                             <li>Comment</li>
                             <li>Review</li>
@@ -748,9 +783,9 @@ const RouteManagementPage = () => {
                     <PersonPlus size={16} className="me-2" />
                     Select Employee
                   </h6>
-                  <Button 
-                    variant="link" 
-                    size="sm" 
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={() => setShowUserPanel(false)}
                     className="p-0 text-muted"
                   >
@@ -768,8 +803,8 @@ const RouteManagementPage = () => {
                     className="shadow-sm"
                   >
                     {requiredRolesInOrder.map(role => (
-                      <option 
-                        key={role} 
+                      <option
+                        key={role}
                         value={role}
                         disabled={currentRoute.users.some(u => u.role === role)}
                       >
@@ -800,13 +835,13 @@ const RouteManagementPage = () => {
                   {filteredUsers.length > 0 ? (
                     <ListGroup variant="flush">
                       {filteredUsers.map(user => (
-                        <ListGroup.Item 
-                          key={user.id} 
+                        <ListGroup.Item
+                          key={user.id}
                           action
                           onClick={() => addUserToRoute(user.id)}
                           className="d-flex align-items-center border-0"
                           disabled={currentRoute.users.some(u => u.id === user.id)}
-                          style={{ 
+                          style={{
                             cursor: currentRoute.users.some(u => u.id === user.id) ? 'not-allowed' : 'pointer',
                             opacity: currentRoute.users.some(u => u.id === user.id) ? 0.6 : 1
                           }}
@@ -827,8 +862,8 @@ const RouteManagementPage = () => {
           </div>
         </Modal.Body>
         <Modal.Footer className="border-0" style={{ backgroundColor: '#f8f9fa' }}>
-          <Button 
-            variant="outline-secondary" 
+          <Button
+            variant="outline-secondary"
             onClick={() => {
               setShowRouteModal(false);
               setShowUserPanel(false);
@@ -838,12 +873,12 @@ const RouteManagementPage = () => {
           >
             Cancel
           </Button>
-          <Button 
-            variant="primary" 
-            onClick={saveRoute} 
+          <Button
+            variant="primary"
+            onClick={saveRoute}
             disabled={loading || !currentRoute.name || !currentRoute.department || currentRoute.users.length !== 4}
             className="shadow-sm"
-            style={{ 
+            style={{
               backgroundColor: '#4e73df',
               borderColor: '#4e73df',
               fontWeight: 500
@@ -854,8 +889,8 @@ const RouteManagementPage = () => {
                 <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                 {isEditing ? 'Updating...' : 'Creating...'}
               </>
-            ) : isEditing ? 'Update Workflow' : 'Create Workflow'
-           } </Button>
+            ) : isEditing ? 'Update Route' : 'Create Route'}
+          </Button>
         </Modal.Footer>
       </Modal>
     </Container>

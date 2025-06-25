@@ -37,7 +37,7 @@ const MyVehicleRequests = () => {
               primary={`Request Reason: ${request.requestReason}`}
               secondary={
                 <>
-                  <Typography component="span" variant="body2" color="textPrimary">
+                  <Typography component="span" variant="body2" color="textPrimary">   
                     Status: {request.status}
                   </Typography>
                   <br />

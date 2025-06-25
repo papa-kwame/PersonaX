@@ -2,41 +2,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getVehicleById, createVehicle, updateVehicle } from '../../services/vehicles';
-import {
-  Box,
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  Container,
-  Divider,
-  Grid,
-  MenuItem,
-  TextField,
-  Typography,
-  LinearProgress,
-  Alert,
-  Stack,
-  Paper
-} from '@mui/material';
-import {
-  Save as SaveIcon,
-  Add as AddIcon,
-  ArrowBack as ArrowBackIcon
-} from '@mui/icons-material';
 
 export default function VehicleForm() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-
   function generateGUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
 
   const [formData, setFormData] = useState({
     id: generateGUID(),
@@ -118,7 +95,6 @@ export default function VehicleForm() {
         ? parseFloat(value) || 0 : value
     }));
 
-    // Validate field on change if form has been submitted
     if (isSubmitted) {
       validateField(name, value);
     }
@@ -172,19 +148,6 @@ export default function VehicleForm() {
     return Object.keys(errors).length === 0;
   };
 
-  if (loading) return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <LinearProgress />
-      <Typography variant="body1" sx={{ mt: 2 }}>Loading vehicle data...</Typography>
-    </Container>
-  );
-
-  if (error) return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Alert severity="error" sx={{ mb: 3 }}>Error: {error}</Alert>
-    </Container>
-  );
-
   const vehicleTypes = [
     { value: 'Sedan', label: 'Sedan' },
     { value: 'SUV', label: 'SUV' },
@@ -210,188 +173,218 @@ export default function VehicleForm() {
   ];
 
   const fields = [
-    { name: 'make', label: 'Make *', required: true, xs: 12, sm: 6, md: 4 },
-    { name: 'model', label: 'Model *', required: true, xs: 12, sm: 6, md: 4 },
+    { name: 'make', label: 'Make', required: true, col: 'col-md-4' },
+    { name: 'model', label: 'Model', required: true, col: 'col-md-4' },
     { 
       name: 'year', 
-      label: 'Year *', 
+      label: 'Year', 
       type: 'number', 
       required: true,
-      inputProps: { min: 1900, max: new Date().getFullYear() + 1 },
-      xs: 12, sm: 6, md: 4 
+      attrs: { min: 1900, max: new Date().getFullYear() + 1 },
+      col: 'col-md-4' 
     },
-    { name: 'licensePlate', label: 'License Plate *', required: true, xs: 12, sm: 6, md: 4 },
-    { name: 'vin', label: 'VIN *', required: true, xs: 12, sm: 6, md: 4 },
+    { name: 'licensePlate', label: 'License Plate', required: true, col: 'col-md-4' },
+    { name: 'vin', label: 'VIN', required: true, col: 'col-md-4' },
     { 
       name: 'currentMileage', 
       label: 'Current Mileage', 
       type: 'number',
-      inputProps: { min: 0 },
-      xs: 12, sm: 6, md: 4 
+      attrs: { min: 0 },
+      col: 'col-md-4' 
     },
-    { name: 'color', label: 'Color', xs: 12, sm: 6, md: 4 },
-    { name: 'purchaseDate', label: 'Purchase Date', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { name: 'color', label: 'Color', col: 'col-md-4' },
+    { name: 'purchaseDate', label: 'Purchase Date', type: 'date', col: 'col-md-4' },
     { 
       name: 'purchasePrice', 
       label: 'Purchase Price ($)', 
       type: 'number',
-      inputProps: { step: 0.01, min: 0 },
-      xs: 12, sm: 6, md: 4 
+      attrs: { step: 0.01, min: 0 },
+      col: 'col-md-4' 
     },
-    { name: 'lastServiceDate', label: 'Last Service Date', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
-    { name: 'nextServiceDue', label: 'Next Service Due', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { name: 'lastServiceDate', label: 'Last Service Date', type: 'date', col: 'col-md-4' },
+    { name: 'nextServiceDue', label: 'Next Service Due', type: 'date', col: 'col-md-4' },
     { 
       name: 'serviceInterval', 
       label: 'Service Interval (miles)', 
       type: 'number',
-      inputProps: { min: 0 },
-      xs: 12, sm: 6, md: 4 
+      attrs: { min: 0 },
+      col: 'col-md-4' 
     },
     { 
       name: 'engineSize', 
       label: 'Engine Size (cc)', 
       type: 'number',
-      inputProps: { min: 0 },
-      xs: 12, sm: 6, md: 4 
+      attrs: { min: 0 },
+      col: 'col-md-4' 
     },
-    { name: 'roadworthyExpiry', label: 'Roadworthy Expiry', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
-    { name: 'registrationExpiry', label: 'Registration Expiry', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
-    { name: 'insuranceExpiry', label: 'Insurance Expiry', type: 'date', InputLabelProps: { shrink: true }, xs: 12, sm: 6, md: 4 },
+    { name: 'roadworthyExpiry', label: 'Roadworthy Expiry', type: 'date', col: 'col-md-4' },
+    { name: 'registrationExpiry', label: 'Registration Expiry', type: 'date', col: 'col-md-4' },
+    { name: 'insuranceExpiry', label: 'Insurance Expiry', type: 'date', col: 'col-md-4' },
     { 
       name: 'seatingCapacity', 
       label: 'Seating Capacity', 
       type: 'number',
-      inputProps: { min: 1 },
-      xs: 12, sm: 6, md: 4 
+      attrs: { min: 1 },
+      col: 'col-md-4' 
     },
   ];
 
+  if (loading) return (
+    <div className="container mt-4">
+      <div className="progress">
+        <div className="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
+      </div>
+      <p className="mt-3">Loading vehicle data...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="container mt-4">
+      <div className="alert alert-danger">{error}</div>
+    </div>
+  );
+
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Card elevation={3}>
-        <CardHeader 
-          title={<Typography variant="h4">{id ? 'Edit Vehicle' : 'Add New Vehicle'}</Typography>}
-          sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }}
-        />
-        <Divider />
-        <CardContent>
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            <Grid container spacing={3}>
+    <div className="container-fluid "  style={{ maxWidth: '1550px',maxHeight: '150px' }}>
+      <div className="card shadow">
+        <div className="card-header bg-primary text-white">
+          <h3 className="mb-0">{id ? 'Edit Vehicle' : 'Add New Vehicle'}</h3>
+        </div>
+        <div className="card-body">
+          {error && <div className="alert alert-danger mb-4">{error}</div>}
+          
+          <form onSubmit={handleSubmit}>
+            <div className="row g-3">
               {/* Standard fields */}
               {fields.map((field) => (
-                <Grid item key={field.name} xs={field.xs} sm={field.sm} md={field.md}>
-                  <TextField
-                    fullWidth
-                    label={field.label}
+                <div key={field.name} className={field.col || 'col-md-6'}>
+                  <label htmlFor={field.name} className="form-label">
+                    {field.label} {field.required && <span className="text-danger">*</span>}
+                  </label>
+                  <input
+                    id={field.name}
+                    className={`form-control ${validationErrors[field.name] ? 'is-invalid' : ''}`}
+                    type={field.type || 'text'}
                     name={field.name}
                     value={formData[field.name]}
                     onChange={handleChange}
-                    type={field.type || 'text'}
-                    error={!!validationErrors[field.name]}
-                    helperText={validationErrors[field.name]}
                     required={field.required}
-                    InputLabelProps={field.InputLabelProps}
-                    inputProps={field.inputProps}
+                    {...(field.attrs || {})}
                   />
-                </Grid>
+                  {validationErrors[field.name] && (
+                    <div className="invalid-feedback">{validationErrors[field.name]}</div>
+                  )}
+                </div>
               ))}
 
               {/* Status dropdown */}
-              <Grid item xs={12} sm={6} md={4}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Status *"
+              <div className="col-md-4">
+                <label htmlFor="status" className="form-label">
+                  Status <span className="text-danger">*</span>
+                </label>
+                <select
+                  id="status"
+                  className={`form-select ${validationErrors.status ? 'is-invalid' : ''}`}
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  error={!!validationErrors.status}
-                  helperText={validationErrors.status}
                 >
                   {statusOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
+                    <option key={option.value} value={option.value}>
                       {option.label}
-                    </MenuItem>
+                    </option>
                   ))}
-                </TextField>
-              </Grid>
+                </select>
+                {validationErrors.status && (
+                  <div className="invalid-feedback">{validationErrors.status}</div>
+                )}
+              </div>
 
               {/* Vehicle Type dropdown */}
-              <Grid item xs={12} sm={6} md={4}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Vehicle Type"
+              <div className="col-md-4">
+                <label htmlFor="vehicleType" className="form-label">Vehicle Type</label>
+                <select
+                  id="vehicleType"
+                  className={`form-select ${validationErrors.vehicleType ? 'is-invalid' : ''}`}
                   name="vehicleType"
                   value={formData.vehicleType}
                   onChange={handleChange}
-                  error={!!validationErrors.vehicleType}
-                  helperText={validationErrors.vehicleType}
                 >
                   {vehicleTypes.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
+                    <option key={option.value} value={option.value}>
                       {option.label}
-                    </MenuItem>
+                    </option>
                   ))}
-                </TextField>
-              </Grid>
+                </select>
+                {validationErrors.vehicleType && (
+                  <div className="invalid-feedback">{validationErrors.vehicleType}</div>
+                )}
+              </div>
 
               {/* Fuel Type dropdown */}
-              <Grid item xs={12} sm={6} md={4}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Fuel Type"
+              <div className="col-md-4">
+                <label htmlFor="fuelType" className="form-label">Fuel Type</label>
+                <select
+                  id="fuelType"
+                  className={`form-select ${validationErrors.fuelType ? 'is-invalid' : ''}`}
                   name="fuelType"
                   value={formData.fuelType}
                   onChange={handleChange}
-                  error={!!validationErrors.fuelType}
-                  helperText={validationErrors.fuelType}
                 >
                   {fuelTypes.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
+                    <option key={option.value} value={option.value}>
                       {option.label}
-                    </MenuItem>
+                    </option>
                   ))}
-                </TextField>
-              </Grid>
+                </select>
+                {validationErrors.fuelType && (
+                  <div className="invalid-feedback">{validationErrors.fuelType}</div>
+                )}
+              </div>
 
               {/* Notes textarea */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  label="Notes"
+              <div className="col-12">
+                <label htmlFor="notes" className="form-label">Notes</label>
+                <textarea
+                  id="notes"
+                  className={`form-control ${validationErrors.notes ? 'is-invalid' : ''}`}
                   name="notes"
+                  rows="4"
                   value={formData.notes}
                   onChange={handleChange}
-                  error={!!validationErrors.notes}
-                  helperText={validationErrors.notes}
-                />
-              </Grid>
-            </Grid>
+                ></textarea>
+                {validationErrors.notes && (
+                  <div className="invalid-feedback">{validationErrors.notes}</div>
+                )}
+              </div>
+            </div>
 
-            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 4 }}>
-              <Button
-                variant="outlined"
-                startIcon={<ArrowBackIcon />}
-                onClick={() => navigate('/dashboard')}
+            <div className="d-flex justify-content-end mt-4 gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => navigate('/vehicles')}
               >
-                Cancel
-              </Button>
-              <Button
+                <i className="bi bi-arrow-left me-2"></i>Cancel
+              </button>
+              <button
                 type="submit"
-                variant="contained"
-                color="primary"
-                startIcon={id ? <SaveIcon /> : <AddIcon />}
+                className="btn btn-primary"
               >
-                {id ? 'Update Vehicle' : 'Add Vehicle'}
-              </Button>
-            </Stack>
-          </Box>
-        </CardContent>
-      </Card>
-    </Container>
+                {id ? (
+                  <>
+                    <i className="bi bi-save me-2"></i>Update Vehicle
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-plus-lg me-2"></i>Add Vehicle
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
-}
+} 

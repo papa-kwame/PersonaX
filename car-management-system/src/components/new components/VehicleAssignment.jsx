@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Modal, Button, Form, ListGroup, Spinner, Card, Badge } from "react-bootstrap";
 import api from "../../services/api";
-import "./VehicleAssignment.css"; // You'll create this CSS file
+import "./VehicleAssignment.css";
 
 export default function DirectVehicleAssignment() {
   const [show, setShow] = useState(false);
@@ -17,43 +17,45 @@ export default function DirectVehicleAssignment() {
   const [recentAssignments, setRecentAssignments] = useState([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
 
-  const fetchUsers = async (query) => {
+  // Search functionality with proper filtering
+  const fetchUsers = useCallback(async (query) => {
     if (!query.trim()) {
       setUsers([]);
       return;
     }
     setLoadingUsers(true);
     try {
-      const { data } = await api.get("/api/Auth/users", {
-        params: { query },
-      });
-      setUsers(data);
+      const { data } = await api.get("/api/Auth/users", { params: { query } });
+      setUsers(data.filter(user => 
+        user.userName.toLowerCase().includes(query.toLowerCase())
+      ));
     } catch (err) {
       console.error("Failed to fetch users:", err);
     } finally {
       setLoadingUsers(false);
     }
-  };
+  }, []);
 
-  const fetchVehicles = async (query) => {
+  const fetchVehicles = useCallback(async (query) => {
     if (!query.trim()) {
       setVehicles([]);
       return;
     }
     setLoadingVehicles(true);
     try {
-      const { data } = await api.get("/api/Vehicles", {
-        params: { query },
-      });
-      setVehicles(data);
+      const { data } = await api.get("/api/Vehicles", { params: { query } });
+      setVehicles(data.filter(vehicle => 
+        vehicle.model.toLowerCase().includes(query.toLowerCase()) || 
+        vehicle.licensePlate.toLowerCase().includes(query.toLowerCase())
+      ));
     } catch (err) {
       console.error("Failed to fetch vehicles:", err);
     } finally {
       setLoadingVehicles(false);
     }
-  };
+  }, []);
 
-  const fetchRecentAssignments = async () => {
+  const fetchRecentAssignments = useCallback(async () => {
     setLoadingAssignments(true);
     try {
       const { data } = await api.get("/api/VehicleAssignment/RecentAssignments");
@@ -63,11 +65,11 @@ export default function DirectVehicleAssignment() {
     } finally {
       setLoadingAssignments(false);
     }
-  };
+  }, []);
 
   const handleShow = () => setShow(true);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setShow(false);
     setSelectedUser(null);
     setSelectedVehicle(null);
@@ -75,7 +77,7 @@ export default function DirectVehicleAssignment() {
     setSearchVehicleQuery("");
     setUsers([]);
     setVehicles([]);
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -99,7 +101,7 @@ export default function DirectVehicleAssignment() {
 
   useEffect(() => {
     fetchRecentAssignments();
-  }, []);
+  }, [fetchRecentAssignments]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -111,7 +113,7 @@ export default function DirectVehicleAssignment() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchUserQuery]);
+  }, [searchUserQuery, fetchUsers]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -123,7 +125,7 @@ export default function DirectVehicleAssignment() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchVehicleQuery]);
+  }, [searchVehicleQuery, fetchVehicles]);
 
   return (
     <div className="vehicle-assignment-container">
@@ -150,20 +152,17 @@ export default function DirectVehicleAssignment() {
                     <Badge bg="dark">{assignment.licensePlate}</Badge>
                     <div className="license-badgediv">
                         <h5 className="license-badgeh5">{assignment.vehicleMake}-{assignment.vehicleModel}</h5>
-                       
                     </div>
                   </div>
                   <Card.Body>
                     <div className="vehicle-header">
-                    <div className="vehicle-icons">
-                      <div className="vehicle-icon">
-                        <i className="bi bi-car-front-fill"></i>
-                      </div>
+                      <div className="vehicle-icons">
+                        <div className="vehicle-icon">
+                          <i className="bi bi-car-front-fill"></i>
+                        </div>
                         <span className="detail-value">{assignment.userName}</span>
                       </div>
-                      <div className="vehicle-info">
-
-                      </div>
+                      <div className="vehicle-info"></div>
                     </div>
                   </Card.Body>
                   <Card.Footer>
@@ -195,7 +194,10 @@ export default function DirectVehicleAssignment() {
                 type="text"
                 placeholder="Start typing username..."
                 value={searchUserQuery}
-                onChange={(e) => setSearchUserQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchUserQuery(e.target.value);
+                  if (selectedUser) setSelectedUser(null);
+                }}
                 className="search-input"
               />
               {loadingUsers && (
@@ -229,7 +231,10 @@ export default function DirectVehicleAssignment() {
                 type="text"
                 placeholder="Search by model or license..."
                 value={searchVehicleQuery}
-                onChange={(e) => setSearchVehicleQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchVehicleQuery(e.target.value);
+                  if (selectedVehicle) setSelectedVehicle(null);
+                }}
                 className="search-input"
               />
               {loadingVehicles && (

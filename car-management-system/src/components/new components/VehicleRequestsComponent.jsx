@@ -1,116 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { Modal, Button, Badge, Spinner, Alert } from 'react-bootstrap';
 import {
-  Box,
-  Typography,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
-  Divider,
-  Paper,
-  Grid,
-  CircularProgress,
-  Alert,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Modal,
-  Fade,
-  Backdrop,
-  Stepper,
-  Step,
-  StepLabel,
-  Chip,
-  styled
-} from '@mui/material';
-import {
-  DirectionsCar as DirectionsCarIcon,
-  ExpandMore as ExpandMoreIcon,
-  CalendarToday as CalendarTodayIcon,
-  Comment as CommentIcon,
-  CheckCircleOutline as CheckCircleOutlineIcon,
-  Pending as PendingIcon,
-  Cancel as CancelIcon,
-  HourglassTop as HourglassTopIcon,
-  AssignmentTurnedIn as AssignmentTurnedInIcon
-} from '@mui/icons-material';
-import { blue } from '@mui/material/colors';
+  CarFront,
+  Calendar,
+  ChatLeftText,
+  CheckCircle,
+  ClockHistory,
+  XCircle,
+  Hourglass,
+  CardChecklist
+} from 'react-bootstrap-icons';
 import VehicleRequestForm from './VehicleRequestForm';
 
-// Custom styled components
-const StatusChip = styled(Chip)(({ theme }) => ({
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-  fontSize: '0.7rem'
-}));
+const workflowStages = ['Comment', 'Review', 'Commit', 'Approval', 'Completed'];
 
-const RequestPaper = styled(Paper)(({ theme }) => ({
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: theme.shadows[4]
-  }
-}));
-
-const VehicleAvatar = styled(Avatar)(({ theme }) => ({
-  backgroundColor: theme.palette.primary.light,
-  color: theme.palette.primary.contrastText
-}));
-
-const WorkflowStep = styled(Step)(({ theme }) => ({
-  '& .MuiStepLabel-label': {
-    fontSize: '0.75rem',
-    '&.Mui-active, &.Mui-completed': {
-      fontWeight: 600,
-    }
-  },
-  '& .MuiStepIcon-root': {
-    color: theme.palette.grey[400],
-    '&.Mui-active': {
-      color: theme.palette.primary.main
-    },
-    '&.Mui-completed': {
-      color: theme.palette.success.main
-    }
-  }
-}));
-
-const MinimalAccordion = styled(Accordion)(({ theme }) => ({
-  boxShadow: 'none',
-  '&:before': {
-    display: 'none'
-  },
-  '&.Mui-expanded': {
-    margin: 0
-  }
-}));
-
-const style = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: { xs: '95%', sm: '90%', md: '850px' },
-  maxHeight: '90vh',
-  bgcolor: 'background.paper',
-  boxShadow: 24,
-  p: 3,
-  borderRadius: 2,
-  overflowY: 'auto',
-  '&::-webkit-scrollbar': {
-    width: '6px'
-  },
-  '&::-webkit-scrollbar-thumb': {
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    borderRadius: '3px'
+const statusBadge = (status) => {
+  switch (status) {
+    case 0:
+      return <Badge bg="warning" className="d-flex align-items-center gap-1">
+        <Hourglass size={14} /> Pending
+      </Badge>;
+    case 1:
+      return <Badge bg="success" className="d-flex align-items-center gap-1">
+        <CheckCircle size={14} /> Approved
+      </Badge>;
+    case 2:
+      return <Badge bg="danger" className="d-flex align-items-center gap-1">
+        <XCircle size={14} /> Rejected
+      </Badge>;
+    default:
+      return <Badge bg="secondary" className="d-flex align-items-center gap-1">
+        <ClockHistory size={14} /> Unknown
+      </Badge>;
   }
 };
 
-const workflowStages = ['Create', 'Comment', 'Review', 'Commit', 'Approval', 'Completed'];
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 const VehicleRequestsComponent = () => {
   const { userId } = useAuth();
@@ -122,7 +57,7 @@ const VehicleRequestsComponent = () => {
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [workflowStatus, setWorkflowStatus] = useState(null);
   const [workflowLoading, setWorkflowLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -149,7 +84,7 @@ const VehicleRequestsComponent = () => {
     try {
       setCommentsLoading(true);
       const response = await api.get(`/api/VehicleAssignment/vehicle-requests/${requestId}/comments`);
-      setComments(response.data.Comments || []);
+      setComments(response.data.comments || []);
     } catch (err) {
       console.error('Error fetching comments:', err);
       setError('Failed to fetch comments');
@@ -175,523 +110,297 @@ const VehicleRequestsComponent = () => {
     setSelectedRequest(request);
     await fetchComments(request.id);
     await fetchWorkflowStatus(request.id);
-    setOpen(true);
+    setShowModal(true);
   };
 
-  const handleClose = () => setOpen(false);
-
-  const getStatusChip = (status) => {
-    switch (status) {
-      case 0:
-        return (
-          <StatusChip
-            icon={<HourglassTopIcon fontSize="small" />}
-            label="Pending"
-            color="warning"
-            variant="outlined"
-            size="small"
-          />
-        );
-      case 1:
-        return (
-          <StatusChip
-            icon={<CheckCircleOutlineIcon fontSize="small" />}
-            label="Approved"
-            color="success"
-            variant="outlined"
-            size="small"
-          />
-        );
-      case 2:
-        return (
-          <StatusChip
-            icon={<CancelIcon fontSize="small" />}
-            label="Rejected"
-            color="error"
-            variant="outlined"
-            size="small"
-          />
-        );
-      default:
-        return (
-          <StatusChip
-            icon={<PendingIcon fontSize="small" />}
-            label="Unknown"
-            color="default"
-            variant="outlined"
-            size="small"
-          />
-        );
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const handleCloseModal = () => setShowModal(false);
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
-        <CircularProgress size={60} thickness={4} />
-      </Box>
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '250px' }}>
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ my: 2, borderRadius: 2 }}>
+      <Alert variant="danger" className="my-3 rounded">
         {error}
       </Alert>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3,minWidth:'400px',height: '245px', borderRadius: '12px', background :'white'}}}>
-      <Typography variant="h8" component="h" gutterBottom sx={{
-        fontWeight: 200,
-        color: 'text.primary',
-        mb: 3,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.5,
-        
-      }}>
-        <DirectionsCarIcon color="primary" />
-        My Vehicle Requests
-      </Typography>
+    <div className="p-4 bg-white rounded-3 shadow-sm" style={{ minHeight: '250px', maxHeight: '250px', overflowY: 'auto' }}>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h5 className="d-flex align-items-center gap-2 mb-0">
+          <CarFront className="text-primary" /> My Vehicle Requests
+        </h5>
+        <VehicleRequestForm className="btn-sm" />
+      </div>
 
- <Grid container spacing={2}>
-  <Grid item xs={12}>
-    {requests.length === 0 ? (
-      <Box 
-        textAlign="center" 
-        py={4}
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        gap={2}
-        width={550}
-      >
-        <Typography variant="body1" color="text.secondary">
-          No vehicle requests found.
-        </Typography>
-        <VehicleRequestForm />
-      </Box>
-    ) : (
-      <List disablePadding sx={{ width: '100%' }}>
-        {requests.map((request) => (
-          <React.Fragment key={request.id}>
-            <ListItem
-              button
-              onClick={() => handleRequestClick(request)}
-              sx={{
-                py: 2,
-                px: 2,
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  backgroundColor: 'action.hover'
-                },
-                display: 'flex',
-                alignItems: 'flex-start'
-              }}
-            >
-              <ListItemAvatar sx={{ minWidth: 48, mr: 1.5 }}>
-                <VehicleAvatar sx={{ width: 40, height: 40 }}>
-                  <DirectionsCarIcon fontSize="small" />
-                </VehicleAvatar>
-              </ListItemAvatar>
-              <ListItemText
-                primary={
-                  <Typography variant="subtitle1" fontWeight={500}>
-                    {request.vehicle?.make || 'No vehicle'} {request.vehicle?.model || ''}
-                  </Typography>
-                }
-                secondary={
-                  <>
-                    <Box 
-                      display="flex" 
-                      alignItems="center" 
-                      gap={1} 
-                      mb={1}
-                    >
-                      <Typography
-                        component="span"
-                        variant="body2"
-                        color="text.primary"
-                        fontWeight={500}
-                      >
-                        {request.vehicle?.licensePlate || 'No license plate'}
-                      </Typography>
-                    </Box>
-                    <Box 
-                      display="flex" 
-                      alignItems="center" 
-                      gap={1.5} 
-                      flexWrap="wrap"
-                    >
-                      {getStatusChip(request.status)}
-                      <Box 
-                        display="flex" 
-                        alignItems="center" 
-                        gap={0.8}
-                        sx={{ color: 'text.secondary' }}
-                      >
-                        <CalendarTodayIcon fontSize="inherit" />
-                        <Typography variant="caption">
-                          {formatDate(request.requestDate)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </>
-                }
-                sx={{ my: 0 }}
-              />
-            </ListItem>
-            <Divider 
-              component="li" 
-              sx={{ 
-                mx: 2,
-                my: 0.5
-              }} 
-            />
-          </React.Fragment>
-        ))}
-      </List>
-    )}
-  </Grid>
-</Grid>
-      <Modal
-        aria-labelledby="transition-modal-title"
-        aria-describedby="transition-modal-description"
-        open={open}
-        onClose={handleClose}
-        closeAfterTransition
-        BackdropComponent={Backdrop}
-        BackdropProps={{
-          timeout: 500,
-        }}
-      >
-        <Fade in={open}>
-          <Box sx={style}>
-            <Typography id="transition-modal-title" variant="h6" component="h2" sx={{
-              fontWeight: 600,
-              mb: 2,
-              color: 'text.primary',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5
-            }}>
-              <AssignmentTurnedInIcon color="primary" />
-              Request Details
-            </Typography>
+      <div className="row">
+        <div className="col-12">
+          {requests.length === 0 ? (
+            <div className="d-flex flex-column align-items-center justify-content-center" 
+                 style={{ 
+                   height: 'calc(250px - 100px)', // Adjust based on your header height
+                   marginTop: '-1rem' // Compensate for padding
+                 }}>
+              <div className="bg-light rounded-circle p-4 mb-3">
+                <CarFront size={32} className="text-muted" />
+              </div>
+              <h6 className="text-muted mb-2">No vehicle requests found</h6>
+              <p className="text-muted small text-center mb-0" style={{ maxWidth: '300px' }}>
+                Click the button above to create a new request
+              </p>
+            </div>
+          ) : (
+            <div className="list-group list-group-flush border-top border-bottom">
+              {requests.map((request) => (
+                <button
+                  key={request.id}
+                  className="list-group-item list-group-item-action p-3 border-0 border-bottom"
+                  onClick={() => handleRequestClick(request)}
+                >
+                  <div className="d-flex align-items-start gap-3">
+                    <div className="bg-primary bg-opacity-10 text-primary rounded-circle p-2 d-flex align-items-center justify-content-center"
+                      style={{ width: '40px', height: '40px' }}>
+                      <CarFront size={18} />
+                    </div>
+                    <div className="flex-grow-1">
+                      <div className="d-flex justify-content-between align-items-start">
+                        <h6 className="mb-1 fw-semibold">
+                          {request.vehicle?.make || 'No vehicle'} {request.vehicle?.model || ''}
+                        </h6>
+                        <div className="ms-2">
+                          {statusBadge(request.status)}
+                        </div>
+                      </div>
+                      <div className="mb-1">
+                        <span className="text-muted small">License: </span>
+                        <span className="fw-semibold">{request.vehicle?.licensePlate || 'N/A'}</span>
+                      </div>
+                      <div className="d-flex align-items-center gap-2 flex-wrap">
+                        <div className="d-flex align-items-center gap-1 text-muted small">
+                          <Calendar size={12} />
+                          <span>{formatDate(request.requestDate)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
-            {selectedRequest && (
-              <Box>
-                {/* Workflow Status Section */}
-                <Paper elevation={0} sx={{
-                  p: 2,
-                  mb: 3,
-                  borderRadius: 2,
-                  backgroundColor: 'background.default'
-                }}>
-                  <Box sx={{ width: '100%', overflowX: 'auto', pb: 1 }}>
-                    <Stepper
-                      activeStep={workflowStages.indexOf(workflowStatus?.currentStage || 'Create')}
-                      alternativeLabel
-                      sx={{ minWidth: '700px' }}
-                    >
-                      {workflowStages.map((label) => (
-                        <WorkflowStep key={label}>
-                          <StepLabel>{label}</StepLabel>
-                        </WorkflowStep>
-                      ))}
-                    </Stepper>
-                  </Box>
+      <Modal show={showModal} onHide={handleCloseModal} size="lg" centered>
+        <Modal.Header closeButton className="border-bottom-0 pb-0">
+          <Modal.Title className="d-flex align-items-center gap-2">
+            <CardChecklist className="text-primary" /> Request Details
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-0">
+          {selectedRequest && (
+            <div>
+              <div className="card mb-4 border-0 shadow-sm">
+                <div className="card-body">
+                  <h6 className="card-title text-muted mb-3">REQUEST STATUS</h6>
+                  <div className="d-flex flex-column gap-3">
+                    <div style={{ overflowX: 'auto' }}>
+                      <div className="d-flex justify-content-between position-relative" style={{ width: '100%' }}>
+                        <div className="position-absolute top-50 start-0 end-0" style={{ height: '2px', backgroundColor: '#e9ecef', zIndex: 1 }}>
+                          <div
+                            className="h-100 bg-primary"
+                            style={{
+                              width: `${((workflowStages.indexOf(workflowStatus?.currentStage) + 1) / workflowStages.length) * 100}%`,
+                              transition: 'width 0.3s ease'
+                            }}
+                          ></div>
+                        </div>
 
-                  {workflowStatus?.pendingActions && workflowStatus.pendingActions.length > 0 && (
-                    <Box sx={{
-                      mt: 2,
-                      p: 1.5,
-                      backgroundColor: 'action.hover',
-                      borderRadius: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}>
-                      <PendingIcon fontSize="small" color="warning" />
-                      <Typography variant="body2">
-                        <strong>Pending:</strong> {workflowStatus.pendingActions[0].userName} ({workflowStatus.pendingActions[0].role})
-                      </Typography>
-                    </Box>
-                  )}
-                </Paper>
+                        {workflowStages.map((stage, index) => {
+                          const isActive = workflowStatus?.currentStage === stage;
+                          const isCompleted = workflowStatus?.completedActions?.[stage];
+                          const isPending = !isActive && !isCompleted;
 
-                <Grid container spacing={3} sx={{ mt: 1 }}>
-                  <Grid item xs={12} md={9}>
-                    <Paper variant="outlined" sx={{
-                      p: 2,
-                      height: '100%',
-                      borderRadius: 2,
-                      borderColor: 'divider'
-                    }}>
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        mb: 2,
-                        pb: 1,
-                        borderBottom: '1px solid',
-                        borderColor: 'divider'
-                      }}>
-                        <DirectionsCarIcon fontSize="small" color="primary" />
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                          Vehicle Information
-                        </Typography>
-                      </Box>
-
-                      {selectedRequest.vehicle ? (
-                        <Grid container spacing={1.5}>
-                          <Grid item xs={6}>
-                            <DetailItem
-                              label="Make"
-                              value={selectedRequest.vehicle.make}
-                            />
-                          </Grid>
-                          <Grid item xs={6}>
-                            <DetailItem
-                              label="Model"
-                              value={selectedRequest.vehicle.model}
-                            />
-                          </Grid>
-                          <Grid item xs={12}>
-                            <DetailItem
-                              label="License Plate"
-                              value={selectedRequest.vehicle.licensePlate}
-                            />
-                          </Grid>
-                        </Grid>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                          No vehicle assigned
-                        </Typography>
-                      )}
-                    </Paper>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Paper variant="outlined" sx={{
-                      p: 2,
-                      height: '100%',
-                      borderRadius: 2,
-                      borderColor: 'divider'
-                    }}>
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        mb: 2,
-                        pb: 1,
-                        borderBottom: '1px solid',
-                        borderColor: 'divider'
-                      }}>
-                        <CalendarTodayIcon fontSize="small" color="primary" />
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                          Request Details
-                        </Typography>
-                      </Box>
-
-                      <Grid container spacing={1.5}>
-                        <Grid item xs={6}>
-                          <DetailItem
-                            label="Status"
-                            value={<Box sx={{ mt: 0.5 }}>{getStatusChip(selectedRequest.status)}</Box>}
-                          />
-                        </Grid>
-                        <Grid item xs={6}>
-                          <DetailItem
-                            label="Request Date"
-                            value={formatDate(selectedRequest.requestDate)}
-                          />
-                        </Grid>
-
-                        <Grid item xs={12}>
-                          <Typography variant="caption" color="text.secondary" component="div">
-                            Reason
-                          </Typography>
-                          <Paper variant="outlined" sx={{
-                            p: 1.5,
-                            mt: 0.5,
-                            borderRadius: 1,
-                            backgroundColor: 'action.hover',
-                            borderColor: 'divider'
-                          }}>
-                            <Typography variant="body2" whiteSpace="pre-line">
-                              {selectedRequest.requestReason || 'No reason provided'}
-                            </Typography>
-                          </Paper>
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                  </Grid>
-
-                  {/* Comments Section */}
-                  <Grid item xs={12}>
-                    <Paper variant="outlined" sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      borderColor: 'divider'
-                    }}>
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        mb: 2,
-                        pb: 1,
-                        borderBottom: '1px solid',
-                        borderColor: 'divider'
-                      }}>
-                        <CommentIcon fontSize="small" color="primary" />
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                          Activity & Comments
-                        </Typography>
-                      </Box>
-
-                      {commentsLoading ? (
-                        <Box display="flex" justifyContent="center" py={3}>
-                          <CircularProgress size={24} />
-                        </Box>
-                      ) : comments.length === 0 ? (
-                        <Box textAlign="center" py={2}>
-                          <Typography variant="body2" color="text.secondary">
-                            No comments or activity recorded
-                          </Typography>
-                        </Box>
-                      ) : (
-                        <Box sx={{
-                          maxHeight: '400px',
-                          overflowY: 'auto',
-                          pr: 1,
-                          '&::-webkit-scrollbar': {
-                            width: '6px'
-                          },
-                          '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: 'rgba(0,0,0,0.1)',
-                            borderRadius: '3px'
-                          }
-                        }}>
-                          {comments.map((comment, index) => (
-                            <Box
-                              key={index}
-                              sx={{
-                                mb: 2,
-                                '&:last-child': { mb: 0 }
-                              }}
+                          return (
+                            <div
+                              key={stage}
+                              className="d-flex flex-column align-items-center position-relative"
+                              style={{ width: `${100 / workflowStages.length}%`, zIndex: 2 }}
                             >
-                              <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                mb: 1
-                              }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Chip
-                                    label={comment.Stage}
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{
-                                      fontWeight: 500,
-                                      fontSize: '0.65rem',
-                                      height: '22px'
-                                    }}
-                                  />
-                                  <Typography variant="caption" color="text.secondary">
-                                    {formatDate(comment.Timestamp)}
-                                  </Typography>
-                                </Box>
-                              </Box>
-                              <Paper variant="outlined" sx={{
-                                p: 1.5,
-                                borderRadius: 1,
-                                borderColor: 'divider',
-                                backgroundColor: index % 2 === 0 ? 'background.paper' : 'action.hover'
-                              }}>
-                                <Typography variant="body2" whiteSpace="pre-line">
-                                  {comment.Comment}
-                                </Typography>
-                              </Paper>
-                            </Box>
-                          ))}
-                        </Box>
+                              <div
+                                className={`rounded-circle d-flex align-items-center justify-content-center mb-1
+                                  ${isActive ? 'bg-primary text-white' :
+                                    isCompleted ? 'bg-success text-white' :
+                                      'bg-light text-muted border'}`}
+                                style={{
+                                  width: '32px',
+                                  height: '32px',
+                                  border: isPending ? '1px solid #dee2e6' : 'none'
+                                }}
+                              >
+                                {index + 1}
+                              </div>
+                              <small className={`text-center ${isActive ? 'fw-bold text-primary' : isCompleted ? 'text-success' : 'text-muted'}`}>
+                                {stage}
+                              </small>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {workflowStatus?.pendingActions?.length > 0 && (
+                      <div className="alert alert-warning d-flex align-items-center gap-2 mb-0 py-2 border-0">
+                        <ClockHistory size={16} />
+                        <div className="small">
+                          <strong>Pending Action:</strong> {workflowStatus.pendingActions[0].userName} ({workflowStatus.pendingActions[0].role})
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="row g-4">
+                <div className="col-md-5">
+                  <div className="card h-100 border-0 shadow-sm">
+                    <div className="card-header bg-white border-0 d-flex align-items-center gap-2 py-3">
+                      <CarFront size={16} className="text-primary" /> <span className="fw-semibold">Vehicle Information</span>
+                    </div>
+                    <div className="card-body pt-0">
+                      {selectedRequest.vehicle ? (
+                        <div className="row">
+                          <div className="col-md-6 mb-3">
+                            <label className="form-label text-muted small mb-1">Make</label>
+                            <p className="mb-0 fw-medium">{selectedRequest.vehicle.make || 'N/A'}</p>
+                          </div>
+                          <div className="col-md-6 mb-3">
+                            <label className="form-label text-muted small mb-1">Model</label>
+                            <p className="mb-0 fw-medium">{selectedRequest.vehicle.model || 'N/A'}</p>
+                          </div>
+          
+                          <div className="col-md-6 mb-3">
+                            <label className="form-label text-muted small mb-1">License Plate</label>
+                            <p className="mb-0 fw-medium">{selectedRequest.vehicle.licensePlate || 'N/A'}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4">
+                          <div className="bg-light rounded-circle p-3 d-inline-block mb-3">
+                            <CarFront size={24} className="text-muted" />
+                          </div>
+                          <p className="text-muted mb-0">No vehicle assigned</p>
+                        </div>
                       )}
-                    </Paper>
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
-          </Box>
-        </Fade>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="card h-100 border-0 shadow-sm">
+                    <div className="card-header bg-white border-0 d-flex align-items-center gap-2 py-3">
+                      <span className="fw-semibold">Request Details </span>
+                    </div>
+                    <div className="card-body pt-0">
+                      <div className="mb-3">
+                        <div className="d-flex align-items-center gap-2">
+                          {statusBadge(selectedRequest.status)}
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label text-muted small mb-1">Request Date</label>
+                        <p className="mb-0 fw-medium">{formatDate(selectedRequest.requestDate)}</p>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label text-muted small mb-1">Duration</label>
+                        <p className="mb-0 fw-medium">
+                          {selectedRequest.startDate && selectedRequest.endDate
+                            ? `${formatDate(selectedRequest.startDate)} to ${formatDate(selectedRequest.endDate)}`
+                            : 'Not specified'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="form-label text-muted small mb-1">Reason</label>
+                        <div className="bg-light p-3 rounded">
+                          <p className="mb-0 fw-medium">{selectedRequest.requestReason || 'No reason provided'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-12">
+                  <div className="card border-0 shadow-sm">
+                    <div className="card-header bg-white border-0 d-flex align-items-center gap-2 py-3">
+                      <ChatLeftText size={16} className="text-primary" /> <span className="fw-semibold">Activity & Comments</span>
+                    </div>
+                    <div className="card-body p-0">
+                      {commentsLoading ? (
+                        <div className="d-flex justify-content-center py-4">
+                          <Spinner animation="border" size="sm" />
+                        </div>
+                      ) : comments.length === 0 ? (
+                        <div className="text-center py-4">
+                          <div className="bg-light rounded-circle p-3 d-inline-block mb-3">
+                            <ChatLeftText size={24} className="text-muted" />
+                          </div>
+                          <h6 className="text-muted">No activity yet</h6>
+                          <p className="text-muted small mb-0">Comments and updates will appear here</p>
+                        </div>
+                      ) : (
+                        <div className="overflow-none" style={{ maxHeight: '300px' }}>
+                          {comments.map((comment, index) => (
+                            <div key={index} className="border-bottom p-3">
+                              <div className="d-flex justify-content-between align-items-center mb-2">
+                                <div className="d-flex align-items-center gap-2">
+                                  <Badge bg="light" text="dark" className="text-uppercase small fw-normal">
+                                    {comment.stage}
+                                  </Badge>
+                                  <small className="text-muted">{formatDate(comment.timestamp)}</small>
+                                </div>
+                                {comment.action === 'approve' && (
+                                  <Badge bg="success" className="small">Approved</Badge>
+                                )}
+                                {comment.action === 'reject' && (
+                                  <Badge bg="danger" className="small">Rejected</Badge>
+                                )}
+                              </div>
+                              <div className={`p-3 rounded ${index % 2 === 0 ? 'bg-white' : 'bg-light bg-opacity-50'}`}>
+                                <div className="d-flex gap-2">
+                                  <div className="flex-shrink-0">
+                                    <div className="bg-primary bg-opacity-10 text-primary rounded-circle p-2 d-flex align-items-center justify-content-center"
+                                      style={{ width: '36px', height: '36px' }}>
+                                      {comment.userInitials || comment.user.charAt(0).toUpperCase()}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h6 className="mb-1 small fw-semibold">{comment.user || 'Unknown User'}</h6>
+                                    <p className="mb-0 small">{comment.comment}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal.Body>
       </Modal>
-    </Box>
+    </div>
   );
 };
-
-const DetailItem = ({
-  label,
-  value,
-  icon = null,
-  dense = false,
-  valueBold = false,
-  valueColor = 'text.primary'
-}) => (
-  <Box sx={{
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 1,
-    mb: dense ? 0.5 : 1,
-    '&:last-child': { mb: 0 }
-  }}>
-    {icon && (
-      <Box sx={{
-        color: 'text.secondary',
-        display: 'flex',
-        alignItems: 'center',
-        height: '24px',
-        mt: '2px'
-      }}>
-        {icon}
-      </Box>
-    )}
-    <Box sx={{ flex: 1 }}>
-      <Typography
-        variant="caption"
-        sx={{
-          color: 'text.secondary',
-          display: 'block',
-          lineHeight: 1.3,
-          fontWeight: 500
-        }}
-      >
-        {label}
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{
-          mt: 0.25,
-          color: valueColor,
-          fontWeight: valueBold ? 600 : 'normal',
-          wordBreak: 'break-word'
-        }}
-      >
-        {value}
-      </Typography>
-    </Box>
-  </Box>
-);
 
 export default VehicleRequestsComponent;

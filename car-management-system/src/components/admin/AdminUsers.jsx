@@ -39,6 +39,7 @@ const AdminUsers = () => {
     email: '',
     phoneNumber: '',
     password: '',
+    confirmPassword: '',
     isActive: true,
     department: '',
   });
@@ -71,6 +72,7 @@ const AdminUsers = () => {
       email: '',
       phoneNumber: '',
       password: '',
+      confirmPassword: '',
       isActive: true,
       department: '',
     });
@@ -83,6 +85,7 @@ const AdminUsers = () => {
         email: user.email || '',
         phoneNumber: user.phoneNumber || '',
         password: '',
+        confirmPassword: '',
         isActive: !user.isLocked,
         department: user.department || '',
       });
@@ -105,6 +108,12 @@ const AdminUsers = () => {
 
   const saveUser = async (e) => {
     e.preventDefault();
+
+    if (!editingUser && form.password !== form.confirmPassword) {
+      toast.error('Password and Confirm Password do not match');
+      return;
+    }
+
     setBusy(true);
     try {
       if (editingUser) {
@@ -128,6 +137,7 @@ const AdminUsers = () => {
           email: form.email,
           phoneNumber: form.phoneNumber,
           password: form.password,
+          confirmPassword: form.confirmPassword,
           department: form.department,
         });
         toast.success('User created successfully');
@@ -147,7 +157,7 @@ const AdminUsers = () => {
 
   const deleteUser = async (id) => {
     if (!isAdmin) return;
-    
+
     const confirmDelete = window.confirm('Are you sure you want to delete this user?');
     if (!confirmDelete) return;
 
@@ -219,7 +229,7 @@ const AdminUsers = () => {
         draggable
         pauseOnHover
       />
-      
+
       <div className="d-flex align-items-center mb-4">
         <div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
           <People size={28} className="text-primary" />
@@ -399,17 +409,30 @@ const AdminUsers = () => {
             />
 
             {!editingUser && (
-              <TextField
-                label="Password"
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={handleInput}
-                fullWidth
-                margin="normal"
-                required
-                inputProps={{ minLength: 6 }}
-              />
+              <>
+                <TextField
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleInput}
+                  fullWidth
+                  margin="normal"
+                  required
+                  inputProps={{ minLength: 6 }}
+                />
+                <TextField
+                  label="Confirm Password"
+                  name="confirmPassword"
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={handleInput}
+                  fullWidth
+                  margin="normal"
+                  required
+                  inputProps={{ minLength: 6 }}
+                />
+              </>
             )}
 
             {editingUser && (

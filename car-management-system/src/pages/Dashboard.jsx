@@ -147,7 +147,6 @@ export default function Dashboard() {
       <div className="bottom-section">
         <CommentsAndFeedback />
         <VehicleAssignment/>
-        <CompleteInvoiceForm/>
       </div>
     </div>
   );

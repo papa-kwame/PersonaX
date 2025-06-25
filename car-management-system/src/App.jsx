@@ -39,6 +39,8 @@ import ChangePasswordOnFirstLogin from './components/auth/ChangePassword';
 import SchedulePage from './components/new components/Schedule';
 import VehicleForm from './components/vehicles/VehicleForm';
 import CompleteInvoiceForm from './components/new components/InvoiceForm';
+import MaintenanceSchedulesPage from './components/new components/MaintenanceSchedulesPage';
+import LayoutUser from './components/shared/LayoutUser';
 
 function RequirePasswordChange({ children }) {
   const { mustChangePassword } = useAuth();
@@ -79,7 +81,7 @@ function App() {
 
             <Route path="/userdashboard" element={
               <ProtectedRoute requiredRoles={['User']}>
-                <Layout><UserDashboard /></Layout>
+                <LayoutUser><UserDashboard /></LayoutUser>
               </ProtectedRoute>
             } />
 
@@ -94,7 +96,13 @@ function App() {
                 <Layout><VehicleShowPage /></Layout>
               </ProtectedRoute>
             } />
-
+ 
+            <Route path="/mechanic" element={
+              <ProtectedRoute requiredRoles={['Mechanic']}>
+                <Layout><MaintenanceSchedulesPage /></Layout>
+              </ProtectedRoute>
+            } />
+          
             <Route path="/requestsss" element={
               <ProtectedRoute requiredRoles={['User', 'Admin']}>
                 <Layout><VehicleAssignmentApp /></Layout>
@@ -106,7 +114,7 @@ function App() {
                 <Layout><VehicleEditForm /></Layout>
               </ProtectedRoute>
             } />
-
+ 
             <Route path="/vehicles" element={
               <ProtectedRoute requiredRoles={['Admin']}>
                 <Layout><Assignments /></Layout>
