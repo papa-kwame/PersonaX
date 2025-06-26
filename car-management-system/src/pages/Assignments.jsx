@@ -38,9 +38,12 @@ import {
   Paper,
   IconButton,
   Chip,
-  useTheme,
   Tabs,
-  Tab
+  Tab,
+  Divider,
+  Badge,
+  styled,
+  alpha
 } from '@mui/material';
 import {
   DirectionsCar as CarIcon,
@@ -66,15 +69,76 @@ import {
   Receipt as ReceiptIcon,
   MonetizationOn as MoneyIcon,
   Notes as NotesIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
+  FilterList as FilterIcon
 } from '@mui/icons-material';
 import { format, parseISO, isBefore } from 'date-fns';
 
+// Define color constants
+const COLORS = {
+  PRIMARY: '#000000',
+  SECONDARY: '#9c27b0',
+  SUCCESS: '#4caf50',
+  ERROR: '#f44336',
+  WARNING: '#ff9800',
+  INFO: '#2196f3',
+  BACKGROUND: '#f5f5f5',
+  TEXT_PRIMARY: '#212121',
+  TEXT_SECONDARY: '#757575',
+  DIVIDER: '#bdbdbd',
+  WHITE: '#ffffff',
+  BLACK: '#000000',
+};
+
+// Styled components for modern look
+const GradientCard = styled(Card)({
+  background: `linear-gradient(135deg, ${alpha(COLORS.PRIMARY, 0.1)} 0%, ${alpha(COLORS.BACKGROUND, 0.8)} 100%)`,
+  backdropFilter: 'blur(10px)',
+  borderRadius: '16px',
+  boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.18)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: '0 12px 40px 0 rgba(31, 38, 135, 0.2)'
+  }
+});
+
+const StatusBadge = styled(Badge)(({ status }) => ({
+  '& .MuiBadge-badge': {
+    backgroundColor:
+      status === 'Available' ? COLORS.SUCCESS :
+      status === 'Assigned' ? COLORS.PRIMARY :
+      status === 'In Maintenance' ? COLORS.WARNING : COLORS.ERROR,
+    color: COLORS.WHITE,
+    boxShadow: `0 0 0 2px ${COLORS.BACKGROUND}`,
+    '&::after': {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      borderRadius: '50%',
+      animation: 'ripple 1.2s infinite ease-in-out',
+      border: '1px solid currentColor',
+      content: '""',
+    }
+  },
+  '@keyframes ripple': {
+    '0%': {
+      transform: 'scale(.8)',
+      opacity: 1,
+    },
+    '100%': {
+      transform: 'scale(2.4)',
+      opacity: 0,
+    },
+  }
+}));
+
 const Assignment = () => {
-  const theme = useTheme();
   const { vehicleId, userId, view } = useParams();
   const navigate = useNavigate();
-
   const [state, setState] = useState({
     loading: true,
     activeTab: view === 'history' ? 'history' : 'vehicleList',
@@ -134,25 +198,21 @@ const Assignment = () => {
   const fetchData = async () => {
     try {
       setState(prev => ({ ...prev, loading: true }));
-
       const [assignmentsRes, vehiclesRes, usersRes, requestsRes] = await Promise.all([
         api.get('/VehicleAssignment/AllAssignments'),
         api.get('/vehicles'),
         api.get('/Auth/users'),
         api.get('/VehicleAssignment/AllRequests?status=Pending')
       ]);
-
       const users = usersRes.data.map(user => ({
         id: user.id,
         userName: user.email.split('@')[0],
         email: user.email,
         roles: user.roles
       }));
-
       const current = assignmentsRes.data;
       const assignedVehicleIds = current.map(a => a.vehicleId);
       const availableVehicles = vehiclesRes.data.filter(v => !assignedVehicleIds.includes(v.id));
-
       setState(prev => ({
         ...prev,
         currentAssignments: current,
@@ -169,7 +229,6 @@ const Assignment = () => {
         },
         loading: false
       }));
-
     } catch (error) {
       console.error('Error fetching data:', error);
       setState(prev => ({ ...prev, loading: false }));
@@ -220,12 +279,10 @@ const Assignment = () => {
     try {
       const { userId, requestReason } = state.formData;
       if (!userId || !requestReason) return;
-
       await api.post('/VehicleAssignment/RequestVehicle', {
         userId,
         requestReason
       });
-
       setState(prev => ({
         ...prev,
         showRequestModal: false,
@@ -301,6 +358,7 @@ const Assignment = () => {
   const totalAvailableVehiclePages = Math.ceil(
     state.vehicles.filter(v => !state.currentAssignments.some(a => a.vehicleId === v.id)).length / state.itemsPerPage
   );
+
   const totalRequestPages = Math.ceil(filteredRequests.length / state.itemsPerPage);
 
   const isDocumentExpired = (dateString) => {
@@ -394,7 +452,6 @@ const Assignment = () => {
     e.preventDefault();
     setState(prev => ({ ...prev, isSubmitted: true }));
     if (!validateForm()) return;
-
     setState(prev => ({ ...prev, formLoading: true }));
     try {
       if (state.formData.id) {
@@ -421,7 +478,6 @@ const Assignment = () => {
           ? parseFloat(value) || 0 : value
       }
     }));
-
     if (state.isSubmitted) {
       validateField(name, value);
     }
@@ -430,7 +486,6 @@ const Assignment = () => {
   const validateField = (name, value) => {
     const currentYear = new Date().getFullYear();
     let error = '';
-
     switch (name) {
       case 'make':
         if (!value) error = 'Make is required';
@@ -452,7 +507,6 @@ const Assignment = () => {
       default:
         break;
     }
-
     setState(prev => ({
       ...prev,
       validationErrors: {
@@ -465,7 +519,6 @@ const Assignment = () => {
   const validateForm = () => {
     const errors = {};
     const currentYear = new Date().getFullYear();
-
     if (!state.formData.make) errors.make = 'Make is required';
     if (!state.formData.model) errors.model = 'Model is required';
     if (!state.formData.year || state.formData.year < 1900 || state.formData.year > currentYear + 1) {
@@ -473,7 +526,6 @@ const Assignment = () => {
     }
     if (!state.formData.licensePlate) errors.licensePlate = 'License plate is required';
     if (!state.formData.vin || state.formData.vin.length < 17) errors.vin = 'VIN must be 17 characters';
-
     setState(prev => ({ ...prev, validationErrors: errors }));
     return Object.keys(errors).length === 0;
   };
@@ -483,307 +535,483 @@ const Assignment = () => {
   };
 
   const renderHeader = () => (
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-      <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-        <CarIcon />
-      </Avatar>
-      <Box>
-        <Typography variant="h5" component="h1" fontWeight='bold'>
-          Vehicle Assignments
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Manage vehicle assignments and requests
-        </Typography>
+    <Box sx={{ mb: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Avatar sx={{
+          bgcolor: 'transparent',
+          mr: 2,
+          width: 48,
+          height: 48,
+          '& svg': {
+            color: COLORS.PRIMARY,
+            fontSize: '2rem'
+          }
+        }}>
+          <CarIcon />
+        </Avatar>
+        <Box>
+          <Typography variant="h4" component="h1" fontWeight={300} sx={{
+            background: `black`,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            Vehicle Fleet Management
+          </Typography>
+        </Box>
       </Box>
-
+      <Divider sx={{
+        borderColor: alpha(COLORS.DIVIDER, 0.1),
+        borderBottomWidth: '2px',
+        background: `linear-gradient(to right, transparent, ${alpha(COLORS.PRIMARY, 0.3)}, transparent)`,
+        height: '2px'
+      }} />
     </Box>
   );
 
   const renderStatsCards = () => (
-    <Grid container spacing={3} sx={{ mb: 4 }}>
+    <Grid container spacing={7} sx={{ mb: 4 }}>
       {[
         {
           title: 'Total Vehicles',
           value: state.stats.totalVehicles,
           icon: <CarIcon fontSize="medium" />,
-          color: theme.palette.primary.main,
-          bgColor: theme.palette.primary.light
+          color: COLORS.PRIMARY,
         },
         {
           title: 'Assigned',
           value: state.stats.assignedVehicles,
           icon: <AssignmentTurnedInIcon fontSize="medium" />,
-          color: theme.palette.success.main,
-          bgColor: theme.palette.success.light
+          color: COLORS.SUCCESS,
         },
         {
           title: 'Available',
           value: state.stats.availableVehicles,
           icon: <CarIcon fontSize="medium" />,
-          color: theme.palette.info.main,
-          bgColor: theme.palette.info.light
+          color: COLORS.INFO,
         }
       ].map((stat, index) => (
-        <Grid item xs={12} sm={9} md={7} key={index}>
-          <Card
-            sx={{
-              height: '100%',
-              width:'480px',
-              borderRadius: '12px',
-              boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 6px 24px 0 rgba(0,0,0,0.1)'
-              }
-            }}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  mb: 1
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  color="text.secondary"
-                  sx={{
-                    fontWeight: 500,
-                    letterSpacing: '0.5px',
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem'
-                  }}
-                >
+        <Grid item xs={12} sm={6} md={3} key={index}>
+          <GradientCard>
+            <CardContent sx={{ p: 3, width: '450px' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{
+                  fontWeight: 600,
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  fontSize: '0.7rem'
+                }}>
                   {stat.title}
                 </Typography>
-                <Box
-                  sx={{
-                    p: 1,
-                    borderRadius: '50%',
-                    backgroundColor: stat.bgColor,
-                    color: stat.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
+                <Box sx={{
+                  p: 1,
+                  borderRadius: '12px',
+                  backgroundColor: alpha(stat.color, 0.1),
+                  color: stat.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 40,
+                  height: 40
+                }}>
                   {stat.icon}
                 </Box>
               </Box>
-              <Typography
-                variant="h4"
-                fontWeight="bold"
-                sx={{
-                  fontSize: '2rem',
-                  color: stat.color,
-                  lineHeight: 1.2
-                }}
-              >
-                {stat.value}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 1 }}>
+                <Typography variant="h3" fontWeight={400} sx={{
+                  fontSize: '2.5rem',
+                  color: COLORS.TEXT_PRIMARY,
+                  lineHeight: 1
+                }}>
+                  {stat.value}
+                </Typography>
+
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Box sx={{
                   height: '4px',
                   borderRadius: '2px',
-                  background: stat.color,
+                  background: `linear-gradient(to right, ${stat.color}, ${alpha(stat.color, 0.5)})`,
                   flexGrow: 1,
-                  mr: 1,
-                  opacity: 0.5
+                  mr: 1
                 }} />
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontSize: '0.7rem' }}
-                >
-                  {index === 0 ? 'All vehicles' :
-                   index === 1 ? 'In use' :
-                   index === 2 ? 'Ready to assign' : 'Awaiting approval'}
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                  {index === 0 ? 'All fleet vehicles' :
+                   index === 1 ? 'Currently assigned' :
+                   index === 2 ? 'Ready for assignment' : 'Awaiting approval'}
                 </Typography>
               </Box>
             </CardContent>
-          </Card>
+          </GradientCard>
         </Grid>
       ))}
     </Grid>
   );
 
   const renderCurrentAssignments = () => (
-    <Card sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Vehicle</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>User</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedCurrentAssignments.length > 0 ? (
-              paginatedCurrentAssignments.map(assignment => (
-                <TableRow key={assignment.assignmentId} hover>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar sx={{ bgcolor: theme.palette.primary.light, mr: 2 }}>
-                        <CarIcon />
-                      </Avatar>
-                      <Box>
-                        <Typography fontWeight="medium">
-                          {assignment.vehicleMake} {assignment.vehicleModel}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {assignment.licensePlate}
-                        </Typography>
+    <GradientCard>
+      <CardContent sx={{ p: 0 }}>
+        <Box sx={{
+          p: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Current Assignments
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              size="small"
+              placeholder="Search assignments..."
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                sx: { borderRadius: '12px' }
+              }}
+            />
+            <Button
+              variant="outlined"
+              startIcon={<FilterIcon />}
+              sx={{ borderRadius: '12px' }}
+              onClick={() => setState(prev => ({ ...prev, showFilters: !prev.showFilters }))}
+            >
+              Filters
+            </Button>
+          </Box>
+        </Box>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{
+                backgroundColor: alpha(COLORS.PRIMARY, 0.03),
+                '& th': {
+                  fontWeight: 700,
+                  color: COLORS.TEXT_SECONDARY,
+                  borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+                }
+              }}>
+                <TableCell>Vehicle</TableCell>
+                <TableCell>Assigned To</TableCell>
+                <TableCell>Assignment Date</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedCurrentAssignments.length > 0 ? (
+                paginatedCurrentAssignments.map(assignment => (
+                  <TableRow
+                    key={assignment.assignmentId}
+                    hover
+                    sx={{
+                      '&:last-child td': { borderBottom: 0 },
+                      '&:hover': { backgroundColor: alpha(COLORS.PRIMARY, 0.02) }
+                    }}
+                  >
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Avatar sx={{
+                          bgcolor: alpha(COLORS.PRIMARY, 0.1),
+                          mr: 2,
+                          color: COLORS.PRIMARY
+                        }}>
+                          <CarIcon />
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight={600}>
+                            {assignment.vehicleMake} {assignment.vehicleModel}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {assignment.licensePlate}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar sx={{ bgcolor: theme.palette.secondary.light, mr: 2 }}>
-                        <PersonIcon />
-                      </Avatar>
-                      <Box>
-                        <Typography fontWeight="medium">{assignment.userName}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {assignment.userEmail}
-                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Avatar sx={{
+                          bgcolor: alpha(COLORS.SECONDARY, 0.1),
+                          mr: 2,
+                          color: COLORS.SECONDARY
+                        }}>
+                          <PersonIcon />
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight={600}>{assignment.userName}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {assignment.userEmail}
+                          </Typography>
+                        </Box>
                       </Box>
+                    </TableCell>
+                    <TableCell>
+                      {safeFormat(assignment.assignmentDate, 'PP')}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Tooltip title="Vehicle details">
+                          <IconButton
+                            onClick={() => fetchVehicleDetails(assignment.vehicleId)}
+                            sx={{
+                              mr: 1,
+                              '&:hover': {
+                                backgroundColor: alpha(COLORS.INFO, 0.1),
+                                color: COLORS.INFO
+                              }
+                            }}
+                          >
+                            <InfoIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Assignment history">
+                          <IconButton
+                            onClick={() => fetchAssignmentHistory(assignment.vehicleId)}
+                            sx={{
+                              mr: 1,
+                              '&:hover': {
+                                backgroundColor: alpha(COLORS.SECONDARY, 0.1),
+                                color: COLORS.SECONDARY
+                              }
+                            }}
+                          >
+                            <HistoryIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Unassign vehicle">
+                          <IconButton
+                            onClick={() => handleUnassignVehicle(assignment.vehicleId)}
+                            sx={{
+                              '&:hover': {
+                                backgroundColor: alpha(COLORS.ERROR, 0.1),
+                                color: COLORS.ERROR
+                              }
+                            }}
+                          >
+                            <CancelIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                    <Box sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      color: COLORS.TEXT_SECONDARY
+                    }}>
+                      <AssignmentIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
+                      <Typography>No current vehicle assignments</Typography>
                     </Box>
-                  </TableCell>
-
-                  <TableCell align="right">
-                    <Tooltip title="View vehicle details">
-                      <IconButton
-                        color="info"
-                        onClick={() => fetchVehicleDetails(assignment.vehicleId)}
-                        sx={{ mr: 1 }}
-                      >
-                        <InfoIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="View assignment history">
-                      <IconButton
-                        color="secondary"
-                        onClick={() => fetchAssignmentHistory(assignment.vehicleId)}
-                        sx={{ mr: 1 }}
-                      >
-                        <HistoryIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Unassign vehicle">
-                      <IconButton
-                        color="error"
-                        onClick={() => handleUnassignVehicle(assignment.vehicleId)}
-                      >
-                        <CancelIcon />
-                      </IconButton>
-                    </Tooltip>
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">
-                    No current vehicle assignments
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      {totalAssignmentPages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-          <Pagination
-            count={totalAssignmentPages}
-            page={state.currentAssignmentsPage}
-            onChange={(e, page) => handlePageChange('currentAssignments', page)}
-            color="primary"
-          />
-        </Box>
-      )}
-    </Card>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        {totalAssignmentPages > 1 && (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            p: 2,
+            borderTop: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+          }}>
+            <Typography variant="body2" color="text.secondary">
+              Showing {(state.currentAssignmentsPage - 1) * state.itemsPerPage + 1}-
+              {Math.min(state.currentAssignmentsPage * state.itemsPerPage, state.currentAssignments.length)} of {state.currentAssignments.length} assignments
+            </Typography>
+            <Pagination
+              count={totalAssignmentPages}
+              page={state.currentAssignmentsPage}
+              onChange={(e, page) => handlePageChange('currentAssignments', page)}
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
+        )}
+      </CardContent>
+    </GradientCard>
   );
 
   const renderAvailableVehicles = () => (
-    <Card sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Make/Model</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Year</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Plate</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedAvailableVehicles.length > 0 ? (
-              paginatedAvailableVehicles.map(vehicle => (
-                <TableRow key={vehicle.id} hover>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar sx={{ bgcolor: theme.palette.primary.light, mr: 2 }}>
-                        <CarIcon />
-                      </Avatar>
-                      <Box>
-                        <Typography fontWeight="medium">
-                          {vehicle.make} {vehicle.model}
-                        </Typography>
+    <GradientCard>
+      <CardContent sx={{ p: 0 }}>
+        <Box sx={{
+          p: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Available Vehicles
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            sx={{ borderRadius: '12px' }}
+            onClick={() => navigate('/vehicles/new')}
+          >
+            Add Vehicle
+          </Button>
+        </Box>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{
+                backgroundColor: alpha(COLORS.PRIMARY, 0.03),
+                '& th': {
+                  fontWeight: 700,
+                  color: COLORS.TEXT_SECONDARY,
+                  borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+                }
+              }}>
+                <TableCell>Make/Model</TableCell>
+                <TableCell>Year</TableCell>
+                <TableCell>License Plate</TableCell>
+                <TableCell>Type</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedAvailableVehicles.length > 0 ? (
+                paginatedAvailableVehicles.map(vehicle => (
+                  <TableRow
+                    key={vehicle.id}
+                    hover
+                    sx={{
+                      '&:last-child td': { borderBottom: 0 },
+                      '&:hover': { backgroundColor: alpha(COLORS.PRIMARY, 0.02) }
+                    }}
+                  >
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <StatusBadge
+                          overlap="circular"
+                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                          variant="dot"
+                          status={vehicle.status}
+                        >
+                          <Avatar sx={{
+                            bgcolor: alpha(COLORS.PRIMARY, 0.1),
+                            mr: 2,
+                            color: COLORS.PRIMARY
+                          }}>
+                            <CarIcon />
+                          </Avatar>
+                        </StatusBadge>
+                        <Box>
+                          <Typography fontWeight={600}>
+                            {vehicle.make} {vehicle.model}
+                          </Typography>
+                        </Box>
                       </Box>
+                    </TableCell>
+                    <TableCell>{vehicle.year}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={vehicle.licensePlate}
+                        size="small"
+                        sx={{
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.1),
+                          color: COLORS.PRIMARY,
+                          fontWeight: 600
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={vehicle.vehicleType}
+                        size="small"
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={vehicle.status}
+                        color={
+                          vehicle.status === 'Available' ? 'success' :
+                          vehicle.status === 'Assigned' ? 'primary' :
+                          vehicle.status === 'In Maintenance' ? 'warning' : 'error'
+                        }
+                        size="small"
+                        sx={{
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          fontSize: '0.7rem'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Tooltip title="Assignment history">
+                          <IconButton
+                            onClick={() => fetchAssignmentHistory(vehicle.id)}
+                            sx={{
+                              '&:hover': {
+                                backgroundColor: alpha(COLORS.SECONDARY, 0.1),
+                                color: COLORS.SECONDARY
+                              }
+                            }}
+                          >
+                            <HistoryIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                    <Box sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      color: COLORS.TEXT_SECONDARY
+                    }}>
+                      <CarIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
+                      <Typography>No available vehicles in the fleet</Typography>
                     </Box>
                   </TableCell>
-                  <TableCell>{vehicle.year}</TableCell>
-                  <TableCell>{vehicle.licensePlate}</TableCell>
-                  <TableCell>{vehicle.vehicleType}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={vehicle.status}
-                      color={vehicle.status === 'Available' ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="View assignment history">
-                      <IconButton
-                        color="secondary"
-                        onClick={() => fetchAssignmentHistory(vehicle.id)}
-                      >
-                        <HistoryIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">
-                    No available vehicles
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      {totalAvailableVehiclePages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-          <Pagination
-            count={totalAvailableVehiclePages}
-            page={state.availableVehiclesPage}
-            onChange={(e, page) => handlePageChange('availableVehicles', page)}
-            color="primary"
-          />
-        </Box>
-      )}
-    </Card>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        {totalAvailableVehiclePages > 1 && (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            p: 2,
+            borderTop: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+          }}>
+            <Typography variant="body2" color="text.secondary">
+              Showing {(state.availableVehiclesPage - 1) * state.itemsPerPage + 1}-
+              {Math.min(state.availableVehiclesPage * state.itemsPerPage,
+                state.vehicles.filter(v => !state.currentAssignments.some(a => a.vehicleId === v.id)).length)} of{' '}
+              {state.vehicles.filter(v => !state.currentAssignments.some(a => a.vehicleId === v.id)).length} vehicles
+            </Typography>
+            <Pagination
+              count={totalAvailableVehiclePages}
+              page={state.availableVehiclesPage}
+              onChange={(e, page) => handlePageChange('availableVehicles', page)}
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
+        )}
+      </CardContent>
+    </GradientCard>
   );
 
   const renderRequestModal = () => (
@@ -813,7 +1041,6 @@ const Assignment = () => {
           }}
           sx={{ mb: 2 }}
         />
-
         <List sx={{ maxHeight: 200, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
           {filteredUsers.length > 0 ? (
             filteredUsers.map(user => (
@@ -843,7 +1070,6 @@ const Assignment = () => {
             </ListItem>
           )}
         </List>
-
         <TextField
           fullWidth
           label="Reason for Request"
@@ -858,7 +1084,6 @@ const Assignment = () => {
           placeholder="Explain why you need a vehicle..."
           sx={{ mt: 2 }}
         />
-
         {state.formData.userId && (
           <Alert severity="info" sx={{ mt: 2 }}>
             Requesting for: {state.users.find(u => u.id === state.formData.userId)?.userName}
@@ -886,10 +1111,8 @@ const Assignment = () => {
 
   const renderVehicleModal = () => {
     if (!state.vehicleDetails) return null;
-
     const vehicle = state.vehicleDetails;
     const currentAssignment = state.currentAssignments.find(a => a.vehicleId === vehicle.id);
-
     return (
       <Dialog
         open={state.showVehicleModal}
@@ -959,7 +1182,6 @@ const Assignment = () => {
                   </Grid>
                 </CardContent>
               </Card>
-
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
@@ -1008,7 +1230,6 @@ const Assignment = () => {
                 </CardContent>
               </Card>
             </Grid>
-
             <Grid item xs={12} md={6}>
               {currentAssignment && (
                 <Card variant="outlined" sx={{ mb: 3 }}>
@@ -1018,7 +1239,7 @@ const Assignment = () => {
                       Current Assignment
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Avatar sx={{ bgcolor: theme.palette.secondary.light, mr: 2 }}>
+                      <Avatar sx={{ bgcolor: COLORS.SECONDARY, mr: 2 }}>
                         <PersonIcon />
                       </Avatar>
                       <Box>
@@ -1047,7 +1268,6 @@ const Assignment = () => {
                   </CardContent>
                 </Card>
               )}
-
               <Card variant="outlined" sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
@@ -1099,7 +1319,6 @@ const Assignment = () => {
                   </Grid>
                 </CardContent>
               </Card>
-
               <Card variant="outlined">
                 <CardContent>
                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
@@ -1129,7 +1348,6 @@ const Assignment = () => {
               </Card>
             </Grid>
           </Grid>
-
           {vehicle.notes && (
             <Card variant="outlined" sx={{ mt: 3 }}>
               <CardContent>
@@ -1182,7 +1400,7 @@ const Assignment = () => {
                   <TableRow key={index} hover>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar sx={{ bgcolor: theme.palette.secondary.light, mr: 2 }}>
+                        <Avatar sx={{ bgcolor: COLORS.SECONDARY, mr: 2 }}>
                           <PersonIcon />
                         </Avatar>
                         <Box>
@@ -1540,64 +1758,98 @@ const Assignment = () => {
         }
         return 0;
       });
-
     const indexOfLastVehicle = state.currentPage * state.itemsPerPage;
     const indexOfFirstVehicle = indexOfLastVehicle - state.itemsPerPage;
     const currentVehicles = filteredVehicles.slice(indexOfFirstVehicle, indexOfLastVehicle);
     const totalPages = Math.ceil(filteredVehicles.length / state.itemsPerPage);
 
     return (
-      <Card sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Vehicle List</Typography>
-           <Link to='/vehicles/new'>
-            <Button 
-              variant="contained" 
-              startIcon={<AddIcon />}   
-              
-              sx={{ borderRadius: '8px' }}
-            >
-              Add Vehicle
-            </Button>
-            </Link>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-            <TextField
-              label="Search"
-              variant="outlined"
-              value={state.searchQuery}
-              onChange={(e) => setState(prev => ({ ...prev, searchQuery: e.target.value }))}
-              sx={{ width: '300px' }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
+      <GradientCard>
+        <CardContent sx={{ p: 0 }}>
+          <Box sx={{
+            p: 3,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+          }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Fleet Vehicle List
+            </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl sx={{ minWidth: 120 }} size="small">
+              <TextField
+                size="small"
+                placeholder="Search vehicles..."
+                value={state.searchQuery}
+                onChange={(e) => setState(prev => ({ ...prev, searchQuery: e.target.value }))}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  sx: { borderRadius: '12px' }
+                }}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<FilterIcon />}
+                sx={{ borderRadius: '12px' }}
+                onClick={() => setState(prev => ({ ...prev, showFilters: !prev.showFilters }))}
+              >
+                Filters
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                sx={{ borderRadius: '12px' }}
+                onClick={() => navigate('/vehicles/new')}
+              >
+                Add Vehicle
+              </Button>
+            </Box>
+          </Box>
+
+          {state.showFilters && (
+            <Box sx={{
+              p: 2,
+              display: 'flex',
+              gap: 2,
+              borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`,
+              backgroundColor: alpha(COLORS.PRIMARY, 0.03)
+            }}>
+              <FormControl size="small" sx={{ minWidth: 180 }}>
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={state.filters.status}
-                  onChange={(e) => setState(prev => ({ ...prev, filters: { ...prev.filters, status: e.target.value } }))}
+                  onChange={(e) => setState(prev => ({
+                    ...prev,
+                    filters: { ...prev.filters, status: e.target.value },
+                    currentPage: 1
+                  }))}
+                  label="Status"
+                  sx={{ borderRadius: '12px' }}
                 >
-                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="">All Statuses</MenuItem>
                   <MenuItem value="Available">Available</MenuItem>
                   <MenuItem value="Assigned">Assigned</MenuItem>
                   <MenuItem value="In Maintenance">In Maintenance</MenuItem>
                   <MenuItem value="Out of Service">Out of Service</MenuItem>
                 </Select>
               </FormControl>
-              <FormControl sx={{ minWidth: 120 }} size="small">
+              <FormControl size="small" sx={{ minWidth: 180 }}>
                 <InputLabel>Vehicle Type</InputLabel>
                 <Select
                   value={state.filters.vehicleType}
-                  onChange={(e) => setState(prev => ({ ...prev, filters: { ...prev.filters, vehicleType: e.target.value } }))}
+                  onChange={(e) => setState(prev => ({
+                    ...prev,
+                    filters: { ...prev.filters, vehicleType: e.target.value },
+                    currentPage: 1
+                  }))}
+                  label="Vehicle Type"
+                  sx={{ borderRadius: '12px' }}
                 >
-                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="">All Types</MenuItem>
                   <MenuItem value="Sedan">Sedan</MenuItem>
                   <MenuItem value="SUV">SUV</MenuItem>
                   <MenuItem value="Truck">Truck</MenuItem>
@@ -1607,85 +1859,192 @@ const Assignment = () => {
                 </Select>
               </FormControl>
             </Box>
-          </Box>
-          <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+          )}
+
+          <TableContainer>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell 
+                <TableRow sx={{
+                  backgroundColor: alpha(COLORS.PRIMARY, 0.03),
+                  '& th': {
+                    fontWeight: 700,
+                    color: COLORS.TEXT_SECONDARY,
+                    borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+                  }
+                }}>
+                  <TableCell
                     onClick={() => handleSort('licensePlate')}
-                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+                    sx={{ cursor: 'pointer', '&:hover': { backgroundColor: alpha(COLORS.PRIMARY, 0.05) } }}
                   >
-                    License Plate {state.sortConfig.key === 'licensePlate' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      License Plate
+                      {state.sortConfig.key === 'licensePlate' && (
+                        <Box component="span" sx={{
+                          ml: 0.5,
+                          color: COLORS.PRIMARY,
+                          transform: state.sortConfig.direction === 'desc' ? 'rotate(180deg)' : 'none'
+                        }}>
+                          ↓
+                        </Box>
+                      )}
+                    </Box>
                   </TableCell>
-                  <TableCell 
+                  <TableCell
                     onClick={() => handleSort('make')}
-                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+                    sx={{ cursor: 'pointer', '&:hover': { backgroundColor: alpha(COLORS.PRIMARY, 0.05) } }}
                   >
-                    Make {state.sortConfig.key === 'make' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      Make
+                      {state.sortConfig.key === 'make' && (
+                        <Box component="span" sx={{
+                          ml: 0.5,
+                          color: COLORS.PRIMARY,
+                          transform: state.sortConfig.direction === 'desc' ? 'rotate(180deg)' : 'none'
+                        }}>
+                          ↓
+                        </Box>
+                      )}
+                    </Box>
                   </TableCell>
-                  <TableCell 
+                  <TableCell
                     onClick={() => handleSort('model')}
-                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+                    sx={{ cursor: 'pointer', '&:hover': { backgroundColor: alpha(COLORS.PRIMARY, 0.05) } }}
                   >
-                    Model {state.sortConfig.key === 'model' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      Model
+                      {state.sortConfig.key === 'model' && (
+                        <Box component="span" sx={{
+                          ml: 0.5,
+                          color: COLORS.PRIMARY,
+                          transform: state.sortConfig.direction === 'desc' ? 'rotate(180deg)' : 'none'
+                        }}>
+                          ↓
+                        </Box>
+                      )}
+                    </Box>
                   </TableCell>
-                  <TableCell 
+                  <TableCell
                     onClick={() => handleSort('year')}
-                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+                    sx={{ cursor: 'pointer', '&:hover': { backgroundColor: alpha(COLORS.PRIMARY, 0.05) } }}
                   >
-                    Year {state.sortConfig.key === 'year' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      Year
+                      {state.sortConfig.key === 'year' && (
+                        <Box component="span" sx={{
+                          ml: 0.5,
+                          color: COLORS.PRIMARY,
+                          transform: state.sortConfig.direction === 'desc' ? 'rotate(180deg)' : 'none'
+                        }}>
+                          ↓
+                        </Box>
+                      )}
+                    </Box>
                   </TableCell>
-                  <TableCell 
-                    onClick={() => handleSort('currentMileage')}
-                    sx={{ fontWeight: 'bold', cursor: 'pointer' }}
-                  >
-                    Mileage {state.sortConfig.key === 'currentMileage' && (state.sortConfig.direction === 'asc' ? '↑' : '↓')}
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {currentVehicles.length > 0 ? (
                   currentVehicles.map(vehicle => (
-                    <TableRow key={vehicle.id} hover>
-                      <TableCell>{vehicle.licensePlate}</TableCell>
+                    <TableRow
+                      key={vehicle.id}
+                      hover
+                      sx={{
+                        '&:last-child td': { borderBottom: 0 },
+                        '&:hover': { backgroundColor: alpha(COLORS.PRIMARY, 0.02) }
+                      }}
+                    >
+                      <TableCell>
+                        <Chip
+                          label={vehicle.licensePlate}
+                          size="small"
+                          sx={{
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.1),
+                            color: COLORS.PRIMARY,
+                            fontWeight: 600
+                          }}
+                        />
+                      </TableCell>
                       <TableCell>{vehicle.make}</TableCell>
                       <TableCell>{vehicle.model}</TableCell>
                       <TableCell>{vehicle.year}</TableCell>
-                      <TableCell>{vehicle.currentMileage?.toLocaleString()}</TableCell>
                       <TableCell>
-                        <Chip
-                          label={vehicle.status}
-                          color={
-                            vehicle.status === 'Available' ? 'success' :
-                            vehicle.status === 'Assigned' ? 'primary' :
-                            vehicle.status === 'In Maintenance' ? 'warning' : 'error'
-                          }
-                          size="small"
-                        />
+                        <StatusBadge
+                          overlap="circular"
+                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                          variant="dot"
+                          status={vehicle.status}
+                        >
+                          <Chip
+                            label={vehicle.status}
+                            color={
+                              vehicle.status === 'Available' ? 'success' :
+                              vehicle.status === 'Assigned' ? 'primary' :
+                              vehicle.status === 'In Maintenance' ? 'warning' : 'error'
+                            }
+                            size="small"
+                            sx={{ fontWeight: 600 }}
+                          />
+                        </StatusBadge>
                       </TableCell>
-                      <TableCell>
-                        <Tooltip title="Edit vehicle">
-                          <IconButton onClick={() => handleEditVehicle(vehicle)}>
-                            <EditIcon color="primary" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete vehicle">
-                          <IconButton onClick={() => handleDeleteClick(vehicle)}>
-                            <DeleteIcon color="error" />
-                          </IconButton>
-                        </Tooltip>
+                      <TableCell align="right">
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <Tooltip title="Edit vehicle">
+                            <IconButton
+                              onClick={() => handleEditVehicle(vehicle)}
+                              sx={{
+                                mr: 1,
+                                '&:hover': {
+                                  backgroundColor: alpha(COLORS.PRIMARY, 0.1),
+                                  color: COLORS.PRIMARY
+                                }
+                              }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete vehicle">
+                            <IconButton
+                              onClick={() => handleDeleteClick(vehicle)}
+                              sx={{
+                                '&:hover': {
+                                  backgroundColor: alpha(COLORS.ERROR, 0.1),
+                                  color: COLORS.ERROR
+                                }
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                      <Typography color="text.secondary">
-                        No vehicles found matching your criteria
-                      </Typography>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        color: COLORS.TEXT_SECONDARY
+                      }}>
+                        <CarIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
+                        <Typography>No vehicles match your criteria</Typography>
+                        <Button
+                          variant="text"
+                          size="small"
+                          sx={{ mt: 1 }}
+                          onClick={() => setState(prev => ({
+                            ...prev,
+                            searchQuery: '',
+                            filters: { status: '', vehicleType: '' }
+                          }))}
+                        >
+                          Clear filters
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 )}
@@ -1693,17 +2052,28 @@ const Assignment = () => {
             </Table>
           </TableContainer>
           {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              p: 2,
+              borderTop: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+            }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing {(state.currentPage - 1) * state.itemsPerPage + 1}-
+                {Math.min(state.currentPage * state.itemsPerPage, filteredVehicles.length)} of {filteredVehicles.length} vehicles
+              </Typography>
               <Pagination
                 count={totalPages}
                 page={state.currentPage}
                 onChange={(e, page) => setState(prev => ({ ...prev, currentPage: page }))}
                 color="primary"
+                shape="rounded"
               />
             </Box>
           )}
         </CardContent>
-      </Card>
+      </GradientCard>
     );
   };
 
@@ -1734,7 +2104,6 @@ const Assignment = () => {
         <>
           {renderHeader()}
           {renderStatsCards()}
-
           <Box sx={{ mb: 3 }}>
             <Tabs
               value={state.activeTab}
@@ -1748,35 +2117,32 @@ const Assignment = () => {
                 }
               }}
             >
-              <Tab 
-                value="vehicleList" 
-                label="Vehicle List" 
-                icon={<CarIcon />} 
+              <Tab
+                value="vehicleList"
+                label="Vehicle List"
+                icon={<CarIcon />}
                 iconPosition="start"
                 sx={{ textTransform: 'none' }}
               />
-              <Tab 
-                value="current" 
-                label="Current Assignments" 
-                icon={<AssignmentIcon />} 
+              <Tab
+                value="current"
+                label="Current Assignments"
+                icon={<AssignmentIcon />}
                 iconPosition="start"
                 sx={{ textTransform: 'none' }}
               />
-              <Tab 
-                value="available" 
-                label="Available Vehicles" 
-                icon={<CarIcon />} 
+              <Tab
+                value="available"
+                label="Available Vehicles"
+                icon={<CarIcon />}
                 iconPosition="start"
                 sx={{ textTransform: 'none' }}
               />
-
             </Tabs>
           </Box>
-
           {state.activeTab === 'current' && renderCurrentAssignments()}
           {state.activeTab === 'available' && renderAvailableVehicles()}
           {state.activeTab === 'vehicleList' && renderVehicleList()}
-
           {renderRequestModal()}
           {renderHistoryModal()}
           {renderVehicleModal()}
