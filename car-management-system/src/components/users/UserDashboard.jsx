@@ -10,14 +10,14 @@ const UserDashboard = () => {
   return (
     <Box
       sx={{
-        p: { xs: 2, sm: 3, md: 4 },
         width: '100%',
         maxWidth: '1800px',
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        backgroundColor: 'transparent', 
+        backgroundColor: 'transparent',
+        fontFamily: '"Open Sans", Arial, sans-serif',
       }}
     >
       <Grid container spacing={3}>

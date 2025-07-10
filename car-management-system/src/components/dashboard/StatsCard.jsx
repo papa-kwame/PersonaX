@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "./dashboard.css";
+import { MdOutlineNavigateNext } from "react-icons/md";
 
 export default function StatsCard({ title, stats, link, linkText, icon, color }) {
   return (
@@ -30,7 +31,7 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
       
       {link && linkText && (
         <Link to={link} className="stats-link" style={{ color }}>
-          {linkText} &rarr;
+          {linkText}  <MdOutlineNavigateNext className="MdOutlineNavigateNext"/> 
         </Link>
       )}
     </div>

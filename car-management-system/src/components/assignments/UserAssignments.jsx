@@ -241,10 +241,10 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Avatar sx={{ width: 38, height: 38, bgcolor: professionalColors.primary }}>
-            {request.requestedByUserName?.charAt(0)?.toUpperCase() || 'U'}
+            {request.requestorName?.charAt(0)?.toUpperCase() || request.requestedByUserName?.charAt(0)?.toUpperCase() || request.userName?.charAt(0)?.toUpperCase() || 'U'}
           </Avatar>
           <Typography variant="body2" sx={{ color: professionalColors.textSecondary, fontWeight: 500 }}>
-            {request.requestedByUserEmail || 'Unknown User'}
+            {request.requestorName || request.requestedByUserName || request.userName || 'Unknown User'}
           </Typography>
           <StatusBadge
             label={request.status}
@@ -586,13 +586,13 @@ const RequestDetails = ({ request, workflowStatus, requestComments }) => {
   );
 };
 
-const ActionButtons = ({ request, onProcessStage, onRejectRequest, currentTab }) => {
+const ActionButtons = ({ request, onProcessStage, onRejectRequest, currentTab, isProcessed }) => {
   const canProcessStage = currentTab === 'myRequests';
   const isFinalStage = request.currentStage === 'Approve';
 
   return (
     <Box sx={{ mt: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-      {canProcessStage && (
+      {canProcessStage && !isProcessed && (
         <StyledButton
           variant="contained"
           startIcon={<CheckCircleIcon />}
@@ -608,7 +608,6 @@ const ActionButtons = ({ request, onProcessStage, onRejectRequest, currentTab })
           Process Current Stage
         </StyledButton>
       )}
-
       {isFinalStage && (
         <StyledButton
           variant="outlined"
@@ -653,6 +652,10 @@ const VehicleAssignmentApp = () => {
   const [stageComments, setStageComments] = useState('');
   const [requestComments, setRequestComments] = useState([]);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [processingStage, setProcessingStage] = useState(false);
+  const [processStageError, setProcessStageError] = useState(null);
+  const [processStageSuccess, setProcessStageSuccess] = useState(false);
+  const [processedRequests, setProcessedRequests] = useState([]);
 
   const [formData, setFormData] = useState({
     vehicleId: '',
@@ -814,7 +817,8 @@ const VehicleAssignmentApp = () => {
 
   const handleProcessStage = async () => {
     if (!selectedRequest) return;
-
+    setProcessingStage(true);
+    setProcessStageError(null);
     try {
       if (shouldSkipForRequestor(selectedRequest, userId)) {
         await api.post(`/api/VehicleAssignment/vehicle-requests/${selectedRequest.id}/process-stage?userId=${userId}`, {
@@ -828,22 +832,18 @@ const VehicleAssignmentApp = () => {
         const payload = {
           comments: stageComments
         };
-
         if (selectedRequest.currentStage === 'Commit') {
           payload.estimatedCost = formData.estimatedCost;
         }
-
         const response = await api.post(`/api/VehicleAssignment/vehicle-requests/${selectedRequest.id}/process-stage?userId=${userId}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-
         if (response.data.message) {
           showNotification(response.data.message, 'success');
         }
       }
-
       const [requestsRes, pendingRes] = await Promise.all([
         api.get('/api/VehicleAssignment/AllRequests'),
         api.get(`/api/VehicleAssignment/my-pending-actions?userId=${userId}`, {
@@ -852,10 +852,10 @@ const VehicleAssignmentApp = () => {
           }
         })
       ]);
-
       setRequests(requestsRes.data.map(formatRequestData));
       setPendingActions(pendingRes.data.map(formatRequestData));
-      setOpenStageDialog(false);
+      setProcessStageSuccess(true);
+      setProcessedRequests(prev => [...prev, selectedRequest.id]);
       setStageComments('');
       fetchWorkflowStatus(selectedRequest.id);
       fetchRequestComments(selectedRequest.id);
@@ -864,7 +864,10 @@ const VehicleAssignmentApp = () => {
                         error.response?.data?.message ||
                         error.message ||
                         'Failed to process stage';
+      setProcessStageError(errorMessage);
       showNotification(errorMessage, 'error');
+    } finally {
+      setProcessingStage(false);
     }
   };
 
@@ -1826,6 +1829,7 @@ const VehicleAssignmentApp = () => {
                   }}
                   onRejectRequest={() => handleRejectRequest(selectedRequest.id)}
                   currentTab={activeTab}
+                  isProcessed={processedRequests.includes(selectedRequest.id)}
                 />
               </>
             )}
@@ -1845,7 +1849,7 @@ const VehicleAssignmentApp = () => {
 
         <Dialog
           open={openStageDialog}
-          onClose={() => setOpenStageDialog(false)}
+          onClose={() => { setOpenStageDialog(false); setProcessStageSuccess(false); }}
           PaperProps={{
             sx: {
               borderRadius: '12px'
@@ -1882,7 +1886,7 @@ const VehicleAssignmentApp = () => {
             backgroundColor: professionalColors.surface
           }}>
             <StyledButton
-              onClick={() => setOpenStageDialog(false)}
+              onClick={() => { setOpenStageDialog(false); setProcessStageSuccess(false); }}
               sx={{
                 color: professionalColors.textSecondary,
                 '&:hover': {
@@ -1892,18 +1896,25 @@ const VehicleAssignmentApp = () => {
             >
               Cancel
             </StyledButton>
-            <StyledButton
-              onClick={handleProcessStage}
-              variant="contained"
-              sx={{
-                backgroundColor: professionalColors.primary,
-                '&:hover': {
-                  backgroundColor: alpha(professionalColors.primary, 0.9)
-                }
-              }}
-            >
-              Submit
-            </StyledButton>
+            {!processStageSuccess && (
+              <StyledButton
+                onClick={handleProcessStage}
+                variant="contained"
+                sx={{
+                  backgroundColor: professionalColors.primary,
+                  '&:hover': {
+                    backgroundColor: alpha(professionalColors.primary, 0.9)
+                  }
+                }}
+                disabled={processingStage}
+                endIcon={processingStage ? <CircularProgress size={18} color="inherit" /> : null}
+              >
+                {processingStage ? 'Processing...' : 'Submit'}
+              </StyledButton>
+            )}
+            {processStageError && (
+              <Alert severity="error" sx={{ mt: 1 }}>{processStageError}</Alert>
+            )}
           </DialogActions>
         </Dialog>
 

@@ -275,6 +275,9 @@ const MaintenanceRequestApp = () => {
     department: 'HR'
   });
 
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [processStageLoading, setProcessStageLoading] = useState(false);
+
   const formatRequestData = (request) => {
     const formatted = {
       ...request,
@@ -409,6 +412,7 @@ const MaintenanceRequestApp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitLoading(true);
     try {
       const requestPayload = {
         vehicleId: formData.vehicleId,
@@ -450,6 +454,8 @@ const MaintenanceRequestApp = () => {
                         error.message ||
                         'Failed to submit request';
       showNotification(errorMessage, 'error');
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
@@ -465,7 +471,7 @@ const MaintenanceRequestApp = () => {
 
   const handleProcessStage = async () => {
     if (!selectedRequest) return;
-
+    setProcessStageLoading(true);
     try {
       if (shouldSkipForRequestor(selectedRequest, userId)) {
         await api.post(`/api/MaintenanceRequest/${selectedRequest.id}/process-stage?userId=${userId}`, {
@@ -479,20 +485,16 @@ const MaintenanceRequestApp = () => {
         const payload = {
           comments: stageComments
         };
-
         if (selectedRequest.currentStage === 'Commit') {
           payload.estimatedCost = formData.estimatedCost;
         }
-
         await api.post(`/api/MaintenanceRequest/${selectedRequest.id}/process-stage?userId=${userId}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
       }
-
       showNotification('Stage processed successfully!');
-
       const [requestsRes, pendingRes] = await Promise.all([
         api.get('/api/MaintenanceRequest'),
         api.get(`/api/MaintenanceRequest/my-pending-actions?userId=${userId}`, {
@@ -501,7 +503,6 @@ const MaintenanceRequestApp = () => {
           }
         })
       ]);
-
       setRequests(requestsRes.data.map(formatRequestData));
       setPendingActions(pendingRes.data.map(formatRequestData));
       setOpenStageDialog(false);
@@ -513,6 +514,8 @@ const MaintenanceRequestApp = () => {
                         error.message ||
                         'Failed to process stage';
       showNotification(errorMessage, 'error');
+    } finally {
+      setProcessStageLoading(false);
     }
   };
 
@@ -1320,14 +1323,15 @@ const MaintenanceRequestApp = () => {
         <Box sx={{
           p: 4,
           borderBottom: `1px solid ${professionalColors.border}`,
-          backgroundColor: professionalColors.surface
+          backgroundColor: professionalColors.surface,
         }}>
           <Box sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: 2
+            gap: 2,
+            
           }}>
             <Typography variant="h4" sx={{
               fontWeight: 300,
@@ -1335,7 +1339,7 @@ const MaintenanceRequestApp = () => {
               fontSize: { xs: '1.5rem', sm: '1.7rem' },
               letterSpacing: '-0.5px'
             }}>
-              Requests
+              Maintenance Requests
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
 
@@ -1808,7 +1812,7 @@ const MaintenanceRequestApp = () => {
             Create Maintenance Request
           </DialogTitle>
           <DialogContent sx={{ py: 3 }}>
-            <Box component="form" onSubmit={handleSubmit}>
+            <Box component="form" id="maintenance-request-form" onSubmit={handleSubmit}>
               <FormControl fullWidth margin="normal" required>
                 <InputLabel sx={{
                   color: professionalColors.textSecondary,
@@ -1902,11 +1906,13 @@ const MaintenanceRequestApp = () => {
                   backgroundColor: alpha(professionalColors.textSecondary, 0.05)
                 }
               }}
+              disabled={submitLoading}
             >
               Cancel
             </StyledButton>
             <StyledButton
-              onClick={handleSubmit}
+              type="submit"
+              form="maintenance-request-form"
               variant="contained"
               sx={{
                 backgroundColor: professionalColors.primary,
@@ -1914,8 +1920,10 @@ const MaintenanceRequestApp = () => {
                   backgroundColor: alpha(professionalColors.primary, 0.9),
                 },
               }}
+              disabled={submitLoading}
+              startIcon={submitLoading ? <CircularProgress size={20} color="inherit" /> : null}
             >
-              Submit Request
+              {submitLoading ? 'Submitting...' : 'Submit Request'}
             </StyledButton>
           </DialogActions>
         </Dialog>
@@ -2006,6 +2014,7 @@ const MaintenanceRequestApp = () => {
                   backgroundColor: alpha(professionalColors.textSecondary, 0.05)
                 }
               }}
+              disabled={processStageLoading}
             >
               Cancel
             </StyledButton>
@@ -2018,8 +2027,10 @@ const MaintenanceRequestApp = () => {
                   backgroundColor: alpha(professionalColors.primary, 0.9)
                 }
               }}
+              disabled={processStageLoading}
+              startIcon={processStageLoading ? <CircularProgress size={20} color="inherit" /> : null}
             >
-              Submit
+              {processStageLoading ? 'Submitting...' : 'Submit'}
             </StyledButton>
           </DialogActions>
         </Dialog>

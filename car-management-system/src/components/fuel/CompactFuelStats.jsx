@@ -60,7 +60,6 @@ const CompactFuelStats = () => {
     const groupedData = {};
     const periodCount = 6;
 
-    // Initialize data structure with empty values
     for (let i = periodCount - 1; i >= 0; i--) {
       let key, label, fullDate;
       if (timeRange === 'month') {
@@ -84,7 +83,6 @@ const CompactFuelStats = () => {
       };
     }
 
-    // Fill with actual data
     fuelLogs.forEach(log => {
       const logDate = new Date(log.date);
       let key;
@@ -135,7 +133,7 @@ const CompactFuelStats = () => {
       transition={{ duration: 0.3 }}
       sx={{
         width: 400,
-        height: 245,
+        height: 345,
         p: 2.5,
         borderRadius: '14px',
         display: 'flex',
@@ -153,7 +151,6 @@ const CompactFuelStats = () => {
             component={motion.div}
             whileHover={{ rotate: 15 }}
             sx={{
-              background: theme.palette.primary.light,
               width: 36,
               height: 36,
               borderRadius: '10px',

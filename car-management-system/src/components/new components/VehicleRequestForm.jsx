@@ -61,21 +61,26 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const RequestDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
-    borderRadius: 12,
-    padding: theme.spacing(2),
-    width: '600px', // Fixed width for the request form
-    maxWidth: '95vw', // Ensure it doesn't exceed viewport on small screens
+    borderRadius: 24,
+    padding: 0,
+    width: '600px',
+    maxWidth: '95vw',
+    background: '#f4f8fb',
+    boxShadow: '0 8px 32px 0 rgba(25, 118, 210, 0.10)',
+    border: 'none',
   },
 }));
 
 const SelectorDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
-    borderRadius: 12,
-    padding: theme.spacing(2),
-    width: '900px', // Fixed width for the selector
-    maxWidth: '95vw', // Ensure it doesn't exceed viewport on small screens
-    maxHeight: '80vh',
-    height:'600px' // Limit height with scroll for content
+    borderRadius: 24,
+    padding: theme.spacing(0),
+    width: '900px',
+    maxWidth: '98vw',
+    maxHeight: '85vh',
+    background: '#f4f8fb',
+    boxShadow: '0 8px 32px 0 rgba(25, 118, 210, 0.10)',
+    border: 'none',
   },
 }));
 
@@ -100,16 +105,17 @@ const VehicleGridSelector = ({
   const [typeFilter, setTypeFilter] = useState('all');
   const [fuelFilter, setFuelFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const vehiclesPerPage = 8;
+  const vehiclesPerPage = 4;
 
+  // Only show vehicles that are not assigned
   const filteredVehicles = vehicles.filter(vehicle => {
-    const matchesSearch = `${vehicle.make} ${vehicle.model} ${vehicle.licensePlate}`
+    // Exclude assigned vehicles
+    if (vehicle.isAssigned) return false;
+    const matchesSearch = `${vehicle.make || ''} ${vehicle.model || ''} ${vehicle.licensePlate || ''}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    
-    const matchesType = typeFilter === 'all' || vehicle.type === typeFilter;
-    const matchesFuel = fuelFilter === 'all' || vehicle.fuelType === fuelFilter;
-    
+    const matchesType = typeFilter === 'all' || (vehicle.type || vehicle.vehicleType) === typeFilter;
+    const matchesFuel = fuelFilter === 'all' || (vehicle.fuelType || '').toLowerCase() === fuelFilter.toLowerCase();
     return matchesSearch && matchesType && matchesFuel;
   });
 
@@ -131,197 +137,186 @@ const VehicleGridSelector = ({
 
   return (
     <SelectorDialog open={open} onClose={onClose}>
-      <DialogTitle>Select a Vehicle</DialogTitle>
-      <DialogContent dividers>
-        <Box sx={{ width: '100%', mt: 1 }}>
-          {/* Search and Filter Bar */}
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 2, 
-            mb: 2,
-            flexWrap: 'wrap',
-            alignItems: 'center'
-          }}>
-            <TextField
-              placeholder="Search vehicles..."
-              variant="outlined"
-              size="small"
-              sx={{ flexGrow: 1, maxWidth: 400 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              value={searchTerm}
+      <Box sx={{ borderRadius: '24px 24px 0 0', overflow: 'hidden' }}>
+        <Box sx={{ bgcolor: '#000000b5', color: 'white', px: 4, py: 2.5, borderRadius: '24px 24px 0 0', boxShadow: '0 2px 8px 0 rgba(25,118,210,0.08)' }}>
+          <Typography variant="h5" fontWeight={300} letterSpacing={0.5}>
+            Select a Vehicle
+          </Typography>
+        </Box>
+      </Box>
+      <DialogContent dividers sx={{ background: '#f4f8fb', minHeight: 350, px: 4, py: 3 }}>
+        {/* Search and Filter Bar */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 2, 
+          mb: 3,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          background: '#fff',
+          borderRadius: 3,
+          p: 2,
+          boxShadow: '0 2px 8px 0 rgba(25,118,210,0.04)'
+        }}>
+          <TextField
+            placeholder="Search vehicles..."
+            variant="outlined"
+            size="small"
+            sx={{ flexGrow: 1, maxWidth: 400, bgcolor: '#f7fafc', borderRadius: 2 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Type</InputLabel>
+            <Select
+              value={typeFilter}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
+                setTypeFilter(e.target.value);
                 setCurrentPage(1);
               }}
-            />
-            
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>Type</InputLabel>
-              <Select
-                value={typeFilter}
-                onChange={(e) => {
-                  setTypeFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                label="Type"
-              >
-                <MenuItem value="all">All Types</MenuItem>
-                <MenuItem value="Sedan">Sedan</MenuItem>
-                <MenuItem value="SUV">SUV</MenuItem>
-                <MenuItem value="Truck">Truck</MenuItem>
-                <MenuItem value="Van">Van</MenuItem>
-              </Select>
-            </FormControl>
-            
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>Fuel</InputLabel>
-              <Select
-                value={fuelFilter}
-                onChange={(e) => {
-                  setFuelFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                label="Fuel"
-              >
-                <MenuItem value="all">All Fuels</MenuItem>
-                <MenuItem value="Gasoline">Gasoline</MenuItem>
-                <MenuItem value="Diesel">Diesel</MenuItem>
-                <MenuItem value="Electric">Electric</MenuItem>
-                <MenuItem value="Hybrid">Hybrid</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-          
-          {/* Vehicle Grid */}
-          <Grid container spacing={2} sx={{ minHeight: 300 }}>
-            {paginatedVehicles.length > 0 ? (
-              paginatedVehicles.map(vehicle => (
-                <Grid item xs={12} sm={6} md={4} key={vehicle.id}>
-                  <Paper 
-                    elevation={selectedVehicle === vehicle.id ? 3 : 1}
-                    sx={{
-                      p: 1,
-                      height: '100%',
-                      border: selectedVehicle === vehicle.id ? 
-                        '2px solid primary.main' : '1px solid divider',
-                      borderRadius: 1.5,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        transform: 'translateY(-2px)'
-                      },
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}
-                    onClick={() => {
-                      onSelectVehicle(vehicle.id);
-                      onClose();
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
-                      <Avatar sx={{ 
-                        bgcolor: 'background.default', 
-                        color: 'primary.main',
-                        width: 36, 
-                        height: 36 
-                      }}>
-                        {getVehicleIcon(vehicle.type)}
-                      </Avatar>
-                      <Box>
-                        <Typography fontWeight="bold" noWrap fontSize="0.85rem">
-                          {vehicle.make} {vehicle.model}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" fontSize="0.7rem">
-                          {vehicle.year}
-                        </Typography>
-                        <Chip 
-                          label={vehicle.licensePlate} 
-                          size="small" 
-                          sx={{ mt: 0.5, fontSize: '0.65rem', height: 20 }} 
-                        />
-                      </Box>
-                    </Box>
-                    
-                    <Box sx={{ 
-                      display: 'flex', 
-                      gap: 0.5, 
-                      mt: 'auto',
-                      pt: 0.5,
-                      flexWrap: 'wrap'
-                    }}>
-                      <Chip 
-                        icon={<FuelIcon fontSize="small" />}
-                        label={vehicle.fuelType}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: '0.65rem', height: 22 }}
-                      />
-                      <Chip 
-                        icon={<SeatsIcon fontSize="small" />}
-                        label={`${vehicle.seats} seats`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: '0.65rem', height: 22 }}
-                      />
-                      {vehicle.features?.includes('GPS') && (
-                        <Chip 
-                          icon={<GpsIcon fontSize="small" />}
-                          label="GPS"
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontSize: '0.65rem', height: 22 }}
-                        />
-                      )}
-                    </Box>
-                  </Paper>
-                </Grid>
-              ))
-            ) : (
-              <Grid item xs={12}>
-                <Paper sx={{ p: 2, textAlign: 'center' }}>
-                  <Typography variant="h6" color="text.secondary">
-                    No vehicles found matching your criteria
+              label="Type"
+            >
+              <MenuItem value="all">All Types</MenuItem>
+              <MenuItem value="Sedan">Sedan</MenuItem>
+              <MenuItem value="SUV">SUV</MenuItem>
+              <MenuItem value="Truck">Truck</MenuItem>
+              <MenuItem value="Van">Van</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Fuel</InputLabel>
+            <Select
+              value={fuelFilter}
+              onChange={(e) => {
+                setFuelFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              label="Fuel"
+            >
+              <MenuItem value="all">All Fuels</MenuItem>
+              <MenuItem value="Gasoline">Gasoline</MenuItem>
+              <MenuItem value="Diesel">Diesel</MenuItem>
+              <MenuItem value="Electric">Electric</MenuItem>
+              <MenuItem value="Hybrid">Hybrid</MenuItem>
+              <MenuItem value="Petrol">Petrol</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+        {/* Vehicle Grid */}
+        <Grid container spacing={3} sx={{ minHeight: 300, mt: 0.5, justifyContent: 'center' }}>
+          {paginatedVehicles.length > 0 ? (
+            paginatedVehicles.map(vehicle => (
+              <Grid item xs={12} sm={6} md={4} key={vehicle.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Paper 
+                  elevation={selectedVehicle === vehicle.id ? 8 : 2}
+                  sx={{
+                    p: 3,
+                    height: 250,
+                    width: 270,
+                    minWidth: 270,
+                    maxWidth: 270,
+                    border: selectedVehicle === vehicle.id ? '2.5px solidrgb(0, 0, 0)' : '1.5px solid #e0e0e0',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    transition: 'all 0.25s cubic-bezier(.4,2,.6,1)',
+                    '&:hover': {
+                      borderColor: '#1976d2',
+                      boxShadow: '0 8px 32px 0 rgba(147, 184, 233, 0.6)',
+                      transform: 'translateY(-4px) scale(1.03)'
+                    },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    background: selectedVehicle === vehicle.id ? '#e3f2fd' : '#fff',
+                  }}
+                  onClick={() => {
+                    onSelectVehicle(vehicle.id);
+                    onClose();
+                  }}
+                >
+                  <Avatar sx={{ 
+                    bgcolor: selectedVehicle === vehicle.id ? '#1976d2' : '#e3f2fd', 
+                    color: selectedVehicle === vehicle.id ? '#fff' : '#1976d2',
+                    width: 56, 
+                    height: 56, 
+                    mb: 1.5,
+                    boxShadow: selectedVehicle === vehicle.id ? '0 2px 12px 0 rgba(25,118,210,0.18)' : 'none',
+                  }}>
+                    {getVehicleIcon(vehicle.type || vehicle.vehicleType)}
+                  </Avatar>
+                  <Typography fontWeight={700} noWrap fontSize="1.15rem" sx={{ mb: 0.5, textAlign: 'center' }}>
+                    {vehicle.make || 'Unknown'} {vehicle.model || ''}
                   </Typography>
-                  <Button 
-                    size="small"
-                    sx={{ mt: 1 }} 
-                    onClick={() => {
-                      setSearchTerm('');
-                      setTypeFilter('all');
-                      setFuelFilter('all');
-                    }}
-                  >
-                    Clear filters
-                  </Button>
+                  <Typography variant="body2" color="text.secondary" fontSize="0.95rem" sx={{ mb: 1, textAlign: 'center' }}>
+                    {vehicle.year || '-'}
+                  </Typography>
+                  <Chip 
+                    label={vehicle.licensePlate || 'N/A'} 
+                    size="medium" 
+                    sx={{ mb: 1, fontSize: '1rem', height: 30, borderRadius: 2, bgcolor: '#f5f5f5', fontWeight: 600 }} 
+                  />
+                  <Box sx={{ display: 'flex', gap: 1, mt: 'auto', pt: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Chip 
+                      icon={<FuelIcon fontSize="small" />} 
+                      label={vehicle.fuelType || 'N/A'}
+                      size="small"
+                      variant="filled"
+                      sx={{ fontSize: '0.95rem', height: 28, borderRadius: 2, bgcolor: '#e3f2fd', color: '#1976d2', fontWeight: 500 }}
+                    />
+                    <Chip 
+                      label={vehicle.color || 'Color N/A'}
+                      size="small"
+                      variant="filled"
+                      sx={{ fontSize: '0.95rem', height: 28, borderRadius: 2, bgcolor: '#fffde7', color: '#fbc02d', fontWeight: 500 }}
+                    />
+                  </Box>
                 </Paper>
               </Grid>
-            )}
-          </Grid>
-          
-          {/* Pagination */}
-          {filteredVehicles.length > vehiclesPerPage && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1.5 }}>
-              <Pagination
-                count={totalPages}
-                page={currentPage}
-                onChange={(e, page) => setCurrentPage(page)}
-                color="primary"
-                shape="rounded"
-                size="small"
-              />
-            </Box>
+            ))
+          ) : (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3, textAlign: 'center', background: '#fff', borderRadius: 3 }}>
+                <Typography variant="h6" color="text.secondary">
+                  No vehicles found matching your criteria
+                </Typography>
+                <Button 
+                  size="small"
+                  sx={{ mt: 1 }} 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setTypeFilter('all');
+                    setFuelFilter('all');
+                  }}
+                >
+                  Clear filters
+                </Button>
+              </Paper>
+            </Grid>
           )}
-        </Box>
+        </Grid>
+
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+      <DialogActions sx={{ px: 4, pb: 2, pt: 1, background: '#f4f8fb', borderRadius: '0 0 24px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {filteredVehicles.length > vehiclesPerPage ? (
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(e, page) => setCurrentPage(page)}
+            color="primary"
+            shape="rounded"
+            size="medium"
+          />
+        ) : <span />}
+        <Button onClick={onClose} sx={{ fontWeight: 600, color: '#1976d2', borderRadius: 2, px: 2 }}>Cancel</Button>
       </DialogActions>
     </SelectorDialog>
   );
@@ -435,6 +430,11 @@ const VehicleRequestForm = () => {
     }
   };
 
+  // Helper for safe vehicle property access
+  const safeVehicleProp = (vehicle, prop, fallback = '-') => {
+    return vehicle && vehicle[prop] !== undefined && vehicle[prop] !== null ? vehicle[prop] : fallback;
+  };
+
   return (
     <Box>
       <StyledButton
@@ -445,46 +445,40 @@ const VehicleRequestForm = () => {
       </StyledButton>
 
       <RequestDialog open={open} onClose={handleClose}>
-        <DialogTitle sx={{ 
-          bgcolor: 'primary.main', 
-          color: 'white',
-          borderRadius: '8px 8px 0 0',
-          py: 1.5,
-          px: 2
-        }}>
-          <Typography variant="h6" fontWeight="600">
-            Request Vehicle Assignment
-          </Typography>
-        </DialogTitle>
-        
-        <Paper component="form" onSubmit={handleSubmit} sx={{ p: 1.5 }}>
-          <DialogContent sx={{ pt: 2 }}>
+        <Box sx={{ borderRadius: '24px 24px 0 0', overflow: 'hidden' }}>
+          <Box sx={{ bgcolor: 'primary.main', color: 'white', px: 4, py: 2.5, borderRadius: '24px 24px 0 0', boxShadow: '0 2px 8px 0 rgba(25,118,210,0.08)' }}>
+            <Typography variant="h5" fontWeight={700} letterSpacing={0.5}>
+              Request Vehicle Assignment
+            </Typography>
+          </Box>
+        </Box>
+        <Paper component="form" onSubmit={handleSubmit} sx={{ p: 0, background: 'transparent', boxShadow: 'none' }}>
+          <DialogContent sx={{ pt: 3, px: 4, background: '#f4f8fb' }}>
             {error && (
-              <Alert severity="error" sx={{ mb: 2, borderRadius: 1.5 }}>
+              <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
                 <Typography variant="body2">{error}</Typography>
               </Alert>
             )}
-
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" gutterBottom>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" gutterBottom fontWeight={600}>
                 Selected Vehicle
               </Typography>
               {selectedVehicle ? (
-                <Paper sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, background: '#f7fafc', borderRadius: 3, boxShadow: '0 2px 8px 0 rgba(25,118,210,0.04)', mb: 1 }}>
                   <Avatar sx={{ 
-                    bgcolor: 'background.default', 
+                    bgcolor: '#e3f2fd', 
                     color: 'primary.main',
-                    width: 42, 
-                    height: 42 
+                    width: 48, 
+                    height: 48 
                   }}>
-                    {VehicleIcons[selectedVehicle.type] || VehicleIcons.default}
+                    {VehicleIcons[safeVehicleProp(selectedVehicle, 'type', 'default')] || VehicleIcons.default}
                   </Avatar>
                   <Box>
-                    <Typography fontWeight="bold" fontSize="0.95rem">
-                      {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})
+                    <Typography fontWeight={700} fontSize="1.05rem">
+                      {safeVehicleProp(selectedVehicle, 'make', 'Unknown')} {safeVehicleProp(selectedVehicle, 'model', '')} ({safeVehicleProp(selectedVehicle, 'year', '-')})
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" fontSize="0.8rem">
-                      License: {selectedVehicle.licensePlate} | {selectedVehicle.fuelType} | {selectedVehicle.seats} seats
+                    <Typography variant="body2" color="text.secondary" fontSize="0.95rem">
+                      License: {safeVehicleProp(selectedVehicle, 'licensePlate', 'N/A')} | {safeVehicleProp(selectedVehicle, 'fuelType', 'N/A')}
                     </Typography>
                   </Box>
                 </Paper>
@@ -497,12 +491,11 @@ const VehicleRequestForm = () => {
                 variant="outlined"
                 size="small"
                 onClick={() => setSelectVehicleOpen(true)}
-                sx={{ mt: 1 }}
+                sx={{ mt: 1, fontWeight: 600, borderRadius: 2, px: 2 }}
               >
                 {selectedVehicle ? 'Change Vehicle' : 'Select Vehicle'}
               </Button>
             </Box>
-
             <TextField
               margin="normal"
               fullWidth
@@ -516,23 +509,24 @@ const VehicleRequestForm = () => {
               onChange={(e) => setFormData({...formData, requestReason: e.target.value})}
               disabled={loading}
               placeholder="Please explain why you need this vehicle..."
-              sx={{ mt: 1 }}
+              sx={{ mt: 1, bgcolor: '#fff', borderRadius: 2 }}
               InputLabelProps={{
                 shrink: true,
               }}
             />
           </DialogContent>
-          
-          <DialogActions sx={{ px: 2, py: 1.5 }}>
+          <DialogActions sx={{ px: 4, pb: 2, pt: 1, background: '#f4f8fb', borderRadius: '0 0 24px 24px' }}>
             <Button 
               onClick={handleClose} 
               disabled={loading}
               color="inherit"
               size="small"
               sx={{ 
-                borderRadius: 1.5,
+                borderRadius: 2,
                 px: 2,
-                textTransform: 'none'
+                textTransform: 'none',
+                fontWeight: 600,
+                color: '#1976d2'
               }}
             >
               Cancel
@@ -545,10 +539,11 @@ const VehicleRequestForm = () => {
               disabled={loading || !formData.vehicleId || !formData.requestReason}
               endIcon={loading ? <CircularProgress size={18} /> : null}
               sx={{ 
-                borderRadius: 1.5,
+                borderRadius: 2,
                 px: 2,
                 textTransform: 'none',
                 boxShadow: 'none',
+                fontWeight: 600,
                 '&:hover': {
                   boxShadow: 'none',
                 }

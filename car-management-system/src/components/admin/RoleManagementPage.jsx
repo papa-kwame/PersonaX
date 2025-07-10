@@ -1,19 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Tab, Tabs, Table, Button, Modal, Form,
-  Badge, Spinner, Card, Container,
-  Row, Col, InputGroup, FloatingLabel,
-  Dropdown, Pagination, ListGroup
-} from 'react-bootstrap';
-import {
-  PlusCircle, Trash, PencilSquare,
-  PersonCheck, PersonX, ShieldCheck, Shield,
-  Search, People, Building,
-  Check, X, ThreeDotsVertical
-} from 'react-bootstrap-icons';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import {
+  Container,
+  Typography,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button,
+  Modal,
+  TextField,
+  Badge,
+  CircularProgress,
+  Card,
+  Box,
+  InputAdornment,
+  Pagination,
+  List,
+  ListItem,
+  ListItemText,
+  Checkbox,
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  Stack,
+  Chip
+} from '@mui/material';
+import {
+  AddCircleOutline,
+  Delete,
+  Edit,
+  PersonAdd,
+  PersonOff,
+  Shield,
+  Search,
+  Business,
+  Check,
+  Close,
+  MoreVert,
+  Lock,
+  LockOpen,
+} from '@mui/icons-material';
+import {
+  PersonCheck,
+  PlusCircle,
+  Trash,
+  PencilSquare,
+  People,
+  Person,
+} from 'react-bootstrap-icons';
 
 const API_BASE = 'https://localhost:7092/api';
 const API_ENDPOINTS = {
@@ -25,7 +68,7 @@ const API_ENDPOINTS = {
 };
 
 const getRandomColor = () => {
-  const colors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info'];
+  const colors = ['primary', 'secondary', 'success', 'error', 'warning', 'info'];
   return colors[Math.floor(Math.random() * colors.length)];
 };
 
@@ -41,6 +84,9 @@ const RoleManagementPage = () => {
   const [showAddRoleModal, setShowAddRoleModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [showRolesModal, setShowRolesModal] = useState(false);
+  const [showCreateRoleModal, setShowCreateRoleModal] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -92,7 +138,7 @@ const RoleManagementPage = () => {
         color: getRandomColor()
       };
       setData(prev => ({ ...prev, roles: [...prev.roles, createdRole] }));
-      setShowRoleModal(false);
+      setShowCreateRoleModal(false);
       setNewRole({ name: '', description: '' });
       toast.success('Role created successfully');
     } catch (err) {
@@ -160,24 +206,12 @@ const RoleManagementPage = () => {
     user.roles.some(role => typeof role === 'string' && role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const filteredRoles = data.roles.filter(role =>
-    typeof role.name === 'string' &&
-    role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    role.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-  const currentRoles = filteredRoles.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(
-    activeTab === 'users' 
-      ? filteredUsers.length / itemsPerPage 
-      : filteredRoles.length / itemsPerPage
-  );
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const paginate = (event, pageNumber) => setCurrentPage(pageNumber);
 
   const handleOpenAddRoleModal = (user) => {
     setSelectedUser(user);
@@ -206,8 +240,24 @@ const RoleManagementPage = () => {
     .map(role => role.name)
     .filter(roleName => !selectedUser?.roles.includes(roleName));
 
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Helper: filter out 'default' department from all lists/dropdowns
+  const filteredDepartments = Array.isArray(data.departments)
+    ? data.departments.filter(
+        d =>
+          (typeof d === 'string' ? d.toLowerCase() : d?.name?.toLowerCase()) !== 'default'
+      )
+    : [];
+
   return (
-    <Container fluid className="py-4 px-4">
+    <Container maxWidth="xl" sx={{ py: 2, px: { xs: 1, sm: 4 } }}>
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -220,406 +270,347 @@ const RoleManagementPage = () => {
         pauseOnHover
       />
       
-      <Row className="mb-4 align-items-center">
-        <Col>
-          <div className="d-flex align-items-center">
-            <div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
-              <ShieldCheck size={28} className="text-primary" />
-            </div>
-            <div>
-              <h2 className="fw-bold mb-0">User & Role Management</h2>
-              <p className="text-muted mb-0">Manage system users and their roles</p>
-            </div>
-          </div>
-        </Col>
-      </Row>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+        <Box sx={{  borderRadius: '50%', p: 2, mr: 2 }}>
+          <LockOpen color="primary" />
+        </Box>
+        <Box>
+          <Typography variant="h6" component="h2" sx={{ fontWeight: '300' }}>
+            User & Role Management
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Manage system users and their roles
+          </Typography>
+        </Box>
+        <Box flexGrow={1} />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => setShowRolesModal(true)}
+          sx={{ borderRadius: 2, fontWeight: 700, ml: 2 }}
+          startIcon={<Shield />}
+        >
+          Manage Roles
+        </Button>
+      </Box>
 
-      <Card className="shadow-sm border-0">
-        <Card.Body className="p-0">
-          <Tabs 
-            activeKey={activeTab} 
-            onSelect={(k) => {
-              setActiveTab(k);
-              setCurrentPage(1);
-            }} 
-            className="px-3 pt-2 border-bottom-0"
-            fill
-          >
-            <Tab 
-              eventKey="users" 
-              title={
-                <span className="d-flex align-items-center">
-                  <People className="me-2" /> Users
-                </span>
-              }
-              className="p-3"
-            >
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h4 className="mb-0">System Users</h4>
-                <InputGroup style={{ width: '300px' }}>
-                  <InputGroup.Text className="bg-light border-end-0">
-                    <Search size={14} />
-                  </InputGroup.Text>
-                  <Form.Control
+      <Card sx={{ boxShadow: '0 2px 12px rgba(60,72,100,0.07)', borderRadius: 4, mb: 4 }}>
+        <Box sx={{ p: 3 }}>
+          {activeTab === 'users' && (
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                <Typography variant="h5" fontWeight={400} color="primary.main" mb={2}>
+                  System Users
+                </Typography>
+                <TextField
+                  variant="outlined"
                     placeholder="Search users..."
                     value={searchTerm}
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="border-start-0"
-                  />
-                </InputGroup>
-              </div>
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ width: 300 }}
+                />
+              </Box>
               
               {loading ? (
-                <div className="text-center py-5">
-                  <Spinner animation="border" variant="primary" />
-                  <p className="mt-2">Loading users...</p>
-                </div>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 5 }}>
+                  <CircularProgress />
+                  <Typography sx={{ mt: 2 }}>Loading users...</Typography>
+                </Box>
               ) : (
                 <>
-                  <div className="table-responsive rounded">
-                    <Table hover className="align-middle mb-0">
-                      <thead className="bg-light">
-                        <tr>
-                          <th>User</th>
-                          <th>Email</th>
-                          <th>Status</th>
-                          <th>Roles</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                  <TableContainer component={Paper} sx={{ borderRadius: 4, boxShadow: '0 2px 12px rgba(60,72,100,0.07)' }}>
+                    <Table>
+                      <TableHead sx={{ bgcolor: '#f5f7fa' }}>
+                        <TableRow>
+                          <TableCell>Username</TableCell>
+                          <TableCell>Email</TableCell>
+                          <TableCell>Phone</TableCell>
+                          <TableCell>Department</TableCell>
+                          <TableCell>Roles</TableCell>
+                          <TableCell align="right">Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
                         {currentUsers.map(user => (
-                          <tr key={user.id}>
-                            <td>
-                              <div className="d-flex align-items-center">
-                                <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
-                                  <PersonCheck size={18} className="text-primary" />
-                                </div>
-                                <div className="fw-medium">
-                                  {user.name || user.email.split('@')[0]}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="text-muted">{user.email}</td>
-                            <td>
-                              <Badge bg={user.isLocked ? 'danger' : 'success'}>
-                                {user.isLocked ? 'Locked' : 'Active'}
-                              </Badge>
-                            </td>
-                            <td>
-                              <div className="d-flex flex-wrap gap-1">
+                          <TableRow key={user.id} hover sx={{ borderRadius: 3, transition: 'background 0.2s' }}>
+                            <TableCell>
+                              <Stack direction="row" alignItems="center" spacing={2}>
+                                <Avatar sx={{  fontWeight: 700 }}>
+                                  <Person />
+                                </Avatar>
+                                <Typography fontWeight={700} sx={{ textTransform: 'capitalize' }}>{user.name || user.email.split('@')[0]}</Typography>
+                              </Stack>
+                            </TableCell>
+                            <TableCell sx={{ color: 'text.secondary' }}>{user.email}</TableCell>
+                            <TableCell sx={{ color: 'text.secondary' }}>{user.phoneNumber || '-'}</TableCell>
+                            <TableCell sx={{ color: 'text.secondary' }}>{user.department || '-'}</TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {user.roles.map(role => (
-                                  <Badge 
+                                  <Chip
                                     key={role} 
-                                    bg="light" 
-                                    text="dark" 
-                                    className="fw-normal border d-flex align-items-center"
-                                  >
-                                    {role}
-                                    <X 
-                                      size={12} 
-                                      className="ms-1 cursor-pointer" 
-                                      onClick={() => handleUpdateUserRoles(
-                                        user.id, 
-                                        user.roles.filter(r => r !== role)
-                                      )}
-                                    />
-                                  </Badge>
+                                    label={role}
+                                    color="secondary"
+                                    size="small"
+                                    sx={{ fontWeight: 500, fontSize: 13, borderRadius: 2 }}
+                                    onDelete={() => handleUpdateUserRoles(user.id, user.roles.filter(r => r !== role))}
+                                    disabled={user.isLocked}
+                                  />
                                 ))}
-                              </div>
-                            </td>
-                            <td className="text-end">
-                              <Dropdown>
-                                <Dropdown.Toggle variant="outline-primary" size="sm">
-                                  Actions
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu>
-                                  <Dropdown.Item onClick={() => handleOpenAddRoleModal(user)}>
-                                    <PlusCircle className="me-2" /> Add Role
-                                  </Dropdown.Item>
-                                </Dropdown.Menu>
-                              </Dropdown>
-                            </td>
-                          </tr>
+                              </Box>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                <Button
+                                  variant="outlined"
+                                  color="primary"
+                                  size="small"
+                                  onClick={() => handleOpenAddRoleModal(user)}
+                                  sx={{ borderRadius: 2, minWidth: 0, px: 2, fontWeight: 700 }}
+                                  disabled={user.isLocked}
+                                >
+                                  Edit Roles
+                                </Button>
+
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
                         ))}
                         {currentUsers.length === 0 && (
-                          <tr>
-                            <td colSpan={5} className="text-center py-4 text-muted">
+                          <TableRow>
+                            <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary', py: 4 }}>
                               {searchTerm ? 'No users match your search' : 'No users found'}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         )}
-                      </tbody>
+                      </TableBody>
                     </Table>
-                  </div>
+                  </TableContainer>
                   
                   {filteredUsers.length > itemsPerPage && (
-                    <div className="d-flex justify-content-center mt-3">
-                      <Pagination>
-                        <Pagination.First 
-                          onClick={() => paginate(1)} 
-                          disabled={currentPage === 1} 
-                        />
-                        <Pagination.Prev 
-                          onClick={() => paginate(currentPage - 1)} 
-                          disabled={currentPage === 1} 
-                        />
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
-                          <Pagination.Item
-                            key={number}
-                            active={number === currentPage}
-                            onClick={() => paginate(number)}
-                          >
-                            {number}
-                          </Pagination.Item>
-                        ))}
-                        <Pagination.Next 
-                          onClick={() => paginate(currentPage + 1)} 
-                          disabled={currentPage === totalPages} 
-                        />
-                        <Pagination.Last 
-                          onClick={() => paginate(totalPages)} 
-                          disabled={currentPage === totalPages} 
-                        />
-                      </Pagination>
-                    </div>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                      <Pagination
+                        count={totalPages}
+                        page={currentPage}
+                        onChange={paginate}
+                        color="primary"
+                      />
+                    </Box>
                   )}
                 </>
               )}
-            </Tab>
-            
-            <Tab 
-              eventKey="roles" 
-              title={
-                <span className="d-flex align-items-center">
-                  <Shield className="me-2" /> Roles
-                </span>
-              }
-              className="p-3"
-            >
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h4 className="mb-0">System Roles</h4>
-                <div className="d-flex">
-                  <InputGroup className="me-3" style={{ width: '300px' }}>
-                    <InputGroup.Text className="bg-light border-end-0">
-                      <Search size={14} />
-                    </InputGroup.Text>
-                    <Form.Control
+            </Box>
+          )}
+        </Box>
+      </Card>
+
+      <Modal open={showRolesModal} onClose={() => setShowRolesModal(false)}>
+        <Box sx={{ ...modalStyle, width: 700, borderRadius: 4, p: 4, maxHeight: '90vh', overflowY: 'auto' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
+            Manage System Roles
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+            <TextField
+              variant="outlined"
                       placeholder="Search roles..."
                       value={searchTerm}
                       onChange={(e) => {
                         setSearchTerm(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="border-start-0"
-                    />
-                  </InputGroup>
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ width: 300, mr: 2 }}
+            />
                   <Button 
-                    variant="primary" 
-                    onClick={() => setShowRoleModal(true)}
-                    className="d-flex align-items-center"
-                  >
-                    <PlusCircle size={18} className="me-2" /> Create Role
+              variant="contained"
+              color="primary"
+              onClick={() => setShowCreateRoleModal(true)}
+              startIcon={<AddCircleOutline />}
+            >
+              Create Role
                   </Button>
-                </div>
-              </div>
-              
-              {loading ? (
-                <div className="text-center py-5">
-                  <Spinner animation="border" variant="primary" />
-                  <p className="mt-2">Loading roles...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="table-responsive rounded">
-                    <Table hover className="align-middle mb-0">
-                      <thead className="bg-light">
-                        <tr>
-                          <th>Role</th>
-                          <th>Description</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentRoles.map(role => (
-                          <tr key={role.id}>
-                            <td>
-                              <Badge pill bg={role.color} className="fs-6 py-2 px-3 text-uppercase">
-                                {role.name}
-                              </Badge>
-                            </td>
-                            <td className="text-muted">{role.description}</td>
-                            <td className="text-end">
-                              <Button 
-                                variant="outline-danger" 
-                                size="sm"
+          </Box>
+          <TableContainer component={Paper} sx={{ borderRadius: 4, boxShadow: '0 2px 12px rgba(60,72,100,0.07)' }}>
+            <Table>
+              <TableHead sx={{ bgcolor: '#f5f7fa' }}>
+                <TableRow>
+                  <TableCell>Role</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.roles.map(role => (
+                  <TableRow key={role.id}>
+                    <TableCell>
+                      <Chip
+                        label={role.name}
+                        color="secondary"
+                        size="small"
+                        sx={{ fontWeight: 500, fontSize: 13, borderRadius: 2 }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ color: 'text.secondary' }}>{role.description}</TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        color="error"
                                 onClick={() => handleDeleteRole(role.id)}
-                                className="rounded-circle"
-                                style={{ width: '32px', height: '32px' }}
                                 disabled={role.name === 'Admin'}
                               >
-                                <Trash size={14} />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                        {currentRoles.length === 0 && (
-                          <tr>
-                            <td colSpan={3} className="text-center py-4 text-muted">
+                        <Delete />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {data.roles.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center" sx={{ py: 4, color: 'text.secondary' }}>
                               {searchTerm ? 'No roles match your search' : 'No roles found'}
-                            </td>
-                          </tr>
+                    </TableCell>
+                  </TableRow>
                         )}
-                      </tbody>
+              </TableBody>
                     </Table>
-                  </div>
-                  
-                  {filteredRoles.length > itemsPerPage && (
-                    <div className="d-flex justify-content-center mt-3">
-                      <Pagination>
-                        <Pagination.First 
-                          onClick={() => paginate(1)} 
-                          disabled={currentPage === 1} 
-                        />
-                        <Pagination.Prev 
-                          onClick={() => paginate(currentPage - 1)} 
-                          disabled={currentPage === 1} 
-                        />
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
-                          <Pagination.Item
-                            key={number}
-                            active={number === currentPage}
-                            onClick={() => paginate(number)}
-                          >
-                            {number}
-                          </Pagination.Item>
-                        ))}
-                        <Pagination.Next 
-                          onClick={() => paginate(currentPage + 1)} 
-                          disabled={currentPage === totalPages} 
-                        />
-                        <Pagination.Last 
-                          onClick={() => paginate(totalPages)} 
-                          disabled={currentPage === totalPages} 
-                        />
-                      </Pagination>
-                    </div>
-                  )}
-                </>
-              )}
-            </Tab>
-          </Tabs>
-        </Card.Body>
-      </Card>
-
-      <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)} centered>
-        <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">Create New Role</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <FloatingLabel controlId="roleName" label="Role Name" className="mb-3">
-              <Form.Control 
-                type="text" 
+          </TableContainer>
+          {filteredUsers.length > itemsPerPage && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={paginate}
+                color="primary"
+              />
+            </Box>
+          )}
+          <Modal open={showCreateRoleModal} onClose={() => setShowCreateRoleModal(false)}>
+            <Box sx={{ ...modalStyle, width: 400, borderRadius: 4, p: 4 }}>
+              <Typography variant="h6" component="h2" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
+                Create New Role
+              </Typography>
+              <TextField
+                fullWidth
+                label="Role Name"
+                variant="outlined"
                 value={newRole.name}
-                onChange={(e) => setNewRole({...newRole, name: e.target.value})}
-                placeholder="Enter role name"
-                className="border-2 py-3"
+                onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
+                sx={{ mb: 2 }}
               />
-            </FloatingLabel>
-            
-            <FloatingLabel controlId="roleDescription" label="Description">
-              <Form.Control 
-                as="textarea" 
-                style={{ height: '100px' }}
+              <TextField
+                fullWidth
+                label="Description"
+                variant="outlined"
+                multiline
+                rows={4}
                 value={newRole.description}
-                onChange={(e) => setNewRole({...newRole, description: e.target.value})}
-                placeholder="Enter role description"
-                className="border-2 py-3"
+                onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
+                sx={{ mb: 2 }}
               />
-            </FloatingLabel>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer className="border-0">
-          <Button variant="outline-secondary" onClick={() => setShowRoleModal(false)}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button variant="outlined" onClick={() => setShowCreateRoleModal(false)} sx={{ mr: 1, fontWeight: 700 }}>
             Cancel
           </Button>
           <Button 
-            variant="primary" 
+                  variant="contained"
+                  color="primary"
             onClick={handleCreateRole}
             disabled={!newRole.name || loading}
+                  sx={{ fontWeight: 700 }}
           >
-            {loading ? <Spinner size="sm" /> : 'Create Role'}
+                  {loading ? <CircularProgress size={24} /> : 'Create Role'}
           </Button>
-        </Modal.Footer>
+              </Box>
+            </Box>
+          </Modal>
+        </Box>
       </Modal>
 
-      <Modal show={showAddRoleModal} onHide={() => setShowAddRoleModal(false)} centered>
-        <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">
+      <Modal open={showAddRoleModal} onClose={() => setShowAddRoleModal(false)}>
+        <Box sx={{ ...modalStyle, width: 420, borderRadius: 4, p: 4 }}>
+          <Typography variant="h6" component="h2" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
             Manage Roles for {selectedUser?.name || selectedUser?.email.split('@')[0]}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <h5 className="mb-3">Current Roles</h5>
-          <div className="d-flex flex-wrap gap-2 mb-4">
+          </Typography>
+          <Typography variant="subtitle1" sx={{ mb: 2 }}>
+            Current Roles
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
             {selectedUser?.roles.map(role => (
-              <Badge 
+              <Chip
                 key={role} 
-                pill 
-                bg="primary" 
-                className="fs-6 py-2 px-3 d-flex align-items-center"
-              >
-                {role}
-              </Badge>
+                label={role}
+                color="secondary"
+                size="small"
+                sx={{ fontWeight: 500, fontSize: 13, borderRadius: 2 }}
+                onDelete={() => setSelectedRoles(selectedRoles.filter(r => r !== role))}
+              />
             ))}
             {selectedUser?.roles.length === 0 && (
-              <span className="text-muted">No roles assigned</span>
+              <Typography variant="body2" color="text.secondary">No roles assigned</Typography>
             )}
-          </div>
-
+          </Box>
           {availableRoles.length > 0 && (
             <>
-              <h5 className="mb-3">Available Roles</h5>
-              <ListGroup>
+              <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                Available Roles
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                 {availableRoles.map(role => (
-                  <ListGroup.Item 
+                  <Chip
                     key={role}
-                    action
-                    active={selectedRoles.includes(role)}
+                    label={role}
+                    color={selectedRoles.includes(role) ? 'primary' : 'default'}
+                    size="small"
+                    sx={{ fontWeight: 500, fontSize: 13, borderRadius: 2, cursor: 'pointer' }}
                     onClick={() => handleRoleSelection(role)}
-                    className="d-flex justify-content-between align-items-center"
-                  >
-                    {role}
-                    {selectedRoles.includes(role) ? (
-                      <Check size={16} className="text-success" />
-                    ) : (
-                      <PlusCircle size={16} className="text-muted" />
-                    )}
-                  </ListGroup.Item>
+                  />
                 ))}
-              </ListGroup>
+              </Box>
             </>
           )}
-        </Modal.Body>
-        <Modal.Footer className="border-0">
-          <Button variant="outline-secondary" onClick={() => setShowAddRoleModal(false)}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button variant="outlined" onClick={() => setShowAddRoleModal(false)} sx={{ mr: 1, fontWeight: 700 }}>
             Cancel
           </Button>
           <Button 
-            variant="primary" 
+              variant="contained"
+              color="primary"
             onClick={handleSaveRoles}
             disabled={loading}
+              sx={{ fontWeight: 700 }}
           >
-            {loading ? <Spinner size="sm" /> : 'Save Changes'}
+              {loading ? <CircularProgress size={24} /> : 'Save Changes'}
           </Button>
-        </Modal.Footer>
+          </Box>
+        </Box>
       </Modal>
     </Container>
   );
+};
+
+const modalStyle = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  bgcolor: 'background.paper',
+  boxShadow: 24,
+  p: 4,
+  borderRadius: 2,
 };
 
 export default RoleManagementPage;

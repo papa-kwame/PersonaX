@@ -36,18 +36,24 @@ export const verifyToken = async (token) => {
       timeout: 5000
     });
 
-    return response.data.isValid === true;
+    return response.data?.isValid === true;
   } catch (error) {
     if (error.response) {
-      console.error('Server responded with:', error.response.status, error.response.data);
+      if (error.response.status === 401) {
+        console.warn('Token expired or unauthorized');
+      } else {
+        console.error('Server error:', error.response.status, error.response.data);
+      }
     } else if (error.request) {
       console.error('No response received:', error.request);
     } else {
       console.error('Axios config error:', error.message);
     }
+
     return false;
   }
 };
+
 
 export const register = async (email, password) => {
   try {

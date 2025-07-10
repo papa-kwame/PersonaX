@@ -1,15 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Button, Badge, Alert, Card, Container,
-  Row, Col, Modal, Table, InputGroup,
-  Dropdown, Form, Spinner, ListGroup, Tab, Tabs,
-  FloatingLabel, CloseButton, Toast, ToastContainer
-} from 'react-bootstrap';
+  Button,
+  Badge,
+  Alert,
+  Card,
+  Chip,
+  Container,
+  Box,
+  Grid,
+  Modal,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  InputAdornment,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  List,
+  ListItem,
+  ListItemText,
+  Checkbox,
+  IconButton,
+  CircularProgress,
+  Pagination,
+  Tabs,
+  Tab,
+  Snackbar,
+  Alert as MuiAlert,
+  Typography,
+  Divider,
+  Avatar,
+  FormGroup,
+  FormControlLabel,
+  Tooltip
+} from '@mui/material';
 import {
-  PersonCheck, Search, PencilSquare,
-  Building, ShieldCheck, X, PersonPlus,
-  ChatSquareText, CheckCircle, ArrowRepeat, Plus
-} from 'react-bootstrap-icons';
+  PersonAdd as PersonAddIcon,
+  PersonOff as PersonOffIcon,
+  Shield as ShieldIcon,
+  Search as SearchIcon,
+  ChatBubbleOutline as ChatBubbleOutlineIcon,
+  CheckCircle as CheckCircleIcon,
+  Repeat as RepeatIcon,
+  Add as AddIcon,
+  Close as CloseIcon,
+  MoreVert as MoreVertIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Check as CheckIcon,
+  Person as PersonIcon,
+  Business as BusinessIcon,
+  Lock as LockIcon
+} from '@mui/icons-material';
 import axios from 'axios';
 
 const RouteManagementPage = () => {
@@ -70,7 +118,7 @@ const RouteManagementPage = () => {
       return Array.isArray(response?.data) ? response.data : defaultValue;
     } catch (err) {
       console.error(`Error fetching ${endpoint}:`, err);
-      addToast(`Failed to load data from ${endpoint}`, 'danger');
+      addToast(`Failed to load data from ${endpoint}`, 'error');
       return defaultValue;
     }
   };
@@ -91,7 +139,7 @@ const RouteManagementPage = () => {
         setRoutes(routesData);
         setDepartmentOptions(deptsData);
       } catch (err) {
-        addToast('Failed to load application data. Please try again later.', 'danger');
+        addToast('Failed to load application data. Please try again later.', 'error');
       } finally {
         setLoading(false);
       }
@@ -145,8 +193,8 @@ const RouteManagementPage = () => {
       return response.data;
     } catch (err) {
       const errorMsg = err.response?.data?.message ||
-                     `Failed to ${operation} route. Please try again.`;
-      addToast(errorMsg, 'danger');
+        `Failed to ${operation} route. Please try again.`;
+      addToast(errorMsg, 'error');
       throw err;
     } finally {
       setLoading(false);
@@ -192,7 +240,7 @@ const RouteManagementPage = () => {
     const missingRoles = requiredRolesInOrder.filter(r => !assignedRoles.includes(r));
 
     if (missingRoles.length > 0) {
-      addToast(`All roles must be assigned. Missing: ${missingRoles.join(', ')}`, 'danger');
+      addToast(`All roles must be assigned. Missing: ${missingRoles.join(', ')}`, 'error');
       return false;
     }
 
@@ -207,7 +255,7 @@ const RouteManagementPage = () => {
       .map(([role]) => role);
 
     if (duplicateRoles.length > 0) {
-      addToast(`Each role must have exactly one user. Duplicates found for: ${duplicateRoles.join(', ')}`, 'danger');
+      addToast(`Each role must have exactly one user. Duplicates found for: ${duplicateRoles.join(', ')}`, 'error');
       return false;
     }
 
@@ -224,7 +272,7 @@ const RouteManagementPage = () => {
       const nextRole = requiredRolesInOrder[i + 1];
 
       if (rolePositions[currentRole] > rolePositions[nextRole]) {
-        addToast('Roles must be in order: Comment → Review → Commit → Approve', 'danger');
+        addToast('Roles must be in order: Comment → Review → Commit → Approve', 'error');
         return false;
       }
     }
@@ -234,7 +282,7 @@ const RouteManagementPage = () => {
 
   const saveRoute = async () => {
     if (!currentRoute.name?.trim() || !currentRoute.department) {
-      addToast('Route name and department are required', 'danger');
+      addToast('Route name and department are required', 'error');
       return;
     }
 
@@ -275,7 +323,7 @@ const RouteManagementPage = () => {
         err.response?.data?.message ||
         err.response?.data?.title ||
         'Failed to save route. Please check the data and try again.',
-        'danger'
+        'error'
       );
     } finally {
       setLoading(false);
@@ -300,7 +348,7 @@ const RouteManagementPage = () => {
     // Find the user in the users list
     const user = users.find(u => u.id === userId);
     if (!user) {
-      addToast('User not found', 'danger');
+      addToast('User not found', 'error');
       return;
     }
 
@@ -352,49 +400,48 @@ const RouteManagementPage = () => {
     const avatarColor = getAvatarColor(email);
 
     return (
-      <div className="d-flex align-items-center">
-        <div className="rounded-circle me-2" style={{
-          width: '24px', height: '24px',
-          backgroundColor: avatarColor,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: avatarColor === '#f8f9fc' ? '#000' : '#fff'
-        }}>
-          {email.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <div>{name}</div>
-          <small className="text-muted">{email}</small>
-        </div>
-      </div>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Avatar sx={{ bgcolor: avatarColor, width: 24, height: 24, mr: 1 }}>
+          <Typography sx={{ fontSize: '0.75rem', color: avatarColor === '#f8f9fc' ? '#000' : '#fff' }}>
+            {email.charAt(0).toUpperCase()}
+          </Typography>
+        </Avatar>
+        <Box>
+          <Typography>{name}</Typography>
+          <Typography variant="body2" color="text.secondary">{email}</Typography>
+        </Box>
+      </Box>
     );
   };
 
   const renderRoleDropdown = (user) => {
     return (
-      <Form.Select
-        size="sm"
-        value={user.role}
-        onChange={(e) => {
-          const newRole = e.target.value;
-          addUserToRoute(user.id, newRole);
-        }}
-        className="shadow-sm"
-      >
-        {requiredRolesInOrder.map(role => (
-          <option
-            key={role}
-            value={role}
-            disabled={currentRoute.users.some(u => u.role === role && u.id !== user.id)}
-          >
-            {role}
-          </option>
-        ))}
-      </Form.Select>
+      <FormControl size="small" sx={{ minWidth: 120 }}>
+        <InputLabel>Role</InputLabel>
+        <Select
+          value={user.role}
+          onChange={(e) => {
+            const newRole = e.target.value;
+            addUserToRoute(user.id, newRole);
+          }}
+          label="Role"
+        >
+          {requiredRolesInOrder.map(role => (
+            <MenuItem
+              key={role}
+              value={role}
+              disabled={currentRoute.users.some(u => u.role === role && u.id !== user.id)}
+            >
+              {role}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
     );
   };
 
   const getRoleColor = (role) => {
-    switch(role) {
+    switch (role) {
       case 'Comment': return '#36b9cc';
       case 'Review': return '#1cc88a';
       case 'Commit': return '#f6c23e';
@@ -404,494 +451,468 @@ const RouteManagementPage = () => {
   };
 
   return (
-    <Container fluid className="py-4 px-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+    <Container maxWidth="xl" sx={{ py: 4, px: 4, backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       {/* Toast Notifications */}
-      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 11 }}>
-        {toasts.map(toast => (
-          <Toast
-            key={toast.id}
+      {toasts.map(toast => (
+        <Snackbar
+          key={toast.id}
+          open={true}
+          autoHideDuration={5000}
+          onClose={() => removeToast(toast.id)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <MuiAlert
+            elevation={6}
+            variant="filled"
+            severity={toast.variant === 'success' ? 'success' : 'error'}
             onClose={() => removeToast(toast.id)}
-            show={true}
-            delay={5000}
-            autohide
-            bg={toast.variant}
-            className="shadow"
           >
-            <Toast.Header className={`bg-${toast.variant} text-white`}>
-              <strong className="me-auto">
-                {toast.variant === 'success' ? 'Success' : 'Error'}
-              </strong>
-            </Toast.Header>
-            <Toast.Body className="text-white">
-              {toast.message}
-            </Toast.Body>
-          </Toast>
-        ))}
-      </ToastContainer>
+            {toast.message}
+          </MuiAlert>
+        </Snackbar>
+      ))}
 
-      <Row className="mb-4 align-items-center">
-        <Col>
-          <div className="d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center">
-              <div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3 d-flex align-items-center justify-content-center">
-                <ShieldCheck size={28} className="text-primary" />
-              </div>
-              <div>
-                <h2 className="fw-bold mb-0" style={{ color: '#2c3e50' }}>Route Management</h2>
-                <p className="text-muted mb-0">Create and manage approval routes</p>
-              </div>
-            </div>
-            <Button
-              variant="primary"
-              onClick={openNewRouteModal}
-              className="d-flex align-items-center shadow-sm"
-              disabled={loading}
-              style={{
-                backgroundColor: '#4e73df',
-                borderColor: '#4e73df',
-                fontWeight: 500
-              }}
-            >
-              {loading ? (
-                <Spinner as="span" animation="border" size="sm" className="me-2" />
-              ) : (
-                <Plus size={18} className="me-2" />
-              )}
-              Add Route
-            </Button>
-          </div>
-        </Col>
-      </Row>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar sx={{ bgcolor: 'primary.light', width: 56, height: 56, mr: 2 }}>
+            <LockIcon color="primary" />
+          </Avatar>
+          <Box>
+            <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
+              Route Management
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Create and manage approval routes
+            </Typography>
+          </Box>
+        </Box>
+        <Button
+          variant="contained"
+          onClick={openNewRouteModal}
+          startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
+          disabled={loading}
+          sx={{
+            backgroundColor: '#4e73df',
+            '&:hover': { backgroundColor: '#3a5ba0' },
+            boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          Add Route
+        </Button>
+      </Box>
 
-      <Card className="shadow-sm border-0">
-        <Card.Body className="p-0">
-          <Tabs
-            activeKey={activeTab}
-            onSelect={(k) => setActiveTab(k)}
-            className="px-3 pt-2 border-bottom-0"
-            fill
-          >
-            <Tab eventKey="routes" title={
-              <span className="d-flex align-items-center">
-                <ShieldCheck size={16} className="me-2" />
-                Routes
-              </span>
-            }>
-              <div className="p-3">
-                {loading && !routes.length ? (
-                  <div className="text-center py-5">
-                    <Spinner animation="border" variant="primary" />
-                    <p className="mt-2 text-muted">Loading routes...</p>
-                  </div>
-                ) : routes.length > 0 ? (
-                  <div className="row g-4">
-                    {routes.map(route => (
-                      <div key={route.id || Math.random()} className="col-md-6 col-lg-4">
-                        <Card className="h-100 shadow-sm" style={{ borderLeft: '4px solid #4e73df' }}>
-                          <Card.Body className="d-flex flex-column">
-                            <div className="d-flex justify-content-between align-items-start mb-3">
-                              <div>
-                                <h5 className="mb-1" style={{ color: '#2c3e50' }}>{route.name || 'Unnamed Route'}</h5>
-                                <Badge bg="light" text="dark" className="mb-2">
-                                  <Building size={12} className="me-1" />
-                                  {route.department || 'No Department'}
-                                </Badge>
-                                {route.isDefault && <Badge bg="info" text="white" className="mb-2 ms-1">Default</Badge>}
-                                <p className="text-muted mb-2 small">
-                                  {route.description || 'No description provided'}
-                                </p>
-                              </div>
-                              <div>
-                                <Button
-                                  variant="outline-secondary"
-                                  size="sm"
-                                  onClick={() => openEditRouteModal(route)}
-                                  className="me-2"
-                                  disabled={loading}
-                                >
-                                  <PencilSquare size={16} />
-                                </Button>
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  onClick={() => deleteRoute(route.id)}
-                                  disabled={loading}
-                                >
-                                  <X size={16} />
-                                </Button>
-                              </div>
-                            </div>
+      <Card sx={{ boxShadow: 'none', backgroundColor: 'transparent' }}>
+        <Tabs
+          value={activeTab}
+          onChange={(event, newValue) => setActiveTab(newValue)}
+          sx={{ px: 3, pt: 2 }}
+          variant="fullWidth"
+        >
+          <Tab
+            value="routes"
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <ShieldIcon sx={{ mr: 1 }} fontSize="small" />
+                <Typography>Routes</Typography>
+              </Box>
+            }
+          />
+        </Tabs>
 
-                            <div className="mb-3 flex-grow-1">
-                              <h6 className="small text-uppercase text-muted mb-2 d-flex align-items-center">
-                                <ChatSquareText size={14} className="me-2" />
-                                Route Flow ({(route.users || []).length})
-                              </h6>
-                              <div className="table-responsive">
-                                <Table hover className="mb-0">
-                                  <thead>
-                                    <tr>
-                                      <th className="small text-uppercase text-muted">Role</th>
-                                      <th className="small text-uppercase text-muted">User</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {(route.users || [])
-                                      .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
-                                      .map((user, index) => (
-                                        <tr key={`${route.id}-${user.userId}`}>
-                                          <td>{renderUserCell(user)}</td>
-                                          <td>
-                                            <Badge
-                                              bg="info"
-                                              className="text-capitalize"
-                                              style={{
-                                                backgroundColor: getRoleColor(user.role),
-                                                color: 'white'
-                                              }}
-                                            >
-                                              {user.role || 'Unknown'}
-                                            </Badge>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                  </tbody>
-                                </Table>
-                              </div>
-                            </div>
-                          </Card.Body>
-                        </Card>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-5">
-                    <div className="bg-primary bg-opacity-10 p-4 rounded-circle d-inline-block mb-3">
-                      <ShieldCheck size={32} className="text-primary" />
-                    </div>
-                    <h4 style={{ color: '#2c3e50' }}>No routes created yet</h4>
-                    <p className="text-muted mb-4">Create your first approval route to get started</p>
-                    <Button
-                      variant="primary"
-                      onClick={openNewRouteModal}
-                      className="d-inline-flex align-items-center shadow-sm"
-                      disabled={loading}
-                      style={{
-                        backgroundColor: '#4e73df',
-                        borderColor: '#4e73df',
-                        fontWeight: 500
-                      }}
-                    >
-                      {loading ? (
-                        <Spinner as="span" animation="border" size="sm" className="me-2" />
-                      ) : (
-                        <Plus size={18} className="me-2" />
-                      )}
-                      Create Route
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </Tab>
-          </Tabs>
-        </Card.Body>
+        <Box sx={{ p: 3 }}>
+          {loading && !routes.length ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 5 }}>
+              <CircularProgress />
+              <Typography sx={{ mt: 2, color: 'text.secondary' }}>Loading routes...</Typography>
+            </Box>
+          ) : routes.length > 0 ? (
+            <Grid container spacing={3}>
+              {routes.map(route => (
+                <Grid item key={route.id || Math.random()} xs={12} sm={6} md={4}>
+                  <Card sx={{ height: '100%', boxShadow: 2, borderLeft: '4px solid #4e73df' }}>
+                    <Card sx={{ p: 2, height: '100%' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box>
+                          <Typography variant="h6" sx={{ color: '#2c3e50' }}>
+                            {route.name || 'Unnamed Route'}
+                          </Typography>
+                          <Chip
+                            icon={<BusinessIcon fontSize="small" />}
+                            label={route.department || 'No Department'}
+                            sx={{ mt: 1, mb: 1, backgroundColor: 'background.paper', color: 'text.secondary' }}
+                          />
+                          {route.isDefault && <Chip label="Default" color="info" sx={{ mb: 1 }} />}
+                          <Typography variant="body2" color="text.secondary">
+                            {route.description || 'No description provided'}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <IconButton
+                            color="secondary"
+                            size="small"
+                            onClick={() => openEditRouteModal(route)}
+                            sx={{ mr: 1 }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() => deleteRoute(route.id)}
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                      <Box sx={{ mb: 2, flexGrow: 1 }}>
+                        <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', color: 'text.secondary', display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <ChatBubbleOutlineIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                          Route Flow ({route.users?.length || 0})
+                        </Typography>
+                        <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+                          <Table>
+                            <TableHead>
+                              <TableRow>
+                                <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>Role</TableCell>
+                                <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>User</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {(route.users || [])
+                                .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
+                                .map((user, index) => (
+                                  <TableRow key={`${route.id}-${user.userId}`}>
+                                    <TableCell>{renderUserCell(user)}</TableCell>
+                                    <TableCell>
+                                      <Chip
+                                        label={user.role || 'Unknown'}
+                                        sx={{
+                                          backgroundColor: getRoleColor(user.role),
+                                          color: 'white',
+                                          textTransform: 'capitalize'
+                                        }}
+                                      />
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    </Card>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 5 }}>
+              <Avatar sx={{ bgcolor: 'primary.light', width: 64, height: 64, mb: 2, mx: 'auto' }}>
+                <ShieldIcon color="primary" />
+              </Avatar>
+              <Typography variant="h5" sx={{ color: '#2c3e50', mb: 2 }}>
+                No routes created yet
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                Create your first approval route to get started
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={openNewRouteModal}
+                startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
+                disabled={loading}
+                sx={{
+                  backgroundColor: '#4e73df',
+                  '&:hover': { backgroundColor: '#3a5ba0' },
+                  boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                Create Route
+              </Button>
+            </Box>
+          )}
+        </Box>
       </Card>
 
       <Modal
-        show={showRouteModal}
-        onHide={() => {
+        open={showRouteModal}
+        onClose={() => {
           setShowRouteModal(false);
           setShowUserPanel(false);
         }}
-        centered
-        backdrop="static"
-        size="lg"
-        className="fade"
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
-        <Modal.Header className="border-0 pb-0 position-relative" style={{ backgroundColor: '#f8f9fa' }}>
-          <Modal.Title className="fw-bold" style={{ color: '#2c3e50' }}>
-            {isEditing ? 'Edit Approval Route' : 'Create New Route'}
-          </Modal.Title>
-          <CloseButton
-            onClick={() => {
+        <Box sx={{ width: '80%', maxWidth: 1000, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
+              {isEditing ? 'Edit Approval Route' : 'Create New Route'}
+            </Typography>
+            <IconButton onClick={() => {
               setShowRouteModal(false);
               setShowUserPanel(false);
-            }}
-            style={{ position: 'absolute', right: '1rem', top: '1rem' }}
-          />
-        </Modal.Header>
-        <Modal.Body style={{ backgroundColor: '#f8f9fa' }}>
-          <div className="d-flex" style={{ minHeight: '400px' }}>
-            <div className="flex-grow-1 pe-3" style={{ width: showUserPanel ? '60%' : '100%' }}>
-              <Form>
-                <Row className="g-3">
-                  <Col md={6}>
-                    <FloatingLabel controlId="routeName" label="Route Name" className="mb-3">
-                      <Form.Control
-                        type="text"
-                        value={currentRoute.name}
-                        onChange={(e) => setCurrentRoute({...currentRoute, name: e.target.value})}
-                        placeholder="e.g. Payroll Approval"
-                        isInvalid={!currentRoute.name?.trim()}
-                        className="shadow-sm"
-                      />
-                      <Form.Control.Feedback type="invalid">
-                      Route name is required
-                      </Form.Control.Feedback>
-                    </FloatingLabel>
-                  </Col>
-                  <Col md={6}>
-                    <FloatingLabel controlId="routeDepartment" label="Department">
-                      <Form.Select
-                        value={currentRoute.department}
-                        onChange={(e) => {
-                          if (!currentRoute.isDefault) {
-                            setCurrentRoute({ ...currentRoute, department: e.target.value });
-                          }
-                        }}
-                        disabled={currentRoute.isDefault}
-                        isInvalid={!currentRoute.department}
-                        className="shadow-sm"
-                      >
-                        <option value="">Select department</option>
-                        {departmentOptions.map(dept => (
-                          <option key={dept} value={dept}>{dept}</option>
-                        ))}
-                      </Form.Select>
-                      <Form.Control.Feedback type="invalid">
-                        Department is required
-                      </Form.Control.Feedback>
-                    </FloatingLabel>
-                  </Col>
-                </Row>
-
-                <FloatingLabel controlId="routeDescription" label="Description" className="mt-3">
-                  <Form.Control
-                    as="textarea"
-                    style={{ height: '100px' }}
-                    value={currentRoute.description}
-                    onChange={(e) => setCurrentRoute({...currentRoute, description: e.target.value})}
-                    placeholder="Describe what this Route is for"
-                    className="shadow-sm"
+            }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <Divider sx={{ mb: 3 }} />
+          <Box sx={{ display: 'flex', minHeight: '400px' }}>
+            <Box sx={{ flexGrow: 1, pr: 3, width: showUserPanel ? '60%' : '100%' }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Route Name"
+                    variant="outlined"
+                    value={currentRoute.name}
+                    onChange={(e) => setCurrentRoute({ ...currentRoute, name: e.target.value })}
+                    placeholder="e.g. Payroll Approval"
+                    error={!currentRoute.name?.trim()}
+                    helperText={!currentRoute.name?.trim() ? "Route name is required" : ""}
+                    sx={{ mb: 3 }}
                   />
-                </FloatingLabel>
-
-                <Form.Group controlId="defaultRoute" className="mb-3 mt-3">
-                  <Form.Check
-                    type="checkbox"
-                    label="Set this as the default fallback route"
-                    checked={currentRoute.isDefault}
-                    onChange={(e) => {
-                      const isDefault = e.target.checked;
-                      setCurrentRoute({
-                        ...currentRoute,
-                        isDefault,
-                        department: isDefault ? 'Default' : currentRoute.department
-                      });
-                    }}
-                  />
-                </Form.Group>
-
-                <div className="mt-4">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h6 className="mb-0 d-flex align-items-center">
-                      <ChatSquareText size={16} className="me-2" />
-                      Approval Flow ({currentRoute.users.length}/4)
-                    </h6>
-                    <Button
-                      variant={showUserPanel ? 'primary' : 'outline-primary'}
-                      size="sm"
-                      onClick={() => setShowUserPanel(!showUserPanel)}
-                      className="d-flex align-items-center shadow-sm"
-                      disabled={currentRoute.users.length >= 4}
-                      style={{
-                        backgroundColor: showUserPanel ? '#4e73df' : 'transparent',
-                        borderColor: '#4e73df',
-                        color: showUserPanel ? 'white' : '#4e73df'
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth sx={{ mb: 3 }}>
+                    <InputLabel>Department</InputLabel>
+                    <Select
+                      value={currentRoute.department}
+                      onChange={(e) => {
+                        if (!currentRoute.isDefault) {
+                          setCurrentRoute({ ...currentRoute, department: e.target.value });
+                        }
                       }}
+                      disabled={currentRoute.isDefault}
+                      error={!currentRoute.department}
+                      label="Department"
                     >
-                      <PersonPlus size={14} className="me-1" />
-                      {showUserPanel ? 'Hide Users' : 'Add Users'}
-                    </Button>
-                  </div>
+                      <MenuItem value="">
+                        <em>Select department</em>
+                      </MenuItem>
+                      {departmentOptions.map(dept => (
+                        <MenuItem key={dept} value={dept}>{dept}</MenuItem>
+                      ))}
+                    </Select>
+                    {!currentRoute.department && <Typography variant="caption" color="error">Department is required</Typography>}
+                  </FormControl>
+                </Grid>
+              </Grid>
 
-                  {currentRoute.users.length > 0 ? (
-                    <div className="table-responsive">
-                      <Table hover className="mb-0">
-                        <thead>
-                          <tr>
-                            <th className="small text-uppercase text-muted">Role</th>
-                            <th className="small text-uppercase text-muted">User</th>
-                            <th className="small text-uppercase text-muted">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentRoute.users
-                            .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
-                            .map((user, index) => (
-                              <tr key={user.id}>
-                                <td>
-                                  {renderRoleDropdown(user)}
-                                </td>
-                                <td>{renderUserCell(user)}</td>
-                                <td className="text-center">
-                                  <Button
-                                    variant="outline-danger"
-                                    size="sm"
-                                    onClick={() => removeUserFromRoute(user.id)}
-                                    className="shadow-sm"
-                                  >
-                                    <X size={16} />
-                                  </Button>
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="border rounded p-4 text-center bg-white shadow-sm">
-                      <PersonCheck size={24} className="text-muted mb-2" />
-                      <p className="text-muted mb-0">No users assigned to this Route</p>
-                    </div>
-                  )}
+              <TextField
+                fullWidth
+                label="Description"
+                variant="outlined"
+                multiline
+                rows={4}
+                value={currentRoute.description}
+                onChange={(e) => setCurrentRoute({ ...currentRoute, description: e.target.value })}
+                placeholder="Describe what this Route is for"
+                sx={{ mb: 3 }}
+              />
 
-                  {currentRoute.users.length < 4 && (
-                    <Alert variant="warning" className="mt-3 shadow-sm">
-                      <div className="d-flex align-items-center">
-                        <ArrowRepeat size={16} className="me-2" />
-                        <div>
-                          <strong>Note:</strong> All 4 roles must be assigned in order:
-                          <ol className="mt-2 mb-0">
-                            <li>Comment</li>
-                            <li>Review</li>
-                            <li>Commit</li>
-                            <li>Approve</li>
-                          </ol>
-                        </div>
-                      </div>
-                    </Alert>
-                  )}
-                </div>
-              </Form>
-            </div>
+              <FormGroup sx={{ mb: 3 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={currentRoute.isDefault}
+                      onChange={(e) => {
+                        const isDefault = e.target.checked;
+                        setCurrentRoute({
+                          ...currentRoute,
+                          isDefault,
+                          department: isDefault ? 'Default' : currentRoute.department
+                        });
+                      }}
+                    />
+                  }
+                  label="Set this as the default fallback route"
+                />
+              </FormGroup>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center' }}>
+                  <ChatBubbleOutlineIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                  Approval Flow ({currentRoute.users.length}/4)
+                </Typography>
+                <Button
+                  variant={showUserPanel ? 'contained' : 'outlined'}
+                  size="small"
+                  onClick={() => setShowUserPanel(!showUserPanel)}
+                  disabled={currentRoute.users.length >= 4}
+                  startIcon={<PersonAddIcon />}
+                  sx={{
+                    backgroundColor: showUserPanel ? '#4e73df' : 'transparent',
+                    color: showUserPanel ? 'white' : '#4e73df',
+                    borderColor: '#4e73df',
+                    '&:hover': {
+                      backgroundColor: showUserPanel ? '#3a5ba0' : 'rgba(78, 115, 223, 0.04)',
+                      borderColor: '#4e73df'
+                    }
+                  }}
+                >
+                  {showUserPanel ? 'Hide Users' : 'Add Users'}
+                </Button>
+              </Box>
+
+              {currentRoute.users.length > 0 ? (
+                <TableContainer component={Paper} sx={{ mb: 3, boxShadow: 'none' }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>Role</TableCell>
+                        <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>User</TableCell>
+                        <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>Action</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {currentRoute.users
+                        .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
+                        .map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell>{renderRoleDropdown(user)}</TableCell>
+                            <TableCell>{renderUserCell(user)}</TableCell>
+                            <TableCell align="center">
+                              <IconButton
+                                color="error"
+                                onClick={() => removeUserFromRoute(user.id)}
+                              >
+                                <CloseIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Box sx={{ border: 1, borderColor: 'grey.300', borderRadius: 1, p: 3, textAlign: 'center', bgcolor: 'background.paper', boxShadow: 1 }}>
+                  <PersonIcon sx={{ color: 'text.secondary', mb: 1 }} />
+                  <Typography variant="body2" color="text.secondary">No users assigned to this Route</Typography>
+                </Box>
+              )}
+
+              {currentRoute.users.length < 4 && (
+                <Alert severity="warning" sx={{ mt: 3, boxShadow: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <RepeatIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                    <Box>
+                      <Typography variant="body2"><strong>Note:</strong> All 4 roles must be assigned in order:</Typography>
+                      <ol sx={{ mt: 1, mb: 0, pl: 3 }}>
+                        <li><Typography variant="body2">Comment</Typography></li>
+                        <li><Typography variant="body2">Review</Typography></li>
+                        <li><Typography variant="body2">Commit</Typography></li>
+                        <li><Typography variant="body2">Approve</Typography></li>
+                      </ol>
+                    </Box>
+                  </Box>
+                </Alert>
+              )}
+            </Box>
 
             {showUserPanel && (
-              <div className="border-start ps-3" style={{ width: '40%' }}>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6 className="mb-0 d-flex align-items-center">
-                    <PersonPlus size={16} className="me-2" />
+              <Box sx={{ borderLeft: 1, borderColor: 'grey.300', pl: 3, width: '40%' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center' }}>
+                    <PersonAddIcon sx={{ mr: 1, fontSize: '1rem' }} />
                     Select Employee
-                  </h6>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => setShowUserPanel(false)}
-                    className="p-0 text-muted"
-                  >
-                    <X size={20} />
-                  </Button>
-                </div>
+                  </Typography>
+                  <IconButton onClick={() => setShowUserPanel(false)}>
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
 
-                <div className="mb-3">
-                  <Form.Label className="small text-muted">Assign as:</Form.Label>
-                  <Form.Select
-                    size="sm"
-                    value={selectedUserRole}
-                    onChange={(e) => setSelectedUserRole(e.target.value)}
-                    disabled={currentRoute.users.some(u => u.role === selectedUserRole)}
-                    className="shadow-sm"
-                  >
-                    {requiredRolesInOrder.map(role => (
-                      <option
-                        key={role}
-                        value={role}
-                        disabled={currentRoute.users.some(u => u.role === role)}
-                      >
-                        {role}
-                      </option>
-                    ))}
-                  </Form.Select>
-                  {currentRoute.users.some(u => u.role === selectedUserRole) && (
-                    <Form.Text className="text-danger small">
-                      This role is already assigned
-                    </Form.Text>
-                  )}
-                </div>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" color="text.secondary">Assign as:</Typography>
+                  <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+                    <Select
+                      value={selectedUserRole}
+                      onChange={(e) => setSelectedUserRole(e.target.value)}
+                      disabled={currentRoute.users.some(u => u.role === selectedUserRole)}
+                    >
+                      {requiredRolesInOrder.map(role => (
+                        <MenuItem
+                          key={role}
+                          value={role}
+                          disabled={currentRoute.users.some(u => u.role === role)}
+                        >
+                          {role}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {currentRoute.users.some(u => u.role === selectedUserRole) && (
+                      <Typography variant="caption" color="error">This role is already assigned</Typography>
+                    )}
+                  </FormControl>
+                </Box>
 
-                <InputGroup className="mb-3 shadow-sm">
-                  <InputGroup.Text className="bg-white">
-                    <Search size={14} />
-                  </InputGroup.Text>
-                  <Form.Control
-                    placeholder="Search users..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    className="border-start-0"
-                  />
-                </InputGroup>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Search users..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ mb: 2 }}
+                />
 
-                <div style={{ height: '300px', overflowY: 'auto' }} className="shadow-sm">
+                <Box sx={{ height: '300px', overflowY: 'auto', border: 1, borderColor: 'grey.300', borderRadius: 1, p: 1 }}>
                   {filteredUsers.length > 0 ? (
-                    <ListGroup variant="flush">
+                    <List>
                       {filteredUsers.map(user => (
-                        <ListGroup.Item
+                        <ListItem
                           key={user.id}
-                          action
+                          button
                           onClick={() => addUserToRoute(user.id)}
-                          className="d-flex align-items-center border-0"
                           disabled={currentRoute.users.some(u => u.id === user.id)}
-                          style={{
+                          sx={{
                             cursor: currentRoute.users.some(u => u.id === user.id) ? 'not-allowed' : 'pointer',
                             opacity: currentRoute.users.some(u => u.id === user.id) ? 0.6 : 1
                           }}
                         >
-                          {renderUserCell(user)}
-                        </ListGroup.Item>
+                          <ListItemText primary={renderUserCell(user)} />
+                        </ListItem>
                       ))}
-                    </ListGroup>
+                    </List>
                   ) : (
-                    <div className="text-center py-4 bg-white">
-                      <Search size={24} className="text-muted mb-2" />
-                      <p className="text-muted">No users found</p>
-                    </div>
+                    <Box sx={{ textAlign: 'center', py: 4, bgcolor: 'background.paper' }}>
+                      <SearchIcon sx={{ color: 'text.secondary', mb: 1 }} />
+                      <Typography variant="body2" color="text.secondary">No users found</Typography>
+                    </Box>
                   )}
-                </div>
-              </div>
+                </Box>
+              </Box>
             )}
-          </div>
-        </Modal.Body>
-        <Modal.Footer className="border-0" style={{ backgroundColor: '#f8f9fa' }}>
-          <Button
-            variant="outline-secondary"
-            onClick={() => {
-              setShowRouteModal(false);
-              setShowUserPanel(false);
-            }}
-            disabled={loading}
-            className="shadow-sm"
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={saveRoute}
-            disabled={loading || !currentRoute.name || !currentRoute.department || currentRoute.users.length !== 4}
-            className="shadow-sm"
-            style={{
-              backgroundColor: '#4e73df',
-              borderColor: '#4e73df',
-              fontWeight: 500
-            }}
-          >
-            {loading ? (
-              <>
-                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                {isEditing ? 'Updating...' : 'Creating...'}
-              </>
-            ) : isEditing ? 'Update Route' : 'Create Route'}
-          </Button>
-        </Modal.Footer>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setShowRouteModal(false);
+                setShowUserPanel(false);
+              }}
+              disabled={loading}
+              sx={{ mr: 2 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={saveRoute}
+              disabled={loading || !currentRoute.name || !currentRoute.department || currentRoute.users.length !== 4}
+              sx={{
+                backgroundColor: '#4e73df',
+                '&:hover': { backgroundColor: '#3a5ba0' }
+              }}
+              startIcon={loading ? <CircularProgress size={20} /> : null}
+            >
+              {isEditing ? 'Update Route' : 'Create Route'}
+            </Button>
+          </Box>
+        </Box>
       </Modal>
     </Container>
   );

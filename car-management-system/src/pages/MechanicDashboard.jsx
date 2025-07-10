@@ -2,8 +2,25 @@ import React, { useState } from 'react';
 import { dummyRequests } from '../components/approval/dummyData';
 import MechanicQuoteForm from '../components/mechanic/MechanicQuoteForm';
 import MechanicWorkOrders from '../components/mechanic/MechanicWorkOrders';
+import {
+  Box, Typography, Tabs, Tab, Card, CardContent, Chip, Button, Stack, Divider, Avatar
+} from '@mui/material';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import BuildIcon from '@mui/icons-material/Build';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
-import MechanicNavbar from '../components/mechanic/MechanicNavbar';
+const tabLabels = [
+  { label: 'Pending Quotes', value: 'pending', icon: <AssignmentIcon /> },
+  { label: 'My Work Orders', value: 'assigned', icon: <BuildIcon /> },
+  { label: 'Completed Repairs', value: 'completed', icon: <CheckCircleIcon /> },
+];
+
+const statusColors = {
+  pending_mechanic: 'warning',
+  in_progress: 'info',
+  completed: 'success',
+};
 
 const MechanicDashboard = () => {
   const [requests, setRequests] = useState(dummyRequests);
@@ -52,64 +69,27 @@ const MechanicDashboard = () => {
   };
 
   return (
-    <div className="mechanic-dashboard">
-    <MechanicNavbar/>
-      <div className="dashboard-containers">
-        {/* Sidebar */}
-        <div className="mechanic-sidebar">
-          <div className="sidebar-header">
-            <div className="mechanic-avatar">
-              <i className="bi bi-person-circle"></i>
-            </div>
-            <h3>Mechanic Portal</h3>
-            <p className="shop-name">Auto Repair Center</p>
-          </div>
-          
-          <nav className="mechanic-nav">
-            <button 
-              className={`nav-btn ${activeTab === 'pending' ? 'active' : ''}`}
-              onClick={() => setActiveTab('pending')}
-            >
-              <i className="bi bi-clipboard"></i>
-              <span>Pending Quotes</span>
-              <span className="badge">{pendingRequests.length}</span>
-            </button>
-            
-            <button 
-              className={`nav-btn ${activeTab === 'assigned' ? 'active' : ''}`}
-              onClick={() => setActiveTab('assigned')}
-            >
-              <i className="bi bi-wrench"></i>
-              <span>My Work Orders</span>
-              <span className="badge">{assignedRequests.length}</span>
-            </button>
-            
-            <button 
-              className={`nav-btn ${activeTab === 'completed' ? 'active' : ''}`}
-              onClick={() => setActiveTab('completed')}
-            >
-              <i className="bi bi-check-circle"></i>
-              <span>Completed</span>
-              <span className="badge">{completedRequests.length}</span>
-            </button>
-          </nav>
-          
-          <div className="sidebar-footer">
-            <div className="performance-metrics">
-              <div className="metric">
-                <span>This Month</span>
-                <strong>12 Jobs</strong>
-              </div>
-              <div className="metric">
-                <span>Avg. Time</span>
-                <strong>3.2h</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="mechanic-main">
+    <Box sx={{ maxWidth: 900, mx: 'auto', mt: 5, p: 3, background: '#fff', borderRadius: 4, boxShadow: 6 }}>
+      <Typography variant="h4" fontWeight={900} color="primary.main" sx={{ mb: 2, letterSpacing: 1 }}>
+        Mechanic Dashboard
+      </Typography>
+      <Tabs
+        value={activeTab}
+        onChange={(e, v) => setActiveTab(v)}
+        indicatorColor="primary"
+        textColor="primary"
+        sx={{ mb: 3 }}
+      >
+        {tabLabels.map(tab => (
+          <Tab
+            key={tab.value}
+            value={tab.value}
+            label={<Stack direction="row" alignItems="center" gap={1}>{tab.icon}{tab.label}</Stack>}
+            sx={{ fontWeight: 700, fontSize: 16, textTransform: 'none' }}
+          />
+        ))}
+      </Tabs>
+      <Divider sx={{ mb: 3 }} />
           {selectedRequest ? (
             <MechanicQuoteForm 
               request={selectedRequest}
@@ -117,143 +97,117 @@ const MechanicDashboard = () => {
               onCancel={() => setSelectedRequest(null)}
             />
           ) : (
-            <div className="work-section">
-              <div className="section-header">
-                <h2>
-                  {activeTab === 'pending' && 'Pending Quotes'}
-                  {activeTab === 'assigned' && 'My Work Orders'}
-                  {activeTab === 'completed' && 'Completed Repairs'}
-                </h2>
-                <div className="status-indicators">
-                  <div className={`indicator pending ${activeTab === 'pending' ? 'active' : ''}`}>
-                    <span>{pendingRequests.length}</span> Pending
-                  </div>
-                  <div className={`indicator in-progress ${activeTab === 'assigned' ? 'active' : ''}`}>
-                    <span>{assignedRequests.length}</span> In Progress
-                  </div>
-                  <div className={`indicator completed ${activeTab === 'completed' ? 'active' : ''}`}>
-                    <span>{completedRequests.length}</span> Completed
-                  </div>
-                </div>
-              </div>
-
+        <Box>
               {activeTab === 'pending' && (
-                <div className="request-grid">
+            <Box>
                   {pendingRequests.length === 0 ? (
-                    <div className="empty-state">
-                      <i className="bi bi-check2-circle"></i>
-                      <h3>No pending quotes</h3>
-                      <p>All caught up! Check back later for new requests.</p>
-                    </div>
-                  ) : (
-                    pendingRequests.map(request => (
-                      <div key={request.id} className="request-card pending">
-                        <div className="card-header">
-                          <h4>Request #{request.id}</h4>
-                          <span className="urgency-badge">{request.urgency}</span>
-                        </div>
-                        <div className="card-body">
-                          <div className="vehicle-info">
-                            <i className="bi bi-truck"></i>
-                            <div>
-                              <strong>{request.vehicleId}</strong>
-                              <span>{request.mileage}</span>
-                            </div>
-                          </div>
-                          <div className="issue-description">
-                            <p>{request.issueDescription}</p>
-                          </div>
-                          <div className="request-meta">
-                            <span><i className="bi bi-calendar"></i> {new Date(request.createdAt).toLocaleDateString()}</span>
-                            <span><i className="bi bi-building"></i> {request.department}</span>
-                          </div>
-                        </div>
-                        <div className="card-footer">
-                          <button 
-                            className="btn-primary"
+                <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+                  <AssignmentIcon sx={{ fontSize: 48, mb: 1, color: 'primary.light' }} />
+                  <Typography variant="h6" fontWeight={700}>No pending quotes</Typography>
+                  <Typography variant="body2">All caught up! Check back later for new requests.</Typography>
+                </Box>
+              ) : (
+                <Stack spacing={3}>
+                  {pendingRequests.map(request => (
+                    <Card key={request.id} sx={{ borderRadius: 3, boxShadow: 3, p: 0 }}>
+                      <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <Avatar sx={{ bgcolor: 'primary.light', width: 56, height: 56, mr: 2 }}>
+                          <DirectionsCarIcon fontSize="large" />
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6" fontWeight={800} color="primary.main">
+                            Request #{request.id}
+                          </Typography>
+                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5, mb: 1 }}>
+                            <Chip label={request.urgency} color="warning" size="small" sx={{ fontWeight: 700 }} />
+                            <Chip label={request.department} color="info" size="small" />
+                          </Stack>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {request.issueDescription}
+                          </Typography>
+                          <Stack direction="row" spacing={2}>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Vehicle:</strong> {request.vehicleId}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Mileage:</strong> {request.mileage}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Date:</strong> {new Date(request.createdAt).toLocaleDateString()}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          sx={{ fontWeight: 700, borderRadius: 2, px: 3, py: 1, minWidth: 140 }}
                             onClick={() => setSelectedRequest(request)}
-                          >
-                            <i className="bi bi-pencil"></i> Prepare Quote
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                          startIcon={<AssignmentIcon />}
+                        >
+                          Prepare Quote
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Stack>
               )}
-
+            </Box>
+          )}
               {activeTab === 'assigned' && (
                 <MechanicWorkOrders 
                   requests={assignedRequests}
                   onComplete={handleCompleteWork}
                 />
               )}
-
               {activeTab === 'completed' && (
-                <div className="completed-requests">
+            <Box>
                   {completedRequests.length === 0 ? (
-                    <div className="empty-state">
-                      <i className="bi bi-wrench"></i>
-                      <h3>No completed repairs</h3>
-                      <p>Work on assigned jobs to see them appear here.</p>
-                    </div>
-                  ) : (
-                    completedRequests.map(request => (
-                      <div key={request.id} className="completed-card">
-                        <div className="card-header">
-                          <h4>WO-{request.id}</h4>
-                          <div className="completion-date">
-                            <i className="bi bi-calendar-check"></i>
-                            {new Date(request.workCompletedAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="card-body">
-                          <div className="vehicle-summary">
-                            <div className="vehicle-info">
-                              <i className="bi bi-truck"></i>
-                              <div>
-                                <strong>{request.vehicleId}</strong>
-                                <span>{request.mileage}</span>
-                              </div>
-                            </div>
-                            <div className="repair-cost">
-                              <span>Total Cost</span>
-                              <strong>${request.finalCost?.toFixed(2) || request.quote?.totalCost.toFixed(2)}</strong>
-                            </div>
-                          </div>
-                          
-                          <div className="repair-details">
-                            <div className="detail">
-                              <label>Issue</label>
-                              <p>{request.issueDescription}</p>
-                            </div>
-                            <div className="detail">
-                              <label>Work Performed</label>
-                              <p>{request.completionNotes}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="time-metrics">
-                            <div className="metric">
-                              <label>Estimated</label>
-                              <span>{request.quote?.estimatedTime}</span>
-                            </div>
-                            <div className="metric">
-                              <label>Actual Time</label>
-                              <span>4.5 hours</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+                  <CheckCircleIcon sx={{ fontSize: 48, mb: 1, color: 'primary.light' }} />
+                  <Typography variant="h6" fontWeight={700}>No completed repairs</Typography>
+                  <Typography variant="body2">Work on assigned jobs to see them appear here.</Typography>
+                </Box>
+              ) : (
+                <Stack spacing={3}>
+                  {completedRequests.map(request => (
+                    <Card key={request.id} sx={{ borderRadius: 3, boxShadow: 3, p: 0 }}>
+                      <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <Avatar sx={{ bgcolor: 'success.light', width: 56, height: 56, mr: 2 }}>
+                          <CheckCircleIcon fontSize="large" />
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6" fontWeight={800} color="success.main">
+                            Request #{request.id}
+                          </Typography>
+                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5, mb: 1 }}>
+                            <Chip label={request.urgency} color="warning" size="small" sx={{ fontWeight: 700 }} />
+                            <Chip label={request.department} color="info" size="small" />
+                          </Stack>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {request.issueDescription}
+                          </Typography>
+                          <Stack direction="row" spacing={2}>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Vehicle:</strong> {request.vehicleId}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Mileage:</strong> {request.mileage}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>Date:</strong> {new Date(request.createdAt).toLocaleDateString()}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Stack>
               )}
-            </div>
+            </Box>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      )}
+    </Box>
   );
 };
 

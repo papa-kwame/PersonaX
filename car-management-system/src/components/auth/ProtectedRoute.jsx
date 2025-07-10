@@ -1,12 +1,13 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import LoadingSpinner from '../LoadingSpinner';
 
 const ProtectedRoute = ({ children, requiredRoles = [] }) => {
   const { isAuthenticated, isLoading, hasRole, userRoles } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
-    return <div className="loading-spinner">Loading...</div>;
+    return <LoadingSpinner size="md" text="Loading..." fullPage={false} />;
   }
 
   if (!isAuthenticated) {

@@ -28,7 +28,7 @@ const MyVehicleRequests = () => {
   return (
     <Paper elevation={3} style={{ padding: '20px', margin: '20px' }}>
       <Typography variant="h4" gutterBottom>
-        My Vehicle Requests
+        My Vehicle Request
       </Typography>
       <List>
         {requests.map((request) => (

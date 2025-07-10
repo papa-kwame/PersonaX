@@ -70,3 +70,18 @@ export const unassignVehicle = (vehicleId) => {
       headers: { 'Content-Type': 'application/json' }
   });
 };
+
+export const getAllVehiclesSimple = async () => {
+  try {
+    const response = await api.get('/api/Vehicles');
+    // Only return id, vin, licensePlate for efficiency
+    return response.data.map(v => ({
+      id: v.id,
+      vin: v.vin,
+      licensePlate: v.licensePlate
+    }));
+  } catch (error) {
+    console.error('Error fetching vehicles for duplicate check:', error);
+    throw error;
+  }
+};

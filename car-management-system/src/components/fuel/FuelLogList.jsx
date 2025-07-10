@@ -154,7 +154,15 @@ const FuelLogList = () => {
       }, 1500);
     } catch (err) {
       console.error('Error submitting form:', err.response?.data || err.message);
-      setError('Failed to add fuel log');
+      let errorMsg = 'Failed to add fuel log';
+      if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (typeof err.response?.data === 'string') {
+        errorMsg = err.response.data;
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      setError(errorMsg);
     }
   };
 
@@ -253,15 +261,51 @@ const FuelLogList = () => {
 
   if (error) {
     return (
-      <Box p={2} height={245} display="flex" flexDirection="column" justifyContent="center" alignItems="center">
-        <Typography color="error" variant="body2" gutterBottom>
+      <Box
+        p={3}
+        height={345}
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        sx={{
+          background: '#fff',
+          borderRadius: '16px',
+          boxShadow: '0 4px 18px rgba(37,99,235,0.07)',
+          border: '1.5px solid #e3eefd',
+          minWidth: 320,
+          maxWidth: 400,
+          mx: 'auto',
+        }}
+      >
+        <Typography
+          color="error"
+          variant="h6"
+          gutterBottom
+          sx={{ fontWeight: 700, mb: 2, textAlign: 'center', fontSize: 18 }}
+        >
           {error}
         </Typography>
         <Button
           onClick={fetchFuelLogs}
           variant="outlined"
-          size="small"
-          sx={{ mt: 1 }}
+          size="medium"
+          sx={{
+            mt: 1,
+            borderRadius: 2,
+            fontWeight: 700,
+            fontSize: 16,
+            px: 4,
+            py: 1.2,
+            borderColor: 'primary.main',
+            color: 'primary.main',
+            boxShadow: '0 2px 8px rgba(25, 118, 210, 0.08)',
+            background: '#f8fafc',
+            '&:hover': {
+              background: '#e3eefd',
+              borderColor: 'primary.dark',
+            },
+          }}
         >
           Retry
         </Button>
@@ -272,7 +316,7 @@ const FuelLogList = () => {
   return (
     <Box sx={{
       width: 430,
-      height: 245,
+      height: 345,
       p: 2,
       backgroundColor: theme.palette.background.paper,
       borderRadius: '16px',

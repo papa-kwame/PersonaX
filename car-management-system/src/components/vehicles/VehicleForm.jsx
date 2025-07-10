@@ -1,9 +1,71 @@
-// src/components/vehicles/VehicleForm.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getVehicleById, createVehicle, updateVehicle } from '../../services/vehicles';
+import {
+  Grid,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Button,
+  Typography,
+  CircularProgress,
+  Alert,
+  Box,
+  Card,
+  CardContent,
+  CardHeader
+} from '@mui/material';
+import {
+  DirectionsCar as CarIcon,
+  Info as InfoIcon,
+  Engineering as EngineeringIcon,
+  Notes as NotesIcon,
+  Save as SaveIcon,
+  ArrowBack as BackIcon,
+  Add as AddIcon
+} from '@mui/icons-material';
+import { alpha } from '@mui/material/styles';
+import { getVehicleById, createVehicle, updateVehicle, getAllVehiclesSimple } from '../../services/vehicles';
+import { toast } from 'react-toastify';
 
-export default function VehicleForm() {
+// Define color constants to match previous styling
+const COLORS = {
+  PRIMARY: '#000000',
+  SECONDARY: '#9c27b0',
+  SUCCESS: '#4caf50',
+  ERROR: '#f44336',
+  WARNING: '#ff9800',
+  INFO: '#2196f3',
+  BACKGROUND: '#f5f5f5',
+  TEXT_PRIMARY: '#212121',
+  TEXT_SECONDARY: '#757575',
+  DIVIDER: '#bdbdbd',
+  WHITE: '#ffffff',
+  BLACK: '#000000',
+};
+
+// Styled Card to match previous design
+const GradientCard = ({ children, sx }) => (
+  <Card sx={{
+    mb: 4,
+    background: `linear-gradient(135deg, ${alpha(COLORS.PRIMARY, 0.1)} 0%, ${alpha(COLORS.BACKGROUND, 0.8)} 100%)`,
+    backdropFilter: 'blur(10px)',
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.18)',
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 12px 40px 0 rgba(31, 38, 135, 0.2)'
+    },
+    ...sx
+  }}>
+    {children}
+  </Card>
+);
+
+export default function kVehicleForm() {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -70,18 +132,41 @@ export default function VehicleForm() {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (!loading) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [loading]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
     if (!validateForm()) return;
 
     try {
+      // Check for duplicate VIN or license plate
+      const allVehicles = await getAllVehiclesSimple();
+      const duplicate = allVehicles.find(v =>
+        (v.vin === formData.vin || v.licensePlate === formData.licensePlate) &&
+        (!id || v.id !== id)
+      );
+      if (duplicate) {
+        setError('A vehicle with this VIN or license plate already exists.');
+        toast.error('A vehicle with this VIN or license plate already exists.');
+        return;
+      }
       if (id) {
         await updateVehicle(id, formData);
+        toast.success('Vehicle updated successfully!');
       } else {
         await createVehicle(formData);
+        toast.success('Vehicle added successfully!');
       }
-      navigate('/vehicles');
+      setTimeout(() => navigate('/vehicles'), 1200);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     }
@@ -173,218 +258,301 @@ export default function VehicleForm() {
   ];
 
   const fields = [
-    { name: 'make', label: 'Make', required: true, col: 'col-md-4' },
-    { name: 'model', label: 'Model', required: true, col: 'col-md-4' },
-    { 
-      name: 'year', 
-      label: 'Year', 
-      type: 'number', 
+    { name: 'make', label: 'Make', required: true },
+    { name: 'model', label: 'Model', required: true },
+    {
+      name: 'year',
+      label: 'Year',
+      type: 'number',
       required: true,
-      attrs: { min: 1900, max: new Date().getFullYear() + 1 },
-      col: 'col-md-4' 
+      inputProps: { min: 1900, max: new Date().getFullYear() + 1 }
     },
-    { name: 'licensePlate', label: 'License Plate', required: true, col: 'col-md-4' },
-    { name: 'vin', label: 'VIN', required: true, col: 'col-md-4' },
-    { 
-      name: 'currentMileage', 
-      label: 'Current Mileage', 
+    { name: 'licensePlate', label: 'License Plate', required: true },
+    { name: 'vin', label: 'VIN', required: true },
+    {
+      name: 'currentMileage',
+      label: 'Current Mileage',
       type: 'number',
-      attrs: { min: 0 },
-      col: 'col-md-4' 
+      inputProps: { min: 0 },
+      InputProps: { endAdornment: 'miles' }
     },
-    { name: 'color', label: 'Color', col: 'col-md-4' },
-    { name: 'purchaseDate', label: 'Purchase Date', type: 'date', col: 'col-md-4' },
-    { 
-      name: 'purchasePrice', 
-      label: 'Purchase Price ($)', 
+    { name: 'color', label: 'Color' },
+    { name: 'purchaseDate', label: 'Purchase Date', type: 'date' },
+    {
+      name: 'purchasePrice',
+      label: 'Purchase Price',
       type: 'number',
-      attrs: { step: 0.01, min: 0 },
-      col: 'col-md-4' 
+      inputProps: { step: 0.01, min: 0 },
+      InputProps: { startAdornment: '$' }
     },
-    { name: 'lastServiceDate', label: 'Last Service Date', type: 'date', col: 'col-md-4' },
-    { name: 'nextServiceDue', label: 'Next Service Due', type: 'date', col: 'col-md-4' },
-    { 
-      name: 'serviceInterval', 
-      label: 'Service Interval (miles)', 
+    { name: 'lastServiceDate', label: 'Last Service Date', type: 'date' },
+    { name: 'nextServiceDue', label: 'Next Service Due', type: 'date' },
+    {
+      name: 'serviceInterval',
+      label: 'Service Interval',
       type: 'number',
-      attrs: { min: 0 },
-      col: 'col-md-4' 
+      inputProps: { min: 0 },
+      InputProps: { endAdornment: 'miles' }
     },
-    { 
-      name: 'engineSize', 
-      label: 'Engine Size (cc)', 
+    {
+      name: 'engineSize',
+      label: 'Engine Size',
       type: 'number',
-      attrs: { min: 0 },
-      col: 'col-md-4' 
+      inputProps: { min: 0 },
+      InputProps: { endAdornment: 'L' }
     },
-    { name: 'roadworthyExpiry', label: 'Roadworthy Expiry', type: 'date', col: 'col-md-4' },
-    { name: 'registrationExpiry', label: 'Registration Expiry', type: 'date', col: 'col-md-4' },
-    { name: 'insuranceExpiry', label: 'Insurance Expiry', type: 'date', col: 'col-md-4' },
-    { 
-      name: 'seatingCapacity', 
-      label: 'Seating Capacity', 
+    { name: 'roadworthyExpiry', label: 'Roadworthy Expiry', type: 'date' },
+    { name: 'registrationExpiry', label: 'Registration Expiry', type: 'date' },
+    { name: 'insuranceExpiry', label: 'Insurance Expiry', type: 'date' },
+    {
+      name: 'seatingCapacity',
+      label: 'Seating Capacity',
       type: 'number',
-      attrs: { min: 1 },
-      col: 'col-md-4' 
+      inputProps: { min: 1 }
     },
   ];
 
-  if (loading) return (
-    <div className="container mt-4">
-      <div className="progress">
-        <div className="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
-      </div>
-      <p className="mt-3">Loading vehicle data...</p>
-    </div>
-  );
-
-  if (error) return (
-    <div className="container mt-4">
-      <div className="alert alert-danger">{error}</div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <Box maxWidth="md" sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '70vh',
+        
+      }}>
+        <CircularProgress size={60} />
+        <Typography variant="h6" sx={{ mt: 3 }}>
+          Loading vehicle data...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
-    <div className="container-fluid "  style={{ maxWidth: '1550px',maxHeight: '150px' }}>
-      <div className="card shadow">
-        <div className="card-header bg-primary text-white">
-          <h3 className="mb-0">{id ? 'Edit Vehicle' : 'Add New Vehicle'}</h3>
-        </div>
-        <div className="card-body">
-          {error && <div className="alert alert-danger mb-4">{error}</div>}
-          
+    <Box
+      sx={{
+        maxwidth: 1400,
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(120deg, #f7fafd 0%, #e3e8f0 100%)',
+        py: { xs: 4, md: 8 },
+        px: 1,
+        overflowY:'none'
+      }}
+    >
+      <GradientCard sx={{ width: '100%', maxWidth: 1400, minWidth: 320, p: { xs: 2, md: 4 } }}>
+        <CardHeader
+          title={
+            <Typography variant="h5" sx={{
+              fontWeight: 700,
+              color: COLORS.PRIMARY,
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <CarIcon sx={{ mr: 1.5, fontSize: '2rem' }} />
+              {id ? 'Edit Vehicle' : 'Add New Vehicle'}
+            </Typography>
+          }
+          sx={{
+            backgroundColor: alpha(COLORS.PRIMARY, 0.05),
+            borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`,
+            py: 3,
+            px: 4
+          }}
+        />
+        <CardContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 4 }}>
+              {error}
+            </Alert>
+          )}
           <form onSubmit={handleSubmit}>
-            <div className="row g-3">
-              {/* Standard fields */}
-              {fields.map((field) => (
-                <div key={field.name} className={field.col || 'col-md-6'}>
-                  <label htmlFor={field.name} className="form-label">
-                    {field.label} {field.required && <span className="text-danger">*</span>}
-                  </label>
-                  <input
-                    id={field.name}
-                    className={`form-control ${validationErrors[field.name] ? 'is-invalid' : ''}`}
-                    type={field.type || 'text'}
-                    name={field.name}
-                    value={formData[field.name]}
-                    onChange={handleChange}
-                    required={field.required}
-                    {...(field.attrs || {})}
-                  />
-                  {validationErrors[field.name] && (
-                    <div className="invalid-feedback">{validationErrors[field.name]}</div>
-                  )}
-                </div>
-              ))}
+            <Grid container spacing={3}>
+              {/* Basic Information Column */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" sx={{
+                  mb: 2,
+                  fontWeight: 600,
+                  color: COLORS.PRIMARY,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  <InfoIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+                  Basic Information
+                </Typography>
 
-              {/* Status dropdown */}
-              <div className="col-md-4">
-                <label htmlFor="status" className="form-label">
-                  Status <span className="text-danger">*</span>
-                </label>
-                <select
-                  id="status"
-                  className={`form-select ${validationErrors.status ? 'is-invalid' : ''}`}
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                >
-                  {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
+                <Grid container spacing={2}>
+                  {fields.slice(0, 8).map((field) => (
+                    <Grid item xs={12} key={field.name}>
+                      <TextField
+                        fullWidth
+                        label={field.label}
+                        name={field.name}
+                        type={field.type || "text"}
+                        value={formData[field.name]}
+                        onChange={handleChange}
+                        error={!!validationErrors[field.name]}
+                        helperText={validationErrors[field.name]}
+                        required={field.required}
+                        variant="outlined"
+                        size="small"
+                        InputLabelProps={{ shrink: true }}
+                        inputProps={field.inputProps}
+                        InputProps={field.InputProps}
+                        sx={{ mb: 2 }}
+                      />
+                    </Grid>
                   ))}
-                </select>
-                {validationErrors.status && (
-                  <div className="invalid-feedback">{validationErrors.status}</div>
-                )}
-              </div>
 
-              {/* Vehicle Type dropdown */}
-              <div className="col-md-4">
-                <label htmlFor="vehicleType" className="form-label">Vehicle Type</label>
-                <select
-                  id="vehicleType"
-                  className={`form-select ${validationErrors.vehicleType ? 'is-invalid' : ''}`}
-                  name="vehicleType"
-                  value={formData.vehicleType}
-                  onChange={handleChange}
-                >
-                  {vehicleTypes.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
+                  <Grid item xs={12}>
+                    <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                      <InputLabel>Vehicle Type</InputLabel>
+                      <Select
+                        name="vehicleType"
+                        value={formData.vehicleType}
+                        onChange={handleChange}
+                        label="Vehicle Type"
+                      >
+                        {vehicleTypes.map(option => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                      <InputLabel>Fuel Type</InputLabel>
+                      <Select
+                        name="fuelType"
+                        value={formData.fuelType}
+                        onChange={handleChange}
+                        label="Fuel Type"
+                      >
+                        {fuelTypes.map(option => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+ 
+                </Grid>
+              </Grid>
+
+              {/* Technical & Maintenance Column */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" sx={{
+                  mb: 2,
+                  fontWeight: 600,
+                  color: COLORS.PRIMARY,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  <EngineeringIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+                  Technical & Maintenance
+                </Typography>
+
+                <Grid container spacing={2}>
+                  {fields.slice(8).map((field) => (
+                    <Grid item xs={12} key={field.name}>
+                      <TextField
+                        fullWidth
+                        label={field.label}
+                        name={field.name}
+                        type={field.type || "text"}
+                        value={formData[field.name]}
+                        onChange={handleChange}
+                        variant="outlined"
+                        size="small"
+                        InputLabelProps={{ shrink: true }}
+                        inputProps={field.inputProps}
+                        InputProps={field.InputProps}
+                        sx={{ mb: 2 }}
+                      />
+                    </Grid>
                   ))}
-                </select>
-                {validationErrors.vehicleType && (
-                  <div className="invalid-feedback">{validationErrors.vehicleType}</div>
-                )}
-              </div>
 
-              {/* Fuel Type dropdown */}
-              <div className="col-md-4">
-                <label htmlFor="fuelType" className="form-label">Fuel Type</label>
-                <select
-                  id="fuelType"
-                  className={`form-select ${validationErrors.fuelType ? 'is-invalid' : ''}`}
-                  name="fuelType"
-                  value={formData.fuelType}
-                  onChange={handleChange}
-                >
-                  {fuelTypes.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {validationErrors.fuelType && (
-                  <div className="invalid-feedback">{validationErrors.fuelType}</div>
-                )}
-              </div>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle1" sx={{
+                      mt: 1,
+                      mb: 2,
+                      fontWeight: 600,
+                      color: COLORS.PRIMARY,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      <NotesIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+                      Additional Notes
+                    </Typography>
 
-              {/* Notes textarea */}
-              <div className="col-12">
-                <label htmlFor="notes" className="form-label">Notes</label>
-                <textarea
-                  id="notes"
-                  className={`form-control ${validationErrors.notes ? 'is-invalid' : ''}`}
-                  name="notes"
-                  rows="4"
-                  value={formData.notes}
-                  onChange={handleChange}
-                ></textarea>
-                {validationErrors.notes && (
-                  <div className="invalid-feedback">{validationErrors.notes}</div>
-                )}
-              </div>
-            </div>
-
-            <div className="d-flex justify-content-end mt-4 gap-2">
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
+                    <TextField
+                      fullWidth
+                      label="Notes"
+                      name="notes"
+                      multiline
+                      rows={4}
+                      value={formData.notes}
+                      onChange={handleChange}
+                      variant="outlined"
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              mt: 4,
+              pt: 3,
+              borderTop: `1px solid ${alpha(COLORS.DIVIDER, 0.2)}`
+            }}>
+              <Button
                 onClick={() => navigate('/vehicles')}
+                sx={{
+                  mr: 2,
+                  minWidth: 120,
+                  borderRadius: '12px',
+                  border: `1px solid ${alpha(COLORS.PRIMARY, 0.5)}`,
+                  color: COLORS.PRIMARY,
+                  '&:hover': {
+                    backgroundColor: alpha(COLORS.PRIMARY, 0.05)
+                  }
+                }}
+                startIcon={<BackIcon />}
               >
-                <i className="bi bi-arrow-left me-2"></i>Cancel
-              </button>
-              <button
+                Cancel
+              </Button>
+              <Button
                 type="submit"
-                className="btn btn-primary"
+                variant="contained"
+                sx={{
+                  minWidth: 150,
+                  borderRadius: '12px',
+                  backgroundColor: COLORS.PRIMARY,
+                  '&:hover': {
+                    backgroundColor: alpha(COLORS.PRIMARY, 0.9)
+                  }
+                }}
+                startIcon={id ? <SaveIcon /> : <AddIcon />}
               >
-                {id ? (
-                  <>
-                    <i className="bi bi-save me-2"></i>Update Vehicle
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-plus-lg me-2"></i>Add Vehicle
-                  </>
-                )}
-              </button>
-            </div>
+                {id ? 'Update Vehicle' : 'Add Vehicle'}
+              </Button>
+            </Box>
           </form>
-        </div>
-      </div>
-    </div>
+        </CardContent>
+      </GradientCard>
+    </Box>
   );
-} 
+}

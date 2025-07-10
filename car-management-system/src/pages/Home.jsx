@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import NavbarHome from '../components/shared/NavbarHome';
 import HomeHero from '../assets/homehero.webp';
@@ -22,10 +22,27 @@ import Slider from 'react-slick';
 import Footer from '../components/shared/Footer';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
+  const { isAuthenticated, userRoles, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      if (userRoles.includes('Admin')) {
+        navigate('/dashboard', { replace: true });
+      } else if (userRoles.includes('Mechanic')) {
+        navigate('/mechanic', { replace: true });
+      } else if (userRoles.includes('User')) {
+        navigate('/userdashboard', { replace: true });
+      } else {
+        navigate('/unauthorized', { replace: true });
+      }
+    }
+  }, [isLoading, isAuthenticated, userRoles, navigate]);
 
   useEffect(() => {
     document.body.classList.add('home-page-body');
@@ -34,37 +51,7 @@ export default function Home() {
     };
   }, []);
 
-  const testimonials = [
-    {
-      text: "This system reduced our fleet maintenance costs by 30% and improved our vehicle utilization rate significantly.",
-      name: "Michael Johnson",
-      role: "Fleet Manager, TransGlobal Logistics",
-      avatar: "https://i.pravatar.cc/100?img=3"
-    },
-    {
-      text: "We streamlined operations, cut down paperwork, and now track everything in real time!",
-      name: "Sarah Luma",
-      role: "Logistics Lead, RoadSync",
-      avatar: "https://i.pravatar.cc/100?img=5"
-    },
-    {
-      text: "The UI is intuitive and saved my team tons of admin time.",
-      name: "Carlos Mendes",
-      role: "Maintenance Chief, SpeedWheels",
-      avatar: "https://i.pravatar.cc/100?img=12"
-    }
-  ];
-
-  const settings = {
-    dots: true,
-    infinite: true,
-    speed: 500,
-    autoplay: true,
-    arrows: false,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    autoplaySpeed: 5000,
-  };
+  if (isLoading) return null;
 
   return (
     <Box sx={{
@@ -80,7 +67,7 @@ export default function Home() {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: isMobile ? theme.spacing(4) : theme.spacing(8),
-        background: ` #3498db`,
+        background: `rgba(52, 152, 219, 0.72)`,
         color: 'common.white',
         position: 'relative',
         overflow: 'hidden'
@@ -94,7 +81,7 @@ export default function Home() {
             variant={isMobile ? 'h3' : 'h2'} 
             component="h1"
             sx={{
-              fontWeight: 700,
+              fontWeight: 400,
               mb: 2,
               lineHeight: 1.2,
               '& span': {
@@ -102,7 +89,7 @@ export default function Home() {
               }
             }}
           >
-            <Box component="span" sx={{ color: 'primary.light' }}>Fleet</Box>
+            <Box component="span" sx={{ color: 'black' }}>Fleet</Box>
             <Box component="span" sx={{ color: 'white' }}>Management</Box>
             <Box component="span">System</Box>
           </Typography>
@@ -112,7 +99,9 @@ export default function Home() {
             sx={{ 
               mb: 4,
               opacity: 0.9,
-              maxWidth: '600px'
+              maxWidth: '800px',
+              fontSize:'18px',
+              fontWeight:'300'
             }}
           >
             Optimize your vehicle fleet operations with our comprehensive management solution
@@ -129,12 +118,11 @@ export default function Home() {
               to="/login"
               variant="contained"
               color="secondary"
-              size="large"
               endIcon={<ArrowForwardIcon />}
               sx={{
                 px: 2,
                 py: 1.5,
-                backgroundColor: 'rgb(0, 0, 0)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 borderRadius: '10px',
                 fontWeight: 600,
                 boxShadow: theme.shadows[4],
@@ -153,7 +141,6 @@ export default function Home() {
               to="/register"
               variant="outlined"
               color="white"
-              size="large"
               sx={{
                 px: 2,
                 py: 1.5,
@@ -199,15 +186,6 @@ export default function Home() {
           />
         </Box>
         
-        <Box sx={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '100px',
-          background: `linear-gradient(to top, ${theme.palette.background.default}, transparent)`,
-          zIndex: 3
-        }} />
       </Box>
 
      

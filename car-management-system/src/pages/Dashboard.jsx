@@ -10,6 +10,8 @@ import { FiTruck, FiCheckCircle, FiFileText, FiTool } from "react-icons/fi";
 import '../components/dashboard/dashboard.css'; // Import your CSS file
 import VehicleAssignment from "../components/new components/VehicleAssignment";
 import CompleteInvoiceForm from "../components/new components/InvoiceForm";
+import LoadingSpinner from '../components/LoadingSpinner';
+import UpcomingMaintenanceWidget from "../components/dashboard/UpcomingMaintenanceWidget";
 
 
 const api = axios.create({
@@ -74,10 +76,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="dashboard-loading">
-        <div className="spinner-circle"></div>
-        <p>Loading fleet data...</p>
-      </div>
+      <LoadingSpinner size="md" text="Loading fleet data..." fullPage={false} />
     );
   }
 
@@ -107,8 +106,8 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <div className="top-section">
-        <VehicleAssignedCard />
-        <FuelExpensesDashboard />
+         <VehicleAssignedCard />
+         <UpcomingMaintenanceWidget/>   
       </div>
         <div className="stats-cards">
           <StatsCard
@@ -117,7 +116,7 @@ export default function Dashboard() {
             link="/vehicles"
             linkText="View All Vehicles"
             icon={<FiTruck />}
-            color="rgba(24,118,210, 0.8)"
+                color="rgb(0, 0, 0)"
           />
           <StatsCard
             title="Assignments"
@@ -125,7 +124,7 @@ export default function Dashboard() {
             link="/assignments"
             linkText="View Assignments"
             icon={<FiFileText />}
-            color="rgba(24,118,210, 0.8)"
+           color="rgb(0, 0, 0)"
           />
           <StatsCard
             title="Maintenance Requests"
@@ -133,7 +132,7 @@ export default function Dashboard() {
             link="/maintenance"
             linkText="View Requests"
             icon={<FiTool />}
-            color="rgba(24,118,210, 0.8)"
+            color="rgb(0, 0, 0)"
           />
                     <StatsCard
             title="Vehicle Request"
@@ -141,12 +140,14 @@ export default function Dashboard() {
             link="/vehicles"
             linkText="View All Vehicles"
             icon={<FiTruck />}
-            color="rgba(24,118,210, 0.8)"
+            color="rgb(0, 0, 0)"
           />
         </div>
       <div className="bottom-section">
+        
         <CommentsAndFeedback />
         <VehicleAssignment/>
+      
       </div>
     </div>
   );

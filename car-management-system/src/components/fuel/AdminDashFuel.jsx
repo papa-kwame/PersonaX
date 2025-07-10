@@ -5,9 +5,9 @@ import {
   Typography,
   Box,
   Avatar,
-  Divider,
   CircularProgress,
   useTheme,
+  Divider
 } from '@mui/material';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import TodayIcon from '@mui/icons-material/Today';
@@ -25,55 +25,58 @@ const FuelExpensesDashboard = () => {
       try {
         const response = await api.get('/api/fuellogs/stats/monthly-summary');
         setData(response.data);
+        console.log('Monthly summary:', response.data);
       } catch (error) {
         console.error('Failed to fetch summary:', error.message);
       } finally {
         setLoading(false);
       }
     };
-
     fetchMonthlySummary();
   }, []);
 
+  const cardSx = {
+    width: '100%',
+    maxWidth: 700,
+    height: 320,
+    margin: '32px auto 0 auto',
+    borderRadius: '16px',
+    boxShadow: '0 2px 16px 0 rgba(34, 74, 190, 0.10)',
+    background: '#fff',
+    border: '1px solid #e3e8f0',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+  };
+
   if (loading) {
     return (
-      <Box
-        sx={{
-          width: '600px',
-          height: '240px',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <CircularProgress size={24} />
+      <Box sx={{
+        ...cardSx,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <CircularProgress size={32} thickness={4} sx={{ color: '#224abe' }} />
       </Box>
     );
   }
 
   if (!data || data.totalMonthlyFuelCost === 0) {
     return (
-      <Card
-        sx={{
-          width: '600px',
-          height: '300px',
-          marginTop: '30px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '8px',
-          boxShadow: 'rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px',
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          No fuel expenses recorded this month.
-        </Typography>
+      <Card sx={cardSx} elevation={0}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <MonetizationOnIcon sx={{ color: '#b0b8d9', fontSize: 40, mb: 1 }} />
+          <Typography variant="body1" sx={{ color: '#b0b8d9', fontWeight: 500 }}>
+            No fuel expenses recorded this month.
+          </Typography>
+        </Box>
       </Card>
     );
   }
 
   const { totalMonthlyFuelCost, totalTodayFuelCost, topSpender, dailyExpenses } = data;
-
   const normalizedDailyExpenses = (dailyExpenses || [])
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(-15)
@@ -83,197 +86,169 @@ const FuelExpensesDashboard = () => {
     }));
 
   return (
-    <Card
-      sx={{
-        width: '600px',
-        height: '300px',
-        marginTop: '30px',
-        borderRadius: '8px',
-        boxShadow: 'rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px',
-        overflow: 'hidden',
-      }}
-    >
-      <Box sx={{ 
-        padding: '16px 24px 0',
-        position: 'relative',
-        '&:after': {
-          content: '""',
-          position: 'absolute',
-          bottom: 0,
-          left: 24,
-          right: 24,
-          height: '1px',
-          backgroundColor: 'rgba(0, 0, 0, 0.08)',
-        }
-      }}>
-        <Typography variant="body2" sx={{ 
-          fontWeight: 500,
-          color: theme.palette.text.primary,
-          letterSpacing: '0.2px'
-        }}>
-          Fuel Expense
+    <Card sx={cardSx} elevation={0}>
+      {/* Header */}
+      <Box sx={{ px: 3, pt: 2, pb: 1 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 800,
+            color: '#224abe',
+            letterSpacing: '0.2px',
+            mb: 0.5,
+          }}
+        >
+          Fuel Dashboard
         </Typography>
+        <Divider sx={{ mb: 1, borderColor: '#e3e8f0' }} />
       </Box>
-
       <CardContent sx={{
-        height: 'calc(100% - 49px)',
-        padding: '16px 24px',
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
+        justifyContent: 'space-between',
+        px: 3,
+        pt: 0,
+        pb: 2,
       }}>
-        {/* Stats Row */}
+        {/* Executive Stats Row */}
         <Box sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          gap: '16px',
-          marginBottom: '12px',
+          alignItems: 'stretch',
+          gap: 2.5,
+          mb: 2,
         }}>
           {/* Monthly */}
-          <Box sx={{ 
+          <Box sx={{
             flex: 1,
-            padding: '8px',
-            backgroundColor: 'rgba(25, 118, 210, 0.04)',
-            borderRadius: '6px'
+            background: '#fff',
+            border: '1px solid #e3e8f0',
+            borderRadius: '10px',
+            boxShadow: '0 1px 6px 0 rgba(34, 74, 190, 0.06)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 90,
+            px: 0,
+            py: 1.5,
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <MonetizationOnIcon 
-                color="primary" 
-                fontSize="small" 
-                sx={{ color: theme.palette.primary.main }}
-              />
-              <Typography variant="body2" sx={{ 
-                fontWeight: 300,
-                color: theme.palette.text.secondary
-              }}>
-                Monthly
-              </Typography>
-            </Box>
-            <Typography variant="h6" sx={{ 
-              fontWeight: 400,
-              marginTop: '4px',
-              color: theme.palette.text.primary
-            }}>
+            <MonetizationOnIcon sx={{ fontSize: 22, color: '#224abe', mb: 0.5 }} />
+            <Typography variant="caption" sx={{ color: '#7b8ca6', fontWeight: 600, mb: 0.5 }}>
+              Monthly
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: '#222', letterSpacing: '0.2px', textAlign: 'center' }}>
               ₵{totalMonthlyFuelCost.toFixed(2)}
             </Typography>
           </Box>
-
           {/* Today */}
-          <Box sx={{ 
+          <Box sx={{
             flex: 1,
-            padding: '8px',
-            backgroundColor: 'rgba(236, 64, 122, 0.04)',
-            borderRadius: '6px'
+            background: '#fff',
+            border: '1px solid #e3e8f0',
+            borderRadius: '10px',
+            boxShadow: '0 1px 6px 0 rgba(34, 74, 190, 0.06)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 90,
+            px: 0,
+            py: 1.5,
           }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <TodayIcon 
-                color="secondary" 
-                fontSize="small" 
-                sx={{ color: theme.palette.secondary.main }}
-              />
-              <Typography variant="body2" sx={{ 
-                fontWeight: 300,
-                color: theme.palette.text.secondary
-              }}>
-                Today
-              </Typography>
-            </Box>
-            <Typography variant="h6" sx={{ 
-              fontWeight: 400,
-              marginTop: '4px',
-              color: theme.palette.secondary.main
-            }}>
+            <TodayIcon sx={{ fontSize: 22, color: '#4e73df', mb: 0.5 }} />
+            <Typography variant="caption" sx={{ color: '#7b8ca6', fontWeight: 600, mb: 0.5 }}>
+              Today
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: '#222', letterSpacing: '0.2px', textAlign: 'center' }}>
               ₵{totalTodayFuelCost.toFixed(2)}
             </Typography>
           </Box>
-
           {/* Top Spender */}
-          <Box sx={{ 
-            flex: 2,
-            padding: '8px',
-            backgroundColor: 'rgba(0, 0, 0, 0.02)',
-            borderRadius: '6px',
+          <Box sx={{
+            flex: 1.2,
+            background: '#fff',
+            border: '1px solid #e3e8f0',
+            borderRadius: '10px',
+            boxShadow: '0 1px 6px 0 rgba(34, 74, 190, 0.06)',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px'
+            justifyContent: 'center',
+            minHeight: 90,
+            px: 1.5,
+            py: 1.5,
+            gap: 1.5,
           }}>
             <Avatar sx={{
-              bgcolor: 'primary.light',
-              width: 32,
-              height: 32,
-              color: 'primary.dark',
-              flexShrink: 0
+              bgcolor: '#e3e8f0',
+              width: 36,
+              height: 36,
+              color: '#224abe',
+              fontWeight: 700,
+              fontSize: '1.3rem',
             }}>
-              <PersonIcon fontSize="small" />
+              <PersonIcon fontSize="medium" />
             </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ 
-                fontWeight: 300,
-                color: theme.palette.text.secondary
-              }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="caption" sx={{ color: '#7b8ca6', fontWeight: 600 }}>
                 Top User
               </Typography>
-              <Typography variant="body2" sx={{ 
-                fontWeight: 400,
-                color: theme.palette.text.primary,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
-                {topSpender.name} (₵{topSpender.amount?.toFixed(2) || '0.00'})
+              <Typography variant="body2" sx={{ fontWeight: 700, color: '#222', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {topSpender.name}
               </Typography>
             </Box>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: '#4e73df', ml: 1, minWidth: 0 }}>
+              ₵{(topSpender.totalSpent ?? 0).toFixed(2)}
+            </Typography>
           </Box>
         </Box>
-
         {/* Chart */}
-        <Box sx={{ 
+        <Box sx={{
           flex: 1,
-          marginTop: '8px',
-          position: 'relative'
+          background: '#fff',
+          border: '1px solid #e3e8f0',
+          borderRadius: '10px',
+          p: 1.5,
+          minHeight: 90,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-end',
         }}>
-          <Typography variant="caption" sx={{ 
-            color: theme.palette.text.secondary,
-            display: 'block',
-            marginBottom: '4px'
-          }}>
+          <Typography variant="caption" sx={{ color: '#7b8ca6', fontWeight: 600, mb: 0.5 }}>
             Daily Trend
           </Typography>
-          <Box sx={{ 
-            height: 'calc(100% - 20px)',
-            backgroundColor: 'rgba(0, 0, 0, 0.01)',
-            borderRadius: '6px',
-            padding: '4px 0'
-          }}>
-            <ResponsiveContainer width="100%" height="97.0%">
+          <Box sx={{ height: 70, width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={normalizedDailyExpenses}>
                 <XAxis
                   dataKey="Date"
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10, fill: '#7b8ca6' }}
                   tickFormatter={(value) => value.split('-')[2]}
                   tickMargin={6}
+                  axisLine={false}
+                  tickLine={false}
                 />
                 <Tooltip
                   formatter={(value) => [`₵${value}`, 'Cost']}
                   labelFormatter={(label) => `Day ${label.split('-')[2]}`}
                   contentStyle={{
-                    borderRadius: '6px',
+                    borderRadius: '8px',
                     fontSize: '12px',
                     padding: '6px 10px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    border: 'none'
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    border: 'none',
+                    background: '#fff',
+                    color: '#224abe',
                   }}
                 />
                 <Line
                   type="monotone"
                   dataKey="Cost"
-                  stroke={theme.palette.primary.main}
+                  stroke="#224abe"
                   strokeWidth={2}
-                  dot={{ r: 2 }}
-                  activeDot={{ 
-                    r: 4,
-                    strokeWidth: 0,
-                    fill: theme.palette.primary.main
-                  }}
+                  dot={{ r: 2, fill: '#4e73df', stroke: '#fff', strokeWidth: 1 }}
+                  activeDot={{ r: 4, strokeWidth: 0, fill: '#4e73df' }}
                 />
               </LineChart>
             </ResponsiveContainer>

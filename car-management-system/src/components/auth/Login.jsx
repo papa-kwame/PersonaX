@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as apiLogin } from '../../services/auth';
 import { useAuth } from '../../context/AuthContext';
@@ -14,7 +14,21 @@ export default function Login() {
   const [toastMessage, setToastMessage] = useState('');
 
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated, userRoles } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (userRoles.includes('Admin')) {
+        navigate('/dashboard', { replace: true });
+      } else if (userRoles.includes('Mechanic')) {
+        navigate('/mechanic', { replace: true });
+      } else if (userRoles.includes('User')) {
+        navigate('/userdashboard', { replace: true });
+      } else {
+        navigate('/unauthorized', { replace: true });
+      }
+    }
+  }, [isAuthenticated, userRoles, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,11 +47,14 @@ export default function Login() {
 
       if (mustChangePassword === true || mustChangePassword === 'true') {
         navigate('/change-password', { replace: true });
-      } else if (roles.includes('Admin') || roles.includes('Mechanic')) {
+      } else if (roles.includes('Admin')) {
         navigate('/dashboard', { replace: true });
       } else if (roles.includes('User')) {
         navigate('/userdashboard', { replace: true });
-      } else {
+      }
+       else if (roles.includes('Mechanic')) {
+        navigate('/mechanic', { replace: true });
+      }  else {
         navigate('/unauthorized', { replace: true });
       }
     } catch (err) {

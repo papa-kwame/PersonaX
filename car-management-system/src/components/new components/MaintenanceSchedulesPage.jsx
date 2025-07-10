@@ -4,6 +4,9 @@ import api from '../../services/api';
 import { format } from 'date-fns';
 import './MaintenanceDashboard.css'; // Import the CSS file
 import {
+  List, ListItem, ListItemAvatar, Avatar, ListItemText, Chip, Box, Button, Typography, Divider, Paper, TextField, Select, MenuItem, InputLabel, FormControl, OutlinedInput, Grid, IconButton, Collapse
+} from '@mui/material';
+import {
   Build as BuildIcon,
   Schedule as ScheduleIcon,
   Close as CloseIcon,
@@ -14,8 +17,13 @@ import {
   DirectionsCar as DirectionsCarIcon,
   Event as EventIcon,
   Description as DescriptionIcon,
-  ArrowBack as ArrowBackIcon
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import ProgressUpdates from './ProgressUpdates';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 const MaintenanceDashboard = () => {
   const { userId } = useAuth();
@@ -25,9 +33,9 @@ const MaintenanceDashboard = () => {
   const [progressUpdates, setProgressUpdates] = useState([]);
   const [openCompleteDialog, setOpenCompleteDialog] = useState(false);
   const [openProgressDialog, setOpenProgressDialog] = useState(false);
-  const [alert, setAlert] = useState({ show: false, message: '', variant: 'success' });
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('list');
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
 
   // Form states
   const [completeForm, setCompleteForm] = useState({
@@ -40,6 +48,40 @@ const MaintenanceDashboard = () => {
     comment: ''
   });
 
+  // Add state for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const assignmentsPerPage = 9;
+  const totalPages = Math.ceil(schedules.length / assignmentsPerPage);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterVehicle, setFilterVehicle] = useState('all');
+  const [filterMechanic, setFilterMechanic] = useState('all');
+  const [filterStartDate, setFilterStartDate] = useState(null);
+  const [filterEndDate, setFilterEndDate] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const uniqueVehicles = Array.from(new Set(schedules.map(s => `${s.vehicleMake} ${s.vehicleModel} (${s.licensePlate})`)));
+  const uniqueMechanics = Array.from(new Set(schedules.map(s => s.assignedMechanicName).filter(Boolean)));
+
+  const filteredSchedules = schedules.slice(
+    (currentPage - 1) * assignmentsPerPage,
+    currentPage * assignmentsPerPage
+  ).filter(schedule => {
+    let match = true;
+    if (filterStatus !== 'all' && schedule.status !== filterStatus) match = false;
+    if (filterVehicle !== 'all' && `${schedule.vehicleMake} ${schedule.vehicleModel} (${schedule.licensePlate})` !== filterVehicle) match = false;
+    if (filterMechanic !== 'all' && schedule.assignedMechanicName !== filterMechanic) match = false;
+    if (filterStartDate && new Date(schedule.scheduledDate) < filterStartDate) match = false;
+    if (filterEndDate && new Date(schedule.scheduledDate) > filterEndDate) match = false;
+    if (searchText && !(
+      schedule.vehicleMake?.toLowerCase().includes(searchText.toLowerCase()) ||
+      schedule.vehicleModel?.toLowerCase().includes(searchText.toLowerCase()) ||
+      schedule.licensePlate?.toLowerCase().includes(searchText.toLowerCase()) ||
+      schedule.reason?.toLowerCase().includes(searchText.toLowerCase())
+    )) match = false;
+    return match;
+  });
+
   // Fetch data
   useEffect(() => {
     fetchUserSchedules();
@@ -47,7 +89,17 @@ const MaintenanceDashboard = () => {
 
   useEffect(() => {
     if (selectedSchedule && viewMode === 'detail') {
-      fetchProgressUpdates(selectedSchedule.id);
+      fetchProgressUpdates(selectedSchedule.maintenanceRequestId);
+    }
+  }, [selectedSchedule, viewMode]);
+
+  useEffect(() => {
+    if (selectedSchedule && viewMode === 'detail') {
+      const handleEsc = (e) => {
+        if (e.key === 'Escape') handleBackToList();
+      };
+      window.addEventListener('keydown', handleEsc);
+      return () => window.removeEventListener('keydown', handleEsc);
     }
   }, [selectedSchedule, viewMode]);
 
@@ -63,26 +115,15 @@ const MaintenanceDashboard = () => {
     }
   };
 
- const fetchProgressUpdates = async (scheduleId) => {
+ const fetchProgressUpdates = async (requestId) => {
   try {
-    const response = await api.get(`/api/MaintenanceRequest/progress-updates/user/${userId}`);
+    const response = await api.get(`/api/MaintenanceRequest/progress-updates/request/${requestId}`);
     setProgressUpdates(response.data);
   } catch (error) {
     showAlert('Failed to fetch progress updates', 'danger');
   }
 };
 
-const fetchAllProgressUpdates = async () => {
-  try {
-    setLoading(true);
-    const response = await api.get(`/api/MaintenanceRequest/progress-updates/user/${userId}`);
-    setProgressUpdates(response.data);
-  } catch (error) {
-    showAlert('Failed to fetch progress updates', 'danger');
-  } finally {
-    setLoading(false);
-  }
-};
 
   const handleCompleteWithInvoice = async () => {
     if (!selectedSchedule) return;
@@ -117,7 +158,7 @@ const fetchAllProgressUpdates = async () => {
         params: { user: userId }
       });
       showAlert('Progress update submitted', 'success');
-      fetchProgressUpdates(selectedSchedule.id);
+      fetchProgressUpdates(selectedSchedule.maintenanceRequestId);
       setOpenProgressDialog(false);
     } catch (error) {
       showAlert('Failed to submit progress update', 'danger');
@@ -127,8 +168,8 @@ const fetchAllProgressUpdates = async () => {
   };
 
   const showAlert = (message, variant) => {
-    setAlert({ show: true, message, variant });
-    setTimeout(() => setAlert({ ...alert, show: false }), 5000);
+    if (variant === 'success') toast.success(message);
+    else toast.error(message);
   };
 
   const handleAddPart = () => {
@@ -162,9 +203,19 @@ const fetchAllProgressUpdates = async () => {
     return <span className={className}>{status}</span>;
   };
 
-  const handleViewDetails = (schedule) => {
+  const handleViewDetails = async (schedule) => {
     setSelectedSchedule(schedule);
     setViewMode('detail');
+    setLoading(true);
+    try {
+      const response = await api.get(`/api/MaintenanceRequest/progress-updates/request/${schedule.maintenanceRequestId}`);
+      setProgressUpdates(response.data);
+    } catch (error) {
+      showAlert('Failed to fetch progress updates for this assignment', 'danger');
+      setProgressUpdates([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBackToList = () => {
@@ -173,52 +224,29 @@ const fetchAllProgressUpdates = async () => {
   };
 
   return (
-    <div className="maintenance-dashboard">
-      {/* Alert Notification */}
-      {alert.show && (
-        <div className={`alert alert-${alert.variant}`}>
-          {alert.message}
-          <button
-            onClick={() => setAlert({ ...alert, show: false })}
-            className="alert-close"
-          >
-            <CloseIcon fontSize="small" />
-          </button>
-        </div>
-      )}
+    <Box sx={{
+      display: 'flex',
+      flexDirection: { xs: 'column', md: 'row' },
+      gap: 3,
+      width: '100%',
+      alignItems: 'flex-start',
+      mt: 2,
+      px: { xs: 1, sm: 2, md: 4 },
+      pb: 4
+    }}>
+      {/* Main Schedule/Assignments Section (70%) */}
+      <Box sx={{
+        flex: { xs: 'unset', md: 7 },
+        minWidth: 0,
+        width: { xs: '100%', md: '70%' },
+        background: 'rgba(255,255,255,0.85)',
+        borderRadius: 4,
+        boxShadow: '0 2px 24px rgba(37,99,235,0.07)',
+        p: { xs: 1, sm: 2, md: 3 },
+        mb: { xs: 3, md: 0 }
+      }}>
+        <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
 
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-content">
-          <h1 className="header-title">
-            <BuildIcon className="header-icon" />
-            Maintenance Dashboard
-          </h1>
-          <div className="header-tabs">
-            <button
-              className={`tab-button ${activeTab === 'assignments' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('assignments');
-                setViewMode('list');
-              }}
-            >
-              My Assignments
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'progress' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('progress');
-                fetchAllProgressUpdates();
-                setViewMode('list');
-              }}
-            >
-              Progress Updates
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
       <main className="dashboard-main">
         <div className="dashboard-container1">
           {loading && (
@@ -229,97 +257,218 @@ const fetchAllProgressUpdates = async () => {
 
           {!loading && viewMode === 'list' && activeTab === 'assignments' && (
             <>
-              <div className="list-header">
-                <h2 className="list-title">My Maintenance Assignments</h2>
-                <p className="list-count">
-                  {schedules.length} {schedules.length === 1 ? 'assignment' : 'assignments'}
-                </p>
-              </div>
-
-              {schedules.length === 0 ? (
-                <div className="empty-state">
-                  <ScheduleIcon className="empty-icon" />
-                  <h3 className="empty-title">No assignments</h3>
-                  <p className="empty-message">You have no assigned maintenance tasks at this time.</p>
-                </div>
-              ) : (
-                <div className="assignment-list">
-                  <ul className="list-items">
-                    {schedules.map((schedule) => (
-                      <li key={schedule.id} className="list-item">
-                        <div className="item-content">
-                          <div className="item-main">
-                            <div className="item-icon">
-                              <DirectionsCarIcon className="vehicle-icon" />
-                            </div>
-                            <div className="item-details">
-                              <p className="vehicle-name">
-                                {schedule.vehicleMake} {schedule.vehicleModel}
-                              </p>
-                              <p className="vehicle-info">
-                                <span className="repair-type">{schedule.repairType}</span>
-                                <span className="divider">·</span>
-                                <span className="license-plate">{schedule.licensePlate}</span>
-                              </p>
-                            </div>
-                          </div>
-                          <div className="item-actions">
-                            {getStatusBadge(schedule.status)}
-                            <div className="action-buttons">
-                              <button
-                                onClick={() => handleViewDetails(schedule)}
-                                className="secondary-button"
-                              >
-                                Details
-                              </button>
-                              {schedule.status !== 'Completed' && (
-                                <button
-                                  onClick={() => {
-                                    setSelectedSchedule(schedule);
-                                    setCompleteForm({
-                                      laborHours: 0,
-                                      totalCost: 0,
-                                      partsUsed: [{ partName: '', quantity: 1, unitPrice: 0 }]
-                                    });
-                                    setOpenCompleteDialog(true);
-                                  }}
-                                  className="primary-button"
-                                >
-                                  Complete
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="item-footer">
-                          <div className="footer-left">
-                            <p className="schedule-date">
-                              <ScheduleIcon className="date-icon" />
-                              {schedule.scheduledDate ?
-                                format(new Date(schedule.scheduledDate), 'PPpp') :
-                                'No scheduled date'}
-                            </p>
-                          </div>
-                          <div className="footer-right">
-                            <button
-                              onClick={() => {
-                                setSelectedSchedule(schedule);
-                                setProgressForm({
-                                  expectedCompletionDate: '',
-                                  comment: ''
-                                });
-                                setOpenProgressDialog(true);
+                <Box sx={{
+                  width: '100%',
+                  mb: 3,
+                  px: { xs: 0, sm: 2, md: 4 },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}>
+                  <Box sx={{
+                    width: '100%',
+                    maxWidth: 1200,
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.85)',
+                    borderRadius: 4,
+                    boxShadow: '0 2px 16px rgba(37,99,235,0.07)',
+                    p: 1.5,
+                    mb: 1,
+                    gap: 2
+                  }}>
+                    <span style={{ fontSize: 24, marginLeft: 8, marginRight: 12 }}>🔍</span>
+                    <TextField
+                      fullWidth
+                      variant="standard"
+                      placeholder="Search by vehicle, mechanic, status, etc."
+                      value={searchText}
+                      onChange={e => setSearchText(e.target.value)}
+                      InputProps={{ disableUnderline: true, sx: { fontSize: 20, pl: 1, background: 'transparent' } }}
+                      sx={{ flex: 1, fontWeight: 600, fontSize: 20, background: 'transparent' }}
+                    />
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<span style={{ fontSize: 20 }}>⏳</span>}
+                      endIcon={<span style={{ fontSize: 18 }}>{filtersOpen ? '▲' : '▼'}</span>}
+                      onClick={() => setFiltersOpen(f => !f)}
+                      sx={{ fontWeight: 700, borderRadius: 3, px: 2, py: 1, fontSize: 16 }}
+                    >
+                      Filters
+                    </Button>
+                  </Box>
+                  <Collapse in={filtersOpen} timeout="auto" unmountOnExit>
+                    <Box sx={{
+                      width: '100%',
+                      maxWidth: 1200,
+                      background: 'rgba(245,248,255,0.97)',
+                      borderRadius: 4,
+                      boxShadow: '0 2px 24px rgba(37,99,235,0.10)',
+                      p: 2.5,
+                      mt: 1,
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 2,
+                      alignItems: 'center',
+                    }}>
+                      <FormControl sx={{ minWidth: 140 }} size="small">
+                        <InputLabel>Status</InputLabel>
+                        <Select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} label="Status">
+                          <MenuItem value="all">All</MenuItem>
+                          <MenuItem value="Scheduled">Scheduled</MenuItem>
+                          <MenuItem value="In Progress">In Progress</MenuItem>
+                          <MenuItem value="Completed">Completed</MenuItem>
+                          <MenuItem value="Cancelled">Cancelled</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <FormControl sx={{ minWidth: 180 }} size="small">
+                        <InputLabel>Vehicle</InputLabel>
+                        <Select value={filterVehicle} onChange={e => setFilterVehicle(e.target.value)} label="Vehicle">
+                          <MenuItem value="all">All</MenuItem>
+                          {uniqueVehicles.map(v => <MenuItem key={v} value={v}>{v}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                      <FormControl sx={{ minWidth: 160 }} size="small">
+                        <InputLabel>Mechanic</InputLabel>
+                        <Select value={filterMechanic} onChange={e => setFilterMechanic(e.target.value)} label="Mechanic">
+                          <MenuItem value="all">All</MenuItem>
+                          {uniqueMechanics.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+                        </Select>
+                      </FormControl>
+                      <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                          label="Start Date"
+                          value={filterStartDate}
+                          onChange={setFilterStartDate}
+                          renderInput={(params) => <TextField {...params} size="small" sx={{ minWidth: 120 }} />}
+                        />
+                        <DatePicker
+                          label="End Date"
+                          value={filterEndDate}
+                          onChange={setFilterEndDate}
+                          renderInput={(params) => <TextField {...params} size="small" sx={{ minWidth: 120 }} />}
+                        />
+                      </LocalizationProvider>
+                      <Button variant="outlined" color="secondary" onClick={() => {
+                        setFilterStatus('all');
+                        setFilterVehicle('all');
+                        setFilterMechanic('all');
+                        setFilterStartDate(null);
+                        setFilterEndDate(null);
+                      }}>Reset</Button>
+                    </Box>
+                  </Collapse>
+                </Box>
+                {/* Two-column layout: schedules list (left), progress updates (right) */}
+                <Box sx={{ display: 'flex', gap: 4, mt: 3, width: '100%', maxWidth: 1400, mx: 'auto' }}>
+                  {/* Schedules List */}
+                  <Paper elevation={3} sx={{ flex: 1.2, p: 2, borderRadius: 4, minWidth: 400, maxHeight: 700, overflowY: 'auto' }}>
+                    <Typography variant="h6" fontWeight={900} color="primary.main" sx={{ mb: 2 }}>
+                      Scheduled Maintenance
+                    </Typography>
+                    {filteredSchedules.length === 0 ? (
+                      <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                        <EventIcon sx={{ fontSize: 48, mb: 1, color: 'primary.light' }} />
+                        <Typography variant="h6" fontWeight={700}>No scheduled maintenance</Typography>
+                        <Typography variant="body2">You have no scheduled maintenance at this time.</Typography>
+                      </Box>
+                    ) : (
+                      <List>
+                        {filteredSchedules.map(schedule => (
+                          <React.Fragment key={schedule.id}>
+                            <ListItem
+                              alignItems="flex-start"
+                              selected={selectedSchedule && selectedSchedule.id === schedule.id}
+                              onClick={() => { setSelectedSchedule(schedule); fetchProgressUpdates(schedule.maintenanceRequestId); }}
+                              sx={{
+                                mb: 2,
+                                borderRadius: 3,
+                                boxShadow: '0 2px 8px rgba(25, 118, 210, 0.10)',
+                                background: selectedSchedule && selectedSchedule.id === schedule.id ? '#e3f0ff' : '#f9fafd',
+                                position: 'relative',
+                                pl: 3,
+                                pr: 3,
+                                py: 2.5,
+                                '&:hover': { background: '#f0f4fa', cursor: 'pointer' },
+                                minHeight: 90,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                transition: 'background 0.2s',
                               }}
-                              className="text-button"
                             >
-                              Add Progress
-                            </button>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                              <ListItemAvatar sx={{  mr : 3 }}>
+                                <Avatar sx={{  width: 56, height: 56 }}>
+                                  <DirectionsCarIcon fontSize="large" />
+                                </Avatar>
+                              </ListItemAvatar>
+                              <ListItemText
+                                primary={
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                    <Typography fontWeight={400} sx={{ fontSize: 22 }}>
+                                      {schedule.vehicleMake} {schedule.vehicleModel} ({schedule.licensePlate})
+                                    </Typography>
+                                    <Chip label={schedule.status} color={schedule.status === 'Completed' ? 'success' : schedule.status === 'In Progress' ? 'info' : 'warning'} size="medium" sx={{ fontWeight: 800, fontSize: 16, height: 32 }} />
+                                  </Box>
+                                }
+                                secondary={
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mt: 1 }}>
+                                    <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 600, fontSize: 17 }}>
+                                      <strong>Date:</strong> {format(new Date(schedule.scheduledDate), 'PPP')}
+                                    </Typography>
+                                  </Box>
+                                }
+                              />
+                              <Box sx={{ display: 'flex', gap: 2 }}>
+                                <Button
+                                  variant="outlined"
+                                  color="primary"
+                                  size="large"
+                                  sx={{ fontWeight: 800, borderRadius: 2, px: 3, py: 1.5, textTransform: 'none', fontSize: 16 }}
+                                  onClick={e => { e.stopPropagation(); handleViewDetails(schedule); }}
+                                >
+                                  View Details
+                                </Button>
+
+                              </Box>
+                            </ListItem>
+                            <Divider variant="inset" component="li" sx={{ my: 1 }} />
+                          </React.Fragment>
+                        ))}
+                      </List>
+                    )}
+                  </Paper>
+
+                </Box>
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem', gap: '0.5rem' }}>
+                      <button
+                        className="secondary-button"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Prev
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                          key={i + 1}
+                          className={`secondary-button${currentPage === i + 1 ? ' active' : ''}`}
+                          style={{ fontWeight: currentPage === i + 1 ? 'bold' : 'normal' }}
+                          onClick={() => setCurrentPage(i + 1)}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                      <button
+                        className="secondary-button"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </button>
+                    </div>
               )}
             </>
           )}
@@ -375,129 +524,129 @@ const fetchAllProgressUpdates = async () => {
           )}
 
           {!loading && viewMode === 'detail' && selectedSchedule && (
-            <div className="detail-view">
-              <div className="detail-header">
-                <div className="header-left">
-                  <button
-                    onClick={handleBackToList}
-                    className="back-button"
-                  >
-                    <ArrowBackIcon />
-                  </button>
-                  <h3 className="vehicle-title">
-                    {selectedSchedule.vehicleMake} {selectedSchedule.vehicleModel} ({selectedSchedule.licensePlate})
-                  </h3>
+            <div className="modal-overlay">
+              <div className="modal-container">
+                <button
+                  className="modal-close"
+                  onClick={handleBackToList}
+                  aria-label="Close"
+                >
+                  &times;
+                </button>
+                <div className="detail-header">
+                  <div className="header-left">
+                    <h3 className="vehicle-title">
+                      {selectedSchedule.vehicleMake} {selectedSchedule.vehicleModel} ({selectedSchedule.licensePlate})
+                    </h3>
+                  </div>
+                  <div className="header-actions">
+                    {selectedSchedule.status !== 'Completed' && (
+                      <button
+                        onClick={() => {
+                          setProgressForm({
+                            expectedCompletionDate: '',
+                            comment: ''
+                          });
+                          setOpenProgressDialog(true);
+                        }}
+                        className="secondary-button"
+                      >
+                        Add Progress
+                      </button>
+                    )}
+                    {selectedSchedule.status !== 'Completed' && (
+                      <button
+                        onClick={() => setShowCompleteConfirm(true)}
+                        className="primary-button"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <div className="spinner small"></div>
+                            Processing...
+                          </>
+                        ) : 'Complete Maintenance'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="header-actions">
-                  <button
-                    onClick={() => {
-                      setProgressForm({
-                        expectedCompletionDate: '',
-                        comment: ''
-                      });
-                      setOpenProgressDialog(true);
-                    }}
-                    className="secondary-button"
-                  >
-                    Add Progress
-                  </button>
-                  {selectedSchedule.status !== 'Completed' && (
-                    <button
-                      onClick={() => {
-                        setCompleteForm({
-                          laborHours: 0,
-                          totalCost: 0,
-                          partsUsed: [{ partName: '', quantity: 1, unitPrice: 0 }]
-                        });
-                        setOpenCompleteDialog(true);
-                      }}
-                      className="primary-button"
-                    >
-                      Complete
-                    </button>
-                  )}
-                </div>
-              </div>
-              <p className="detail-subtitle">
-                {selectedSchedule.repairType} · {getStatusBadge(selectedSchedule.status)}
-              </p>
-
-              <div className="detail-content">
-                <div className="detail-grid">
-                  <div className="detail-section">
-                    <h4 className="section-title">
-                      <DescriptionIcon className="section-icon" />
-                      Assignment Details
-                    </h4>
-                    <div className="section-content">
-                      <div className="detail-field">
-                        <label className="field-label">Scheduled Date</label>
-                        <p className="field-value">
-                          {selectedSchedule.scheduledDate ?
-                            format(new Date(selectedSchedule.scheduledDate), 'PPpp') :
-                            'Not scheduled'}
-                        </p>
-                      </div>
-                      <div className="detail-field">
-                        <label className="field-label">Repair Type</label>
-                        <p className="field-value">{selectedSchedule.repairType}</p>
-                      </div>
-                      <div className="detail-field">
-                        <label className="field-label">Reason</label>
-                        <p className="field-value">
-                          {selectedSchedule.reason || 'No reason provided'}
-                        </p>
-                      </div>
-                      <div className="detail-field">
-                        <label className="field-label">Comments</label>
-                        <p className="field-value">
-                          {selectedSchedule.comments || 'No comments'}
-                        </p>
+                <p className="detail-subtitle">
+                  {selectedSchedule.repairType} · {getStatusBadge(selectedSchedule.status)}
+                </p>
+                <div className="detail-content">
+                  <div className="detail-grid">
+                    <div className="detail-section">
+                      <h4 className="section-title">
+                        <DescriptionIcon className="section-icon" />
+                        Assignment Details
+                      </h4>
+                      <div className="section-content">
+                        <div className="detail-field">
+                          <label className="field-label">Scheduled Date</label>
+                          <p className="field-value">
+                            {selectedSchedule.scheduledDate ?
+                              format(new Date(selectedSchedule.scheduledDate), 'PPpp') :
+                              'Not scheduled'}
+                          </p>
+                        </div>
+                        <div className="detail-field">
+                          <label className="field-label">Repair Type</label>
+                          <p className="field-value">{selectedSchedule.repairType}</p>
+                        </div>
+                        <div className="detail-field">
+                          <label className="field-label">Reason</label>
+                          <p className="field-value">
+                            {selectedSchedule.reason || 'No reason provided'}
+                          </p>
+                        </div>
+                        <div className="detail-field">
+                          <label className="field-label">Comments</label>
+                          <p className="field-value">
+                            {selectedSchedule.comments || 'No comments'}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="detail-section">
-                    <h4 className="section-title">
-                      <ScheduleIcon className="section-icon" />
-                      Progress History
-                    </h4>
-
-                    {progressUpdates.length === 0 ? (
-                      <div className="empty-section">
-                        <p className="empty-text">No progress updates yet</p>
-                      </div>
-                    ) : (
-                      <div className="timeline">
-                        <ul className="timeline-list">
-                          {progressUpdates.map((update, index) => (
-                            <li key={index} className="timeline-item">
-                              <div className="timeline-connector"></div>
-                              <div className="timeline-content">
-                                <div className="timeline-avatar">
-                                  {update.mechanic?.charAt(0).toUpperCase() || 'M'}
-                                </div>
-                                <div className="timeline-details">
-                                  <p className="timeline-comment">{update.comment}</p>
-                                  <div className="timeline-tags">
-                                    {update.expectedCompletionDate && (
-                                      <span className="date-tag expected">
-                                        <EventIcon className="tag-icon" />
-                                        Expected: {format(new Date(update.expectedCompletionDate), 'PP')}
-                                      </span>
-                                    )}
-
+                    <div className="detail-section">
+                      <h4 className="section-title">
+                        <ScheduleIcon className="section-icon" />
+                        Progress History
+                      </h4>
+                      {progressUpdates.length === 0 ? (
+                        <div className="empty-section">
+                          <p className="empty-text">No progress updates yet</p>
+                        </div>
+                      ) : (
+                        <div className="timeline">
+                          <ul className="timeline-list">
+                            {progressUpdates.map((update, index) => (
+                              <li key={index} className="timeline-item">
+                                <div className="timeline-connector"></div>
+                                <div className="timeline-content">
+                                  <div className="timeline-avatar">
+                                    {update.mechanic?.charAt(0).toUpperCase() || 'M'}
                                   </div>
-                                  <div className="timeline-time">
-                                    {format(new Date(update.timestamp), 'PPpp')}
+                                  <div className="timeline-details">
+                                    <p className="timeline-comment">{update.comment}</p>
+                                    <div className="timeline-tags">
+                                      {update.expectedCompletionDate && (
+                                        <span className="date-tag expected">
+                                          <EventIcon className="tag-icon" />
+                                          Expected: {format(new Date(update.expectedCompletionDate), 'PP')}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="timeline-time">
+                                      {format(new Date(update.timestamp), 'PPpp')}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -506,130 +655,56 @@ const fetchAllProgressUpdates = async () => {
         </div>
       </main>
 
-      {/* Complete with Invoice Modal */}
-      {openCompleteDialog && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-content">
-              <div className="modal-header">
-                <CheckCircleIcon className="modal-icon success" />
-                <h3 className="modal-title">Complete Maintenance</h3>
-              </div>
-              <div className="modal-summary">
-                <p className="summary-text">
-                  <strong>{selectedSchedule?.vehicleMake} {selectedSchedule?.vehicleModel}</strong> ({selectedSchedule?.licensePlate}) - {selectedSchedule?.repairType}
-                </p>
-              </div>
-
-              <div className="modal-form">
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label htmlFor="laborHours" className="form-label">Labor Hours</label>
-                    <input
-                      type="number"
-                      id="laborHours"
-                      className="form-input"
-                      min="0"
-                      step="0.5"
-                      value={completeForm.laborHours}
-                      onChange={(e) => setCompleteForm({ ...completeForm, laborHours: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="totalCost" className="form-label">Total Cost</label>
-                    <input
-                      type="number"
-                      id="totalCost"
-                      className="form-input"
-                      min="0"
-                      step="0.01"
-                      value={completeForm.totalCost}
-                      onChange={(e) => setCompleteForm({ ...completeForm, totalCost: e.target.value })}
-                    />
-                  </div>
-
-
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setOpenCompleteDialog(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={handleCompleteWithInvoice}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <div className="spinner small"></div>
-                      Processing...
-                    </>
-                  ) : 'Complete Maintenance'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Progress Update Modal */}
       {openProgressDialog && (
         <div className="modal-overlay">
-          <div className="modal-container">
+            <div className="modal-container modern-progress-modal">
             <div className="modal-content">
-              <div className="modal-header">
+                <div className="modal-header modern-modal-header">
                 <PendingIcon className="modal-icon warning" />
                 <h3 className="modal-title">Progress Update</h3>
               </div>
-              <div className="modal-summary">
+                <div className="modal-summary modern-modal-summary">
                 <p className="summary-text">
                   <strong>{selectedSchedule?.vehicleMake} {selectedSchedule?.vehicleModel}</strong> ({selectedSchedule?.licensePlate}) - {selectedSchedule?.repairType}
                 </p>
               </div>
-
-              <div className="modal-form">
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label htmlFor="expectedDate" className="form-label">Expected Completion</label>
+                <div className="modal-form modern-modal-form">
+                  <div className="form-grid modern-form-grid">
+                    <div className="form-group modern-form-group">
+                      <label htmlFor="expectedDate" className="form-label modern-form-label">Expected Completion</label>
                     <input
                       type="date"
                       id="expectedDate"
-                      className="form-input"
+                        className="form-input modern-form-input"
                       value={progressForm.expectedCompletionDate}
                       onChange={(e) => setProgressForm({ ...progressForm, expectedCompletionDate: e.target.value })}
                     />
                   </div>
-
-                  <div className="form-group full-width">
-                    <label htmlFor="comment" className="form-label">Comments</label>
+                    <div className="form-group full-width modern-form-group">
+                      <label htmlFor="comment" className="form-label modern-form-label">Comments</label>
                     <textarea
                       id="comment"
                       rows="3"
-                      className="form-textarea"
+                        className="form-textarea modern-form-textarea"
                       value={progressForm.comment}
                       onChange={(e) => setProgressForm({ ...progressForm, comment: e.target.value })}
+                        placeholder="Add any comments or notes..."
                     ></textarea>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="modal-footer">
+                <div className="modal-footer modern-modal-footer">
                 <button
                   type="button"
-                  className="secondary-button"
+                    className="secondary-button modern-secondary-button"
                   onClick={() => setOpenProgressDialog(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="primary-button"
+                    className="primary-button modern-primary-button"
                   onClick={handleSubmitProgressUpdate}
                   disabled={loading}
                 >
@@ -645,7 +720,120 @@ const fetchAllProgressUpdates = async () => {
           </div>
         </div>
       )}
-    </div>
+
+        {/* Confirmation Modal for Completing Maintenance */}
+        {showCompleteConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(30, 41, 59, 0.18)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'fadeIn 0.25s',
+          }}>
+            <div style={{
+              minWidth: 340,
+              maxWidth: 420,
+              width: '90vw',
+              background: 'rgba(255,255,255,0.85)',
+              borderRadius: 20,
+              boxShadow: '0 8px 40px rgba(37,99,235,0.13)',
+              padding: '2.2rem 2.2rem 1.5rem 2.2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              border: '1.5px solid #e0eaff',
+              position: 'relative',
+              animation: 'scaleIn 0.22s',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
+                <span style={{ fontSize: 32, color: '#fbbf24', filter: 'drop-shadow(0 2px 8px #fbbf2433)' }}>⚠️</span>
+                <span style={{ fontWeight: 900, fontSize: 23, color: '#222', letterSpacing: 0.2 }}>Are you sure?</span>
+              </div>
+              <div style={{ fontSize: 17, color: '#374151', marginBottom: 28, textAlign: 'center', fontWeight: 500 }}>
+                Are you sure you have completed all necessary work on this vehicle?
+              </div>
+              <div style={{ display: 'flex', gap: 18, justifyContent: 'flex-end', width: '100%' }}>
+                <button
+                  type="button"
+                  style={{
+                    background: 'none',
+                    border: '1.5px solid #2563eb',
+                    color: '#2563eb',
+                    fontWeight: 700,
+                    borderRadius: 8,
+                    padding: '0.7rem 1.6rem',
+                    fontSize: 16,
+                    cursor: 'pointer',
+                    transition: 'background 0.18s, color 0.18s, box-shadow 0.18s',
+                    boxShadow: '0 1px 6px rgba(37,99,235,0.06)',
+                  }}
+                  onClick={() => setShowCompleteConfirm(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    background: 'linear-gradient(90deg, #2563eb 60%, #60a5fa 100%)',
+                    color: '#fff',
+                    fontWeight: 800,
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '0.7rem 1.8rem',
+                    fontSize: 16,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 12px rgba(37,99,235,0.13)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent:'center',
+                    gap: 8,
+                    transition: 'background 0.18s, box-shadow 0.18s',
+                  }}
+                  onClick={() => {
+                    setShowCompleteConfirm(false);
+                    handleCompleteWithInvoice();
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <span style={{ fontSize: 18, marginRight: 6 }}>⏳</span> Processing...
+                    </>
+                  ) : (
+                    <>
+                     Yes, Complete
+                    </>
+                  )}
+                </button>
+              </div>
+              <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes scaleIn { from { transform: scale(0.95); opacity: 0.7; } to { transform: scale(1); opacity: 1; } }
+                button:active { transform: scale(0.97); }
+                button:focus { outline: 2px solid #2563eb33; }
+              `}</style>
+            </div>
+          </div>
+        )}
+      </Box>
+ 
+      <Box sx={{
+        flex: { xs: 'unset', md: 3 },
+        minWidth: 0,
+        width: { xs: '100%', md: '30%' },
+        borderRadius: 4,
+        p: { xs: 1, sm: 2, md: 3 },
+        maxHeight: { md: '80vh' },
+        overflowY: 'auto',
+        position: 'sticky',
+
+      }}>
+        <ProgressUpdates userId={userId} />
+      </Box>
+    </Box>
   );
 };
 

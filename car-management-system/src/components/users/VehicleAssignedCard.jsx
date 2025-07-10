@@ -23,7 +23,9 @@ import {
   Divider,
   List,
   ListItem,
-  ListItemText
+  ListItemText,
+  Tabs,
+  Tab
 } from '@mui/material';
 import {
   DirectionsCar as CarIcon,
@@ -53,7 +55,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   width: '100%',
   minWidth: 600,
   maxWidth: 600,
-  minHeight: 460,
+  minHeight: 430,
   borderRadius: 16,
   boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
   display: 'flex',
@@ -126,9 +128,9 @@ const VehicleCard = ({ vehicle, onClick, upcomingMaintenanceCount, nextMaintenan
 
   return (
     <motion.div
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -7 }}
       whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 400, damping: 15 }}
+      transition={{ type: "spring", stiffness: 20, damping: 5 }}
     >
       <Box
         onClick={onClick}
@@ -302,94 +304,100 @@ const EmptyVehicleCard = styled(Box)(({ theme }) => ({
 }));
 
 const GhanaianLicensePlate = ({ licensePlate }) => {
-  const [region, numberAndYear] = licensePlate ? licensePlate.split(' ') : ['', ''];
-  const mainNumber = numberAndYear?.slice(0, numberAndYear.length - 2) || '';
-  const year = numberAndYear?.slice(-2) || '';
+  // Parse the license plate for region, number, and suffix
+  let region = '', number = '', suffix = '';
+  if (licensePlate) {
+    const parts = licensePlate.split(' ');
+    region = parts[0] || '';
+    number = parts[1] || '';
+    suffix = parts[2] || '';
+  }
 
   return (
-    <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ duration: 0.3 }}>
-      <Box sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
-        background: 'linear-gradient(135deg, #1e3c72, #2a5298)',
-        border: '3px solid #1a237e',
-        borderRadius: '12px',
-        boxShadow: '0 8px 20px rgba(26, 35, 126, 0.3)',
-        width: '260px',
-        height: '140px',
-        position: 'relative',
-        mb: 3,
-        mx: 'auto',
-        transform: 'perspective(500px) rotateX(5deg)',
-        '&:hover': { transform: 'perspective(500px) rotateX(0deg)' },
-        transition: 'all 0.3s ease',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%)',
-          zIndex: 1
-        }
-      }}>
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: '100%',
-          mb: 1,
-          zIndex: 2
-        }}>
-          <Typography variant="h6" sx={{
-            fontWeight: 'bold',
-            fontSize: '2.3rem',
-            color: '#fff',
-            letterSpacing: '1px',
-            marginLeft: '80px',
-            textShadow: '1px 1px 3px rgba(0,0,0,0.3)'
-          }}>
-            {region}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', zIndex: 2 }}>
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Flag_of_Ghana.svg/640px-Flag_of_Ghana.svg.png"
-              alt="Ghana Flag"
-              style={{
-                width: '24px',
-                height: '16px',
-                marginRight: '6px',
-                boxShadow: '0 0 5px rgba(0,0,0,0.2)',
-                borderRadius: '2px'
-              }}
-            />
-            <Typography variant="caption" sx={{
-              fontSize: '0.7rem',
-              fontWeight: 'bold',
-              color: '#fff',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
-            }}>
-              GH
-            </Typography>
-          </Box>
-        </Box>
-        <Typography variant="h4" sx={{
-          fontWeight: 'bold',
-          letterSpacing: '2px',
-          color: '#fff',
-          fontSize: '2.4rem',
-          textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-          zIndex: 2
-        }}>
-          {mainNumber}{year}
-        </Typography>
+    <Box sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: 330,
+      height: 74,
+      background: 'linear-gradient(135deg, #fff 70%, #e9e9e9 100%)',
+      border: '3px solid #222',
+      borderRadius: '8px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+      position: 'relative',
+      px: 2.5,
+      py: 1.5,
+      mb: 2,
+      fontFamily: 'Impact, Arial Black, Arial, sans-serif',
+      overflow: 'hidden',
+      letterSpacing: 2,
+      '::after': {
+        content: '""',
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        background: 'repeating-linear-gradient(120deg, transparent, transparent 12px, rgba(0,0,0,0.03) 14px, transparent 16px)',
+        opacity: 0.7,
+        zIndex: 2
+      }
+    }}>
+      {/* Plate Text */}
+      <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, zIndex: 3 }}>
+        <Typography variant="h5" sx={{
+          fontWeight: 900,
+          color: '#181818',
+          fontFamily: 'Impact, Arial Black, Arial, sans-serif',
+          fontSize: 34,
+          lineHeight: 1,
+          mr: 1.5,
+          textShadow: '0 1px 0 #fff, 0 2px 2px #bbb',
+        }}>{region}</Typography>
+        <Typography variant="h5" sx={{
+          fontWeight: 900,
+          color: '#181818',
+          fontSize: 34,
+          lineHeight: 1,
+          mr: 1.5,
+          textShadow: '0 1px 0 #fff, 0 2px 2px #bbb',
+        }}>{number}</Typography>
+        <Typography variant="h5" sx={{
+          fontWeight: 900,
+          color: '#181818',
+          fontSize: 34,
+          lineHeight: 1,
+          textShadow: '0 1px 0 #fff, 0 2px 2px #bbb',
+        }}>{suffix}</Typography>
       </Box>
-    </motion.div>
+      {/* Ghana flag and GH at top right */}
+      <Box sx={{ position: 'absolute', top: 7, right: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 3 }}>
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Flag_of_Ghana.svg/640px-Flag_of_Ghana.svg.png"
+          alt="Ghana Flag"
+          style={{ width: 32, height: 20, border: '1px solid #222', borderRadius: 2, marginBottom: 1 }}
+        />
+        <Typography variant="caption" sx={{ fontWeight:700, color: '#181818', fontSize: 13, letterSpacing: 1, mt: 0.5 }}>GH</Typography>
+      </Box>
+      {/* GH at bottom right */}
+      <Typography variant="caption" sx={{
+        position: 'absolute',
+        bottom: 7,
+        right: 20,
+        fontWeight: 700,
+        color: '#181818',
+        fontSize: 13,
+        letterSpacing: 1,
+        zIndex: 3
+      }}>GH</Typography>
+      {/* Thin inner border for depth */}
+      <Box sx={{
+        position: 'absolute',
+        inset: 4,
+        border: '1.5px solid #bbb',
+        borderRadius: '6px',
+        pointerEvents: 'none',
+        zIndex: 2
+      }} />
+    </Box>
   );
 };
 
@@ -410,7 +418,12 @@ const VehicleAssignedCard = () => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [formData, setFormData] = useState({ requestType: '', description: '', priority: '' });
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const navigate = useNavigate();
+  const [tabIndex, setTabIndex] = useState(0);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [scheduleToUpdate, setScheduleToUpdate] = useState(null);
+  const [updateForm, setUpdateForm] = useState({ status: '', comments: '', expectedCompletionDate: '' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -489,15 +502,50 @@ const VehicleAssignedCard = () => {
     const payload = { ...formData, VehicleId: vehicleId };
 
     try {
+      setProcessing(true);
       await axios.post(`${API_URL}/MaintenanceRequest/personal?userId=${authData.userId}`, payload);
       setSubmitSuccess(true);
       setTimeout(() => {
         setShowRequestModal(false);
         setSubmitSuccess(false);
         setFormData({ requestType: '', description: '', priority: '' });
+        setProcessing(false);
       }, 1500);
     } catch (error) {
+      setProcessing(false);
       console.error('Error submitting request:', error);
+    }
+  };
+
+  const handleUpdateClick = (schedule) => {
+    setScheduleToUpdate(schedule);
+    setUpdateForm({
+      status: schedule.status || '',
+      comments: schedule.comments || '',
+      expectedCompletionDate: schedule.expectedCompletionDate ? schedule.expectedCompletionDate.split('T')[0] : ''
+    });
+    setUpdateModalOpen(true);
+  };
+  const handleUpdateChange = (e) => {
+    const { name, value } = e.target;
+    setUpdateForm((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    if (!scheduleToUpdate) return;
+    try {
+      await axios.put(`${API_URL}/MaintenanceRequest/schedule/${scheduleToUpdate.id}/update`, updateForm);
+      setUpdateModalOpen(false);
+      setScheduleToUpdate(null);
+      // Refresh schedules
+      const authData = getAuthData();
+      const userId = authData.userId;
+      const schedulesResponse = await axios.get(`${API_URL}/MaintenanceRequest/user/${userId}/schedules`, {
+        headers: { Authorization: `Bearer ${authData.token}` }
+      });
+      setSchedules(schedulesResponse.data);
+    } catch (err) {
+      // handle error (show toast or alert)
     }
   };
 
@@ -671,8 +719,8 @@ const VehicleAssignedCard = () => {
       >
         <Fade in={showModal}>
           <Box sx={{
-            width: '90%',
-            maxWidth: 700,
+            width: '98%',
+            maxWidth: 1000,
             bgcolor: 'background.paper',
             borderRadius: 3,
             boxShadow: 24,
@@ -682,32 +730,32 @@ const VehicleAssignedCard = () => {
             overflowY: 'auto',
             border: '1px solid rgba(0, 0, 0, 0.1)'
           }}>
-            <Box sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 3,
-              pb: 2,
-              borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
-            }}>
-              <Typography variant="h5" fontWeight="bold" sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, pb: 2, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
+              <Typography variant="h5" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center' }}>
                 <CarIcon sx={{ mr: 1.5 }} />
                 {selectedVehicle?.make} {selectedVehicle?.model} Details
               </Typography>
-              <IconButton
-                onClick={() => setShowModal(false)}
-                sx={{
-                  color: 'text.secondary',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.05)'
-                  }
-                }}
-              >
+              <IconButton onClick={() => setShowModal(false)} sx={{ color: 'text.secondary', '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.05)' } }}>
                 <CloseIcon />
               </IconButton>
             </Box>
-
-            {selectedVehicle && (
+            <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} sx={{ mb: 3 }}>
+              <Tab label="Details" />
+              <Tab
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Schedules
+                    <Chip
+                      label={getUpcomingSchedules(selectedVehicle?.id || '').length}
+                      size="small"
+                      color="primary"
+                      sx={{ fontWeight: 700, fontSize: 13, height: 22 }}
+                    />
+                  </Box>
+                }
+              />
+            </Tabs>
+            {tabIndex === 0 && selectedVehicle && (
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <GhanaianLicensePlate licensePlate={selectedVehicle.licensePlate} />
                 <Box sx={{
@@ -718,9 +766,9 @@ const VehicleAssignedCard = () => {
                   mt: 2
                 }}>
                   <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{
+                    <Typography variant="subtitle2"  sx={{
                       mb: 2,
-                      fontWeight: 700,
+                      fontWeight: 300,
                       letterSpacing: 1,
                       textTransform: 'uppercase',
                       display: 'flex',
@@ -795,89 +843,70 @@ const VehicleAssignedCard = () => {
                     <DetailItem label="Next Maintenance" value={getNextMaintenanceDate(selectedVehicle.id) ? formatDate(getNextMaintenanceDate(selectedVehicle.id)) : 'Not scheduled'} icon={<FiClock />} />
                   </Box>
                 </Box>
-                <Box sx={{ width: '100%', mt: 4 }}>
-                  <Typography variant="subtitle2" color="text.secondary" sx={{
-                    mb: 2,
-                    fontWeight: 700,
-                    letterSpacing: 1,
-                    textTransform: 'uppercase',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <CalendarIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                    Upcoming Maintenance
-                  </Typography>
-                  {getUpcomingSchedules(selectedVehicle.id).length > 0 ? (
-                    <List sx={{
-                      maxHeight: 300,
-                      overflow: 'auto',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 2,
-                      background: 'linear-gradient(145deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.01) 100%)'
-                    }}>
-                      {getUpcomingSchedules(selectedVehicle.id).map((schedule, index) => (
-                        <React.Fragment key={schedule.id}>
-                          <ListItem
+              </Box>
+            )}
+            {tabIndex === 1 && selectedVehicle && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>Upcoming Maintenance</Typography>
+                {getUpcomingSchedules(selectedVehicle.id).length === 0 ? (
+                  <Typography color="text.secondary">No upcoming maintenance scheduled for this vehicle.</Typography>
+                ) : (
+                  <Box>
+                    {getUpcomingSchedules(selectedVehicle.id).map((schedule) => (
+                      <Box key={schedule.id} sx={{
+                        background: 'linear-gradient(135deg, #f8fafc 0%, #e3eefd 100%)',
+                        borderRadius: 3,
+                        p: 2.5,
+                        mb: 3,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        boxShadow: '0 4px 18px rgba(37,99,235,0.07)',
+                        transition: 'box-shadow 0.2s, background 0.2s',
+                        '&:hover': {
+                          boxShadow: '0 8px 32px rgba(37,99,235,0.13)',
+                          background: 'linear-gradient(135deg, #e3eefd 0%, #f8fafc 100%)',
+                        },
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <CalendarIcon color="primary" sx={{ mr: 1 }} />
+                          <Typography variant="subtitle1" fontWeight={700} sx={{ mr: 2 }}>
+                            {formatDate(schedule.scheduledDate)}
+                          </Typography>
+                          <Chip
+                            label={schedule.status}
+                            size="small"
                             sx={{
-                              borderBottom: '1px solid',
-                              borderColor: 'divider',
-                              '&:last-child': { borderBottom: 'none' },
-                              backgroundColor: schedule.status === 'Completed' ? 'rgba(76, 175, 80, 0.05)' :
-                                              schedule.status === 'Pending' ? 'rgba(255, 152, 0, 0.05)' :
-                                              'rgba(25, 118, 210, 0.05)'
+                              fontWeight: 700,
+                              backgroundColor:
+                                (schedule.status || '').toLowerCase() === 'completed'
+                                  ? 'rgba(76, 175, 80, 0.18)' // green
+                                  : (schedule.status || '').toLowerCase() === 'pending'
+                                  ? 'rgba(255, 193, 7, 0.18)' // yellow
+                                  : 'rgba(25, 118, 210, 0.12)', // blue
+                              color:
+                                (schedule.status || '').toLowerCase() === 'completed'
+                                  ? 'success.main'
+                                  : (schedule.status || '').toLowerCase() === 'pending'
+                                  ? 'warning.dark'
+                                  : 'primary.dark',
+                              ml: 1
                             }}
-                          >
-                            <ListItemText
-                              primary={
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <CalendarIcon color="primary" sx={{ mr: 1 }} />
-                                  <Typography variant="subtitle1" fontWeight={700}>{formatDate(schedule.scheduledDate)}</Typography>
-                                  <Chip
-                                    label={schedule.status}
-                                    size="small"
-                                    sx={{
-                                      ml: 2,
-                                      fontWeight: 700,
-                                      backgroundColor: schedule.status === 'Completed' ? 'rgba(76, 175, 80, 0.2)' :
-                                                      schedule.status === 'Pending' ? 'rgba(255, 152, 0, 0.2)' :
-                                                      'rgba(25, 118, 210, 0.2)',
-                                      color: schedule.status === 'Completed' ? 'success.dark' :
-                                            schedule.status === 'Pending' ? 'warning.dark' :
-                                            'primary.dark'
-                                    }}
-                                  />
-                                </Box>
-                              }
-                              secondary={
-                                <>
-                                  <Typography variant="body2" sx={{ mt: 0.5 }}>{schedule.repairType}: {schedule.reason}</Typography>
-                                  {schedule.assignedMechanicName && (
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                      Mechanic: {schedule.assignedMechanicName}
-                                    </Typography>
-                                  )}
-                                </>
-                              }
-                            />
-                          </ListItem>
-                          {index < getUpcomingSchedules(selectedVehicle.id).length - 1 && <Divider />}
-                        </React.Fragment>
-                      ))}
-                    </List>
-                  ) : (
-                    <Box sx={{
-                      textAlign: 'center',
-                      py: 3,
-                      border: '1px dashed',
-                      borderColor: 'divider',
-                      borderRadius: 2,
-                      backgroundColor: 'rgba(0, 0, 0, 0.02)'
-                    }}>
-                      <Typography variant="body2" color="text.secondary">No upcoming maintenance scheduled</Typography>
-                    </Box>
-                  )}
-                </Box>
+                          />
+                        </Box>
+                        <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, color: 'text.primary' }}>
+                          {schedule.repairType}: {schedule.reason}
+                        </Typography>
+                        {schedule.assignedMechanicName && (
+                          <Typography variant="caption" color="text.secondary">
+                            Mechanic: {schedule.assignedMechanicName}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </Box>
             )}
           </Box>
@@ -896,7 +925,7 @@ const VehicleAssignedCard = () => {
       >
         <Box sx={{
           width: '90%',
-          maxWidth: 500,
+          maxWidth: 400,
           bgcolor: 'background.paper',
           borderRadius: 3,
           boxShadow: 24,
@@ -1052,13 +1081,74 @@ const VehicleAssignedCard = () => {
                         background: 'linear-gradient(45deg, #1565c0 30%, #1e88e5 90%)'
                       }
                     }}
+                    disabled={processing}
+                    endIcon={processing ? <CircularProgress size={20} color="inherit" /> : null}
                   >
-                    Submit Request
+                    {processing ? 'Processing...' : 'Submit Request'}
                   </Button>
                 </motion.div>
               </Box>
             </>
           )}
+        </Box>
+      </Modal>
+
+      <Modal open={updateModalOpen} onClose={() => setUpdateModalOpen(false)}>
+        <Box sx={{
+          width: 400,
+          bgcolor: 'background.paper',
+          borderRadius: 3,
+          boxShadow: 24,
+          p: 4,
+          outline: 'none',
+          mx: 'auto',
+          mt: '10vh',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2
+        }}>
+          <Typography variant="h6" fontWeight={700} gutterBottom>Update Schedule</Typography>
+          <form onSubmit={handleUpdateSubmit}>
+            <TextField
+              select
+              fullWidth
+              label="Status"
+              name="status"
+              value={updateForm.status}
+              onChange={handleUpdateChange}
+              margin="normal"
+              required
+              sx={{ mb: 2 }}
+            >
+              <MenuItem value="Pending">Pending</MenuItem>
+              <MenuItem value="In Progress">In Progress</MenuItem>
+              <MenuItem value="Completed">Completed</MenuItem>
+              <MenuItem value="Cancelled">Cancelled</MenuItem>
+            </TextField>
+            <TextField
+              fullWidth
+              label="Comments"
+              name="comments"
+              value={updateForm.comments}
+              onChange={handleUpdateChange}
+              margin="normal"
+              multiline
+              rows={3}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="Expected Completion Date"
+              name="expectedCompletionDate"
+              type="date"
+              value={updateForm.expectedCompletionDate}
+              onChange={handleUpdateChange}
+              margin="normal"
+              InputLabelProps={{ shrink: true }}
+              sx={{ mb: 3 }}
+            />
+            <Button type="submit" variant="contained" color="primary" fullWidth>Save Update</Button>
+          </form>
         </Box>
       </Modal>
     </StyledCard>

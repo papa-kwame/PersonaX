@@ -92,7 +92,6 @@ const COLORS = {
 
 // Styled components for modern look
 const GradientCard = styled(Card)({
-  background: `linear-gradient(135deg, ${alpha(COLORS.PRIMARY, 0.1)} 0%, ${alpha(COLORS.BACKGROUND, 0.8)} 100%)`,
   backdropFilter: 'blur(10px)',
   borderRadius: '16px',
   boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
@@ -162,9 +161,11 @@ const Assignment = () => {
     },
     showHistoryModal: false,
     showVehicleModal: false,
+    showViewVehicleModal: false,
     showRequestModal: false,
     showRequestsModal: false,
     selectedVehicleForHistory: null,
+    selectedVehicle: null,
     currentAssignmentsPage: 1,
     availableVehiclesPage: 1,
     requestsPage: 1,
@@ -450,9 +451,13 @@ const Assignment = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setState(prev => ({ ...prev, isSubmitted: true }));
-    if (!validateForm()) return;
-    setState(prev => ({ ...prev, formLoading: true }));
+    setState(prev => ({ ...prev, isSubmitted: true, formLoading: true }));
+
+    if (!validateForm()) {
+      setState(prev => ({ ...prev, formLoading: false }));
+      return;
+    }
+
     try {
       if (state.formData.id) {
         await api.put(`/vehicles/${state.formData.id}`, state.formData);
@@ -538,126 +543,117 @@ const Assignment = () => {
     <Box sx={{ mb: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <Avatar sx={{
-          bgcolor: 'transparent',
+          bgcolor: 'black',
           mr: 2,
-          width: 48,
-          height: 48,
+          width: 52,
+          height: 52,
+          boxShadow: '0 2px 8px rgba(25, 118, 210, 0.10)',
+          border: '2px solid #e3e8f0',
           '& svg': {
-            color: COLORS.PRIMARY,
-            fontSize: '2rem'
+            color: '#fff',
+            fontSize: '2.2rem'
           }
         }}>
           <CarIcon />
         </Avatar>
         <Box>
-          <Typography variant="h4" component="h1" fontWeight={300} sx={{
-            background: `black`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
+          <Typography variant="h4" component="h1" fontWeight={400} sx={{
+            color: 'black',
+            letterSpacing: '0.5px',
           }}>
-            Vehicle Fleet Management
+            Vehicle Management
           </Typography>
         </Box>
       </Box>
       <Divider sx={{
-        borderColor: alpha(COLORS.DIVIDER, 0.1),
+        borderColor: 'primary.light',
         borderBottomWidth: '2px',
-        background: `linear-gradient(to right, transparent, ${alpha(COLORS.PRIMARY, 0.3)}, transparent)`,
-        height: '2px'
+        background: `linear-gradient(to right, transparent, #1976d2 40%, transparent)`,
+        height: '2px',
+        mb: 1
       }} />
     </Box>
   );
 
   const renderStatsCards = () => (
-    <Grid container spacing={7} sx={{ mb: 4 }}>
+    <Grid container spacing={3} sx={{ mb: 4 }}>
       {[
         {
           title: 'Total Vehicles',
           value: state.stats.totalVehicles,
           icon: <CarIcon fontSize="medium" />,
-          color: COLORS.PRIMARY,
+          color: 'black',
+          
         },
         {
           title: 'Assigned',
           value: state.stats.assignedVehicles,
           icon: <AssignmentTurnedInIcon fontSize="medium" />,
-          color: COLORS.SUCCESS,
+          color: 'black',
         },
         {
           title: 'Available',
           value: state.stats.availableVehicles,
           icon: <CarIcon fontSize="medium" />,
-          color: COLORS.INFO,
+          color: 'black',
         }
       ].map((stat, index) => (
-        <Grid item xs={12} sm={6} md={3} key={index}>
-          <GradientCard>
-            <CardContent sx={{ p: 3, width: '450px' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="subtitle2" color="text.secondary" sx={{
-                  fontWeight: 600,
-                  letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                  fontSize: '0.7rem'
-                }}>
-                  {stat.title}
-                </Typography>
+        <Grid item xs={12} sm={6} md={4} key={index}>
+          <Card sx={{
+            borderRadius: 4,
+            boxShadow: '0 4px 24px rgba(25, 118, 210, 0.08)',
+            p: 0,
+            borderLeft: `6px solid`,
+            borderColor: stat.color,
+            background: '#fff',
+            minWidth: 0
+          }}>
+            <CardContent sx={{ p: 3 ,width: '474px' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Box sx={{
-                  p: 1,
-                  borderRadius: '12px',
-                  backgroundColor: alpha(stat.color, 0.1),
-                  color: stat.color,
+                  p: 1.2,
+                  borderRadius: '50%',
+                  backgroundColor: stat.color,
+                  color: '#fff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: 40,
-                  height: 40
+                  width: 44,
+                  height: 44,
+                  mr: 2
                 }}>
                   {stat.icon}
                 </Box>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 1 }}>
-                <Typography variant="h3" fontWeight={400} sx={{
-                  fontSize: '2.5rem',
-                  color: COLORS.TEXT_PRIMARY,
-                  lineHeight: 1
+                <Typography variant="subtitle2" sx={{
+                  fontWeight: 700,
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  color: 'text.secondary',
+                  fontSize: '0.9rem'
                 }}>
-                  {stat.value}
-                </Typography>
-
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box sx={{
-                  height: '4px',
-                  borderRadius: '2px',
-                  background: `linear-gradient(to right, ${stat.color}, ${alpha(stat.color, 0.5)})`,
-                  flexGrow: 1,
-                  mr: 1
-                }} />
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                  {index === 0 ? 'All fleet vehicles' :
-                   index === 1 ? 'Currently assigned' :
-                   index === 2 ? 'Ready for assignment' : 'Awaiting approval'}
+                  {stat.title}
                 </Typography>
               </Box>
+              <Typography variant="h3" fontWeight={700} sx={{
+                fontSize: '2.3rem',
+                lineHeight: 1.1,
+                mb: 1
+              }}>
+                {stat.value}
+              </Typography>
+              <Box sx={{ height: '4px', borderRadius: '2px', background: stat.color, opacity: 0.18, width: '100%' }} />
             </CardContent>
-          </GradientCard>
+          </Card>
         </Grid>
       ))}
     </Grid>
   );
 
   const renderCurrentAssignments = () => (
-    <GradientCard>
+    <Card sx={{ borderRadius: 4, boxShadow: 3, background: '#fff', mb: 4 }}>
       <CardContent sx={{ p: 0 }}>
-        <Box sx={{
-          p: 3,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
-        }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'primary.light', background: 'rgba(25, 118, 210, 0.03)' }}>
+          <Typography variant="h6" sx={{ fontWeight: 400 }}>
             Current Assignments
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -670,34 +666,19 @@ const Assignment = () => {
                     <SearchIcon fontSize="small" />
                   </InputAdornment>
                 ),
-                sx: { borderRadius: '12px' }
+                sx: { borderRadius: '12px', background: '#f4f8fd', border: '1px solid #e3e8f0' }
               }}
             />
-            <Button
-              variant="outlined"
-              startIcon={<FilterIcon />}
-              sx={{ borderRadius: '12px' }}
-              onClick={() => setState(prev => ({ ...prev, showFilters: !prev.showFilters }))}
-            >
-              Filters
-            </Button>
+
           </Box>
         </Box>
-        <TableContainer>
-          <Table>
+        <TableContainer component={Paper} sx={{ boxShadow: 'none', background: '#f9fafb', borderRadius: 2 }}>
+          <Table size="small">
             <TableHead>
-              <TableRow sx={{
-                backgroundColor: alpha(COLORS.PRIMARY, 0.03),
-                '& th': {
-                  fontWeight: 700,
-                  color: COLORS.TEXT_SECONDARY,
-                  borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
-                }
-              }}>
-                <TableCell>Vehicle</TableCell>
-                <TableCell>Assigned To</TableCell>
-                <TableCell>Assignment Date</TableCell>
-                <TableCell align="right">Actions</TableCell>
+              <TableRow sx={{ backgroundColor: 'rgba(25, 118, 210, 0.04)' }}>
+                <TableCell sx={{ fontWeight: 800,  borderBottom: '2px solid #e3e8f0', fontSize: '1rem', letterSpacing: 0.2, textTransform: 'uppercase' }}>Vehicle</TableCell>
+                <TableCell sx={{ fontWeight: 800,  borderBottom: '2px solid #e3e8f0', fontSize: '1rem', letterSpacing: 0.2, textTransform: 'uppercase' }}>Assigned To</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 800,  borderBottom: '2px solid #e3e8f0', fontSize: '1rem', letterSpacing: 0.2, textTransform: 'uppercase' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -708,20 +689,21 @@ const Assignment = () => {
                     hover
                     sx={{
                       '&:last-child td': { borderBottom: 0 },
-                      '&:hover': { backgroundColor: alpha(COLORS.PRIMARY, 0.02) }
+                      '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.06)' }
                     }}
                   >
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar sx={{
-                          bgcolor: alpha(COLORS.PRIMARY, 0.1),
                           mr: 2,
-                          color: COLORS.PRIMARY
+                      
+                          width: 40,
+                          height: 40
                         }}>
                           <CarIcon />
                         </Avatar>
                         <Box>
-                          <Typography fontWeight={600}>
+                          <Typography fontWeight={700} >
                             {assignment.vehicleMake} {assignment.vehicleModel}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
@@ -733,23 +715,21 @@ const Assignment = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar sx={{
-                          bgcolor: alpha(COLORS.SECONDARY, 0.1),
                           mr: 2,
-                          color: COLORS.SECONDARY
+                          width: 40,
+                          height: 40
                         }}>
                           <PersonIcon />
                         </Avatar>
                         <Box>
-                          <Typography fontWeight={600}>{assignment.userName}</Typography>
+                          <Typography fontWeight={700}>{assignment.userName}</Typography>
                           <Typography variant="body2" color="text.secondary">
                             {assignment.userEmail}
                           </Typography>
                         </Box>
                       </Box>
                     </TableCell>
-                    <TableCell>
-                      {safeFormat(assignment.assignmentDate, 'PP')}
-                    </TableCell>
+
                     <TableCell align="right">
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Tooltip title="Vehicle details">
@@ -758,8 +738,8 @@ const Assignment = () => {
                             sx={{
                               mr: 1,
                               '&:hover': {
-                                backgroundColor: alpha(COLORS.INFO, 0.1),
-                                color: COLORS.INFO
+                             
+                                color: '#fff'
                               }
                             }}
                           >
@@ -771,9 +751,10 @@ const Assignment = () => {
                             onClick={() => fetchAssignmentHistory(assignment.vehicleId)}
                             sx={{
                               mr: 1,
+                              color: 'info.main',
                               '&:hover': {
-                                backgroundColor: alpha(COLORS.SECONDARY, 0.1),
-                                color: COLORS.SECONDARY
+                                backgroundColor: 'info.light',
+                                color: '#fff'
                               }
                             }}
                           >
@@ -784,9 +765,10 @@ const Assignment = () => {
                           <IconButton
                             onClick={() => handleUnassignVehicle(assignment.vehicleId)}
                             sx={{
+                              color: 'error.main',
                               '&:hover': {
-                                backgroundColor: alpha(COLORS.ERROR, 0.1),
-                                color: COLORS.ERROR
+                                backgroundColor: 'error.light',
+                                color: '#fff'
                               }
                             }}
                           >
@@ -804,7 +786,7 @@ const Assignment = () => {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      color: COLORS.TEXT_SECONDARY
+                      color: 'text.secondary'
                     }}>
                       <AssignmentIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
                       <Typography>No current vehicle assignments</Typography>
@@ -821,7 +803,8 @@ const Assignment = () => {
             justifyContent: 'space-between',
             alignItems: 'center',
             p: 2,
-            borderTop: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+            borderTop: '1px solid #e3e8f0',
+            background: '#f8fafc'
           }}>
             <Typography variant="body2" color="text.secondary">
               Showing {(state.currentAssignmentsPage - 1) * state.itemsPerPage + 1}-
@@ -837,20 +820,14 @@ const Assignment = () => {
           </Box>
         )}
       </CardContent>
-    </GradientCard>
+    </Card>
   );
 
   const renderAvailableVehicles = () => (
-    <GradientCard>
+    <GradientCard sx={{ borderRadius: 4, boxShadow: 3,  background: '#fff', mb: 4 }}>
       <CardContent sx={{ p: 0 }}>
-        <Box sx={{
-          p: 3,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
-        }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}` }}>
+          <Typography variant="h6" sx={{ fontWeight: 400, }}>
             Available Vehicles
           </Typography>
           <Button
@@ -862,23 +839,16 @@ const Assignment = () => {
             Add Vehicle
           </Button>
         </Box>
-        <TableContainer>
-          <Table>
+        <TableContainer component={Paper} sx={{ boxShadow: 'none', background: '#f9fafb', borderRadius: 2 }}>
+          <Table size="small">
             <TableHead>
-              <TableRow sx={{
-                backgroundColor: alpha(COLORS.PRIMARY, 0.03),
-                '& th': {
-                  fontWeight: 700,
-                  color: COLORS.TEXT_SECONDARY,
-                  borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
-                }
-              }}>
-                <TableCell>Make/Model</TableCell>
-                <TableCell>Year</TableCell>
-                <TableCell>License Plate</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
+              <TableRow sx={{ backgroundColor: alpha(COLORS.PRIMARY, 0.03) }}>
+                <TableCell sx={{ fontWeight: 700, color: COLORS.TEXT_SECONDARY, borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`, textTransform: 'uppercase' }}>Make/Model</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: COLORS.TEXT_SECONDARY, borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`, textTransform: 'uppercase' }}>Year</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: COLORS.TEXT_SECONDARY, borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`, textTransform: 'uppercase' }}>License Plate</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: COLORS.TEXT_SECONDARY, borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`, textTransform: 'uppercase' }}>Type</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: COLORS.TEXT_SECONDARY, borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`, textTransform: 'uppercase' }}>Status</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, color: COLORS.TEXT_SECONDARY, borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`, textTransform: 'uppercase' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -936,18 +906,10 @@ const Assignment = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={vehicle.status}
-                        color={
-                          vehicle.status === 'Available' ? 'success' :
-                          vehicle.status === 'Assigned' ? 'primary' :
-                          vehicle.status === 'In Maintenance' ? 'warning' : 'error'
-                        }
+                        label={vehicle.isAssigned ? 'Assigned' : 'Available'}
+                        color={vehicle.isAssigned ? 'primary' : 'success'}
                         size="small"
-                        sx={{
-                          fontWeight: 600,
-                          textTransform: 'uppercase',
-                          fontSize: '0.7rem'
-                        }}
+                        sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem' }}
                       />
                     </TableCell>
                     <TableCell align="right">
@@ -1109,6 +1071,338 @@ const Assignment = () => {
     </Dialog>
   );
 
+  const renderViewVehicleModal = () => {
+    if (!state.selectedVehicle) return null;
+    const vehicle = state.selectedVehicle;
+    const safeFormat = (dateString) => {
+      if (!dateString) return 'N/A';
+      try {
+        return format(parseISO(dateString), 'PP');
+      } catch {
+        return 'Invalid date';
+      }
+    };
+    const statusColor = {
+      'Available': '#2ecc40',
+      'Assigned': '#0074d9',
+      'In Maintenance': '#ffb300',
+      'Out of Service': '#ff4136'
+    }[vehicle.status] || '#bdbdbd';
+
+    return (
+      <Dialog
+        open={state.showViewVehicleModal}
+        onClose={() => setState(prev => ({ ...prev, showViewVehicleModal: false, selectedVehicle: null }))}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            marginTop:'30px',
+            borderRadius: '22px',
+            background: 'rgba(255,255,255,0.75)',
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 8px 40px 0 rgba(31, 38, 135, 0.18)',
+            border: '1.5px solid rgba(255,255,255,0.25)',
+            p: 0,
+            position: 'relative',
+            fontFamily: 'Open Sans, sans-serif',
+          }
+        }}
+      >
+        <Box sx={{ position: 'absolute', right: 24, top: 24, zIndex: 2 }}>
+          <IconButton
+            onClick={() => setState(prev => ({ ...prev, showViewVehicleModal: false, selectedVehicle: null }))}
+            sx={{
+              background: 'rgba(255,255,255,0.7)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              border: '1.5px solid #e3e8f0',
+              backdropFilter: 'blur(8px)',
+              '&:hover': {
+                background: '#e3e8f0',
+                transform: 'scale(1.08)'
+              },
+              transition: 'all 0.18s',
+            }}
+          >
+            <span style={{ fontSize: 22, fontWeight: 300, color: '#0074d9' }}>×</span>
+          </IconButton>
+        </Box>
+        <DialogTitle sx={{
+          display: 'flex',
+          alignItems: 'center',
+          fontWeight: 400,
+          fontSize: '1.45rem',
+          pl: 4,
+          pr: 6,
+          py: 3.5,
+          borderBottom: '2px solid #e3e8f0',
+          background: 'rgba(255,255,255,0.35)',
+          position: 'relative',
+          fontFamily: 'Open Sans, sans-serif',
+        }}>
+         
+          {vehicle.make} {vehicle.model}  ({vehicle.licensePlate})
+        </DialogTitle>
+        <DialogContent dividers={false} sx={{ mt: 1,py: 4, px: { xs: 2, sm: 4 } }}>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              {/* Identification */}
+              <Box sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: '18px',
+                background: 'rgba(245, 250, 255, 0.85)',
+                boxShadow: '0 2px 16px rgba(25, 118, 210, 0.07)',
+                minHeight: 160,
+                border: '1.5px solid #e3e8f0',
+                position: 'relative',
+              }}>
+                <Typography variant="h6" sx={{
+                  mb: 2,
+                  fontWeight: 400,
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.08rem',
+                  letterSpacing: 0.1,
+                  fontFamily: 'Open Sans, sans-serif',
+                }}>
+                  Identification
+                </Typography>
+                <Grid container spacing={2}>
+                  {[{ label: 'Make', value: vehicle.make },
+                    { label: 'Model', value: vehicle.model },
+                    { label: 'Year', value: vehicle.year },
+                    { label: 'License Plate', value: vehicle.licensePlate },
+                    { label: 'VIN', value: vehicle.vin },
+                    { label: 'Color', value: vehicle.color },
+                    { label: 'Vehicle Type', value: vehicle.vehicleType },
+                    {
+                      label: 'Status',
+                      value: (
+                        <Box sx={{ display: 'inline-flex', alignItems: 'center', mt: 0.5 }}>
+                          <Box
+                            sx={{
+                              background: statusColor,
+                              color: '#fff',
+                              fontWeight: 300,
+                              fontSize: '0.95em',
+                              borderRadius: '999px',
+                              px: 2,
+                              py: 0.5,
+                              boxShadow: '0 1px 6px rgba(0,0,0,0.08)',
+                              letterSpacing: 0.5,
+                              mr: 1,
+                              minWidth: 80,
+                              textAlign: 'center',
+                              transition: 'all 0.18s',
+                            }}
+                          >
+                            {vehicle.status}
+                          </Box>
+                        </Box>
+                      )
+                    }
+                  ].map((item, index) => (
+                    <Grid item xs={6} key={index}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
+                        {item.label}
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, color: '#003366', fontSize: '1.01rem' }}>
+                        {item.value || 'N/A'}
+                      </Typography>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+              {/* Technical Specs */}
+              <Box sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: '18px',
+                background: 'rgba(245, 250, 255, 0.85)',
+                boxShadow: '0 2px 16px rgba(25, 118, 210, 0.07)',
+                minHeight: 120,
+                border: '1.5px solid #e3e8f0',
+              }}>
+                <Typography variant="h6" sx={{
+                  mb: 2,
+                  fontWeight: 400,
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.08rem',
+                  letterSpacing: 0.1,
+                  fontFamily: 'Open Sans, sans-serif',
+                }}>
+                  Technical Specs
+                </Typography>
+                <Grid container spacing={2}>
+                  {[{ label: 'Fuel Type', value: vehicle.fuelType },
+                    { label: 'Transmission', value: vehicle.transmission },
+                    { label: 'Engine Size', value: vehicle.engineSize ? `${vehicle.engineSize} cc` : 'N/A' },
+                    { label: 'Seating Capacity', value: vehicle.seatingCapacity },
+                    { label: 'Current Mileage', value: vehicle.currentMileage ? `${vehicle.currentMileage.toLocaleString()} miles` : 'N/A' },
+                  ].map((item, index) => (
+                    <Grid item xs={6} key={index}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
+                        {item.label}
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, color: '#003366', fontSize: '1.01rem' }}>
+                        {item.value}
+                      </Typography>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              {/* Service & Compliance */}
+              <Box sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: '18px',
+                background: 'rgba(245, 250, 255, 0.85)',
+                boxShadow: '0 2px 16px rgba(25, 118, 210, 0.07)',
+                minHeight: 120,
+                border: '1.5px solid #e3e8f0',
+              }}>
+                <Typography variant="h6" sx={{
+                  mb: 2,
+                  fontWeight: 400,
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.08rem',
+                  letterSpacing: 0.1,
+                  fontFamily: 'Open Sans, sans-serif',
+                }}>
+                  Service & Compliance
+                </Typography>
+                <Grid container spacing={2}>
+                  {[{ label: 'Service Interval', value: vehicle.serviceInterval ? `${vehicle.serviceInterval.toLocaleString()} miles` : 'N/A' },
+                    { label: 'Last Service', value: safeFormat(vehicle.lastServiceDate) },
+                    { label: 'Next Service Due', value: safeFormat(vehicle.nextServiceDue) },
+                    { label: 'Roadworthy Expiry', value: safeFormat(vehicle.roadworthyExpiry) },
+                    { label: 'Registration Expiry', value: safeFormat(vehicle.registrationExpiry) },
+                    { label: 'Insurance Expiry', value: safeFormat(vehicle.insuranceExpiry) },
+                  ].map((item, index) => (
+                    <Grid item xs={6} key={index}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
+                        {item.label}
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, color: '#003366', fontSize: '1.01rem' }}>
+                        {item.value}
+                      </Typography>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+              {/* Purchase Information */}
+              <Box sx={{
+                p: 3,
+                borderRadius: '18px',
+                background: 'rgba(245, 250, 255, 0.85)',
+                boxShadow: '0 2px 16px rgba(25, 118, 210, 0.07)',
+                minHeight: 80,
+                border: '1.5px solid #e3e8f0',
+              }}>
+                <Typography variant="h6" sx={{
+                  mb: 2,
+                  fontWeight: 400,
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.08rem',
+                  letterSpacing: 0.1,
+                  fontFamily: 'Open Sans, sans-serif',
+                }}>
+                  Purchase Information
+                </Typography>
+                <Grid container spacing={2}>
+                  {[{ label: 'Purchase Date', value: safeFormat(vehicle.purchaseDate) },
+                    { label: 'Purchase Price', value: vehicle.purchasePrice ? `$${vehicle.purchasePrice.toLocaleString()}` : 'N/A' },
+                  ].map((item, index) => (
+                    <Grid item xs={6} key={index}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
+                        {item.label}
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, color: '#003366', fontSize: '1.01rem' }}>
+                        {item.value}
+                      </Typography>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+              {/* Additional Notes */}
+              {vehicle.notes && (
+                <Box sx={{
+                  p: 3,
+                  mt: 3,
+                  borderRadius: '18px',
+                  background: 'rgba(245, 250, 255, 0.85)',
+                  boxShadow: '0 2px 16px rgba(25, 118, 210, 0.07)',
+                  minHeight: 60,
+                  border: '1.5px solid #e3e8f0',
+                }}>
+                  <Typography variant="h6" sx={{
+                    mb: 2,
+                    fontWeight: 700,
+                    color: '#0074d9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '1.08rem',
+                    letterSpacing: 0.1,
+                    fontFamily: 'Open Sans, sans-serif',
+                  }}>
+                    Additional Notes
+                  </Typography>
+                  <Typography variant="body1" sx={{
+                    whiteSpace: 'pre-line',
+                    p: 2,
+                    background: 'rgba(244, 248, 253, 0.85)',
+                    borderRadius: '10px',
+                    color: '#003366',
+                    fontWeight: 500,
+                    fontSize: '1.01rem',
+                  }}>
+                    {vehicle.notes}
+                  </Typography>
+                </Box>
+              )}
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{
+          px: 4,
+          py: 2.5,
+          borderTop: '2px solid #e3e8f0',
+          background: 'rgba(255,255,255,0.55)',
+          borderBottomLeftRadius: '22px',
+          borderBottomRightRadius: '22px',
+        }}>
+          <Button
+            variant="outlined"
+            onClick={() => setState(prev => ({ ...prev, showViewVehicleModal: false, selectedVehicle: null }))}
+            sx={{
+              borderRadius: '12px',
+              minWidth: 100,
+              borderColor: '#0074d9',
+              color: '#0074d9',
+              fontWeight: 700,
+              fontFamily: 'Open Sans, sans-serif',
+              letterSpacing: 0.5,
+              '&:hover': {
+                backgroundColor: '#0074d9',
+                color: '#fff',
+                borderColor: '#0074d9',
+              },
+              transition: 'all 0.18s',
+            }}
+          >
+            CLOSE
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   const renderVehicleModal = () => {
     if (!state.vehicleDetails) return null;
     const vehicle = state.vehicleDetails;
@@ -1117,253 +1411,399 @@ const Assignment = () => {
       <Dialog
         open={state.showVehicleModal}
         onClose={() => setState(prev => ({ ...prev, showVehicleModal: false }))}
-        maxWidth="lg"
+        maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            marginTop:'30px',
+            borderRadius: '22px',
+            background: 'rgba(255,255,255,0.75)',
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 8px 40px 0 rgba(31, 38, 135, 0.18)',
+            border: '1.5px solid rgba(255,255,255,0.25)',
+            p: 0,
+            position: 'relative',
+            fontFamily: 'Open Sans, sans-serif',
+          }
+        }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
-          <CarIcon sx={{ mr: 1 }} />
-          {vehicle.make} {vehicle.model} ({vehicle.licensePlate})
+        <DialogTitle sx={{
+          display: 'flex',
+          alignItems: 'center',
+          fontWeight: 400,
+          fontSize: '1.5rem',
+          pl: 4,
+          pr: 6,
+          py: 3,
+          borderBottom: '2px solid #e3e8f0',
+          background: 'rgba(25, 118, 210, 0.03)',
+          position: 'relative',
+        }}>
+          <CarIcon sx={{ mr: 1.5, color: 'primary.main', fontSize: '2rem' }} />
+          {vehicle.make} {vehicle.model} ({vehicle.licensePlate}) 
+          <IconButton
+            onClick={() => setState(prev => ({ ...prev, showVehicleModal: false }))}
+            sx={{
+              position: 'absolute',
+              right: 16,
+              top: 18,
+              background: 'rgba(25, 118, 210, 0.08)',
+              '&:hover': {
+                color: '#fff'
+              }
+            }}
+          >
+            <CancelIcon />
+          </IconButton>
         </DialogTitle>
-        <DialogContent dividers>
-          <Grid container spacing={3}>
+        <DialogContent dividers={false} sx={{ py: 4, px: 4 }}>
+          <Grid container spacing={4}>
             <Grid item xs={12} md={6}>
-              <Card variant="outlined" sx={{ mb: 3 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                    <InfoIcon sx={{ mr: 1 }} />
-                    Basic Information
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Make/Model
-                      </Typography>
-                      <Typography>
-                        {vehicle.make} {vehicle.model}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Year
-                      </Typography>
-                      <Typography>{vehicle.year}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Color
-                      </Typography>
-                      <Typography sx={{ display: 'flex', alignItems: 'center' }}>
-                        <ColorLensIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {vehicle.color || 'N/A'}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        VIN
-                      </Typography>
-                      <Typography>{vehicle.vin || 'N/A'}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Type
-                      </Typography>
-                      <Typography>{vehicle.vehicleType || 'N/A'}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Status
-                      </Typography>
-                      <Chip
-                        label={vehicle.status}
-                        color={vehicle.status === 'Available' ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </Grid>
+              <Box sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: '14px',
+                background: '#f7fafd',
+                boxShadow: '0 2px 12px rgba(25, 118, 210, 0.06)',
+                minHeight: 180
+              }}>
+                <Typography variant="h6" sx={{
+                  mb: 2,
+                  fontWeight: 300,
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.1rem'
+                }}>
+                  <InfoIcon sx={{ mr: 1 }} />
+                  Basic Information
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                      Make/Model
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400 }}>
+                      {vehicle.make} {vehicle.model}
+                    </Typography>
                   </Grid>
-                </CardContent>
-              </Card>
-              <Card variant="outlined" sx={{ mb: 3 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                    <EngineeringIcon sx={{ mr: 1 }} />
-                    Technical Details
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Mileage
-                      </Typography>
-                      <Typography>
-                        {vehicle.currentMileage?.toLocaleString() || 'N/A'} miles
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Fuel Type
-                      </Typography>
-                      <Typography sx={{ display: 'flex', alignItems: 'center' }}>
-                        <LocalGasStationIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {vehicle.fuelType || 'N/A'}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Transmission
-                      </Typography>
-                      <Typography>{vehicle.transmission || 'N/A'}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Engine Size
-                      </Typography>
-                      <Typography>
-                        {vehicle.engineSize ? `${vehicle.engineSize}L` : 'N/A'}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Seating Capacity
-                      </Typography>
-                      <Typography>{vehicle.seatingCapacity || 'N/A'}</Typography>
-                    </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Year
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400}}>{vehicle.year}</Typography>
                   </Grid>
-                </CardContent>
-              </Card>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Color
+                    </Typography>
+                    <Typography sx={{ display: 'flex', alignItems: 'center', fontWeight: 400 }}>
+                      <ColorLensIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                      {vehicle.color || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      VIN
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400 }}>{vehicle.vin || 'N/A'}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Type
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400 }}>{vehicle.vehicleType || 'N/A'}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Status
+                    </Typography>
+                    <Chip
+                      label={vehicle.status}
+                      color={vehicle.status === 'Available' ? 'success' : 'default'}
+                      size="small"
+                      sx={{ fontWeight: 400, borderRadius: 2, px: 1.5, fontSize: '0.95em' }}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+              <Box sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: '14px',
+                background: '#f7fafd',
+                boxShadow: '0 2px 12px rgba(25, 118, 210, 0.06)',
+                minHeight: 180
+              }}>
+                <Typography variant="h6" sx={{
+                  mb: 2,
+                  fontWeight: 400,
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.1rem'
+                }}>
+                  <EngineeringIcon sx={{ mr: 1 }} />
+                  Technical Details
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Mileage
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400 }}>
+                      {vehicle.currentMileage?.toLocaleString() || 'N/A'} miles
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                      Fuel Type
+                    </Typography>
+                    <Typography sx={{ display: 'flex', alignItems: 'center', fontWeight: 400 }}>
+                      <LocalGasStationIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                      {vehicle.fuelType || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Transmission
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400 }}>{vehicle.transmission || 'N/A'}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Engine Size
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400 }}>
+                      {vehicle.engineSize ? `${vehicle.engineSize}L` : 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Seating Capacity
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400 }}>{vehicle.seatingCapacity || 'N/A'}</Typography>
+                  </Grid>
+                </Grid>
+              </Box>
             </Grid>
             <Grid item xs={12} md={6}>
               {currentAssignment && (
-                <Card variant="outlined" sx={{ mb: 3 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                      <AssignmentTurnedInIcon sx={{ mr: 1 }} />
-                      Current Assignment
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Avatar sx={{ bgcolor: COLORS.SECONDARY, mr: 2 }}>
-                        <PersonIcon />
-                      </Avatar>
-                      <Box>
-                        <Typography fontWeight="medium">
-                          {currentAssignment.userName}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {currentAssignment.userEmail}
-                        </Typography>
-                      </Box>
+                <Box sx={{
+                  p: 3.5,
+                  mb: 4,
+                  borderRadius: '18px',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e3eefd 100%)',
+                  boxShadow: '0 4px 18px rgba(37,99,235,0.07)',
+                  minHeight: 120,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2
+                }}>
+                  <Typography variant="h6" sx={{
+                    mb: 2,
+                    fontWeight: 400,
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '1.18rem',
+                    letterSpacing: 0.5
+                  }}>
+                    <AssignmentTurnedInIcon sx={{ mr: 1 }} />
+                    Current Assignment
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'info.main', width: 56, height: 56, mr: 2, fontSize: 32 }}>
+                      <PersonIcon fontSize="large" />
+                    </Avatar>
+                    <Box>
+                      <Typography fontWeight={500} c sx={{ fontSize: 18 }}>
+                        {currentAssignment.userName}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: 15 }}>
+                        {currentAssignment.userEmail}
+                      </Typography>
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
-                      <EventIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                      Assigned on {safeFormat(currentAssignment.assignmentDate, 'PP')}
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      startIcon={<CancelIcon />}
-                      fullWidth
-                      sx={{ mt: 2 }}
-                      onClick={() => handleUnassignVehicle(vehicle.id)}
-                    >
-                      Unassign Vehicle
-                    </Button>
-                  </CardContent>
-                </Card>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', fontSize: 15 }}>
+                    <EventIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                    Assigned on {safeFormat(currentAssignment.assignmentDate, 'PP')}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<CancelIcon />}
+                    sx={{ mt: 2, borderRadius: 2, fontWeight: 800, fontSize: 16, py: 1.2 }}
+                    onClick={() => handleUnassignVehicle(vehicle.id)}
+                  >
+                    Unassign Vehicle
+                  </Button>
+                </Box>
               )}
-              <Card variant="outlined" sx={{ mb: 3 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                    <ReceiptIcon sx={{ mr: 1 }} />
-                    Maintenance & Compliance
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Last Service
-                      </Typography>
-                      <Typography sx={{ display: 'flex', alignItems: 'center' }}>
-                        <ScheduleIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {safeFormat(vehicle.lastServiceDate, 'PPpp')}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Service Interval
-                      </Typography>
-                      <Typography>
-                        {vehicle.serviceInterval ? `${vehicle.serviceInterval} miles` : 'N/A'}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Next Service Due
-                      </Typography>
-                      <Typography color={isDocumentExpired(vehicle.nextServiceDue) ? 'error' : 'inherit'}>
-                        {safeFormat(vehicle.nextServiceDue, 'PPpp')}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Registration Expiry
-                      </Typography>
-                      <Typography color={isDocumentExpired(vehicle.registrationExpiry) ? 'error' : 'inherit'}>
-                        {safeFormat(vehicle.registrationExpiry, 'PPpp')}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Insurance Expiry
-                      </Typography>
-                      <Typography color={isDocumentExpired(vehicle.insuranceExpiry) ? 'error' : 'inherit'}>
-                        {safeFormat(vehicle.insuranceExpiry, 'PPpp')}
-                      </Typography>
-                    </Grid>
+              <Box sx={{
+                p: 3.5,
+                mb: 4,
+                borderRadius: '18px',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #e3eefd 100%)',
+                boxShadow: '0 4px 18px rgba(37,99,235,0.07)',
+                minHeight: 120,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+              }}>
+                <Typography variant="h6" sx={{
+                  mb: 2,
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.18rem',
+                  letterSpacing: 0.5
+                }}>
+                  <ReceiptIcon sx={{ mr: 1 }} />
+                  Maintenance & Compliance
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" c sx={{ fontSize: '0.8rem' }}>
+                      Last Service
+                    </Typography>
+                    <Typography sx={{ display: 'flex', alignItems: 'center', fontWeight: 400 }}>
+                      <ScheduleIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                      {safeFormat(vehicle.lastServiceDate, 'PPpp')}
+                    </Typography>
                   </Grid>
-                </CardContent>
-              </Card>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                    <MoneyIcon sx={{ mr: 1 }} />
-                    Purchase Information
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Purchase Date
-                      </Typography>
-                      <Typography sx={{ display: 'flex', alignItems: 'center' }}>
-                        <CalendarTodayIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        {safeFormat(vehicle.purchaseDate, 'PPpp')}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Purchase Price
-                      </Typography>
-                      <Typography>
-                        {vehicle.purchasePrice ? `$${vehicle.purchasePrice.toLocaleString()}` : 'N/A'}
-                      </Typography>
-                    </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Service Interval
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400}}>
+                      {vehicle.serviceInterval ? `${vehicle.serviceInterval} miles` : 'N/A'}
+                    </Typography>
                   </Grid>
-                </CardContent>
-              </Card>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                      Next Service Due
+                    </Typography>
+                    <Typography color={isDocumentExpired(vehicle.nextServiceDue) ? 'error' : '' } sx={{ fontWeight: 400 }}>
+                      {safeFormat(vehicle.nextServiceDue, 'PPpp')}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" c sx={{ fontSize: '0.8rem' }}>
+                      Registration Expiry
+                    </Typography>
+                    <Typography color={isDocumentExpired(vehicle.registrationExpiry) ? 'error' : ''} sx={{ fontWeight: 400 }}>
+                      {safeFormat(vehicle.registrationExpiry, 'PPpp')}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                      Insurance Expiry
+                    </Typography>
+                    <Typography color={isDocumentExpired(vehicle.insuranceExpiry) ? 'error' : ''} sx={{ fontWeight: 400 }}>
+                      {safeFormat(vehicle.insuranceExpiry, 'PPpp')}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+              <Box sx={{
+                p: 3.5,
+                mb: 4,
+                borderRadius: '18px',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #e3eefd 100%)',
+                boxShadow: '0 4px 18px rgba(37,99,235,0.07)',
+                minHeight: 120,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+              }}>
+                <Typography variant="h6" sx={{
+                  mb: 2,
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.18rem',
+                  letterSpacing: 0.5
+                }}>
+                  <MoneyIcon sx={{ mr: 1 }} />
+                  Purchase Information
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Purchase Date
+                    </Typography>
+                    <Typography sx={{ display: 'flex', alignItems: 'center', fontWeight: 400,  }}>
+                      <CalendarTodayIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                      {safeFormat(vehicle.purchaseDate, 'PPpp')}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2"  sx={{ fontSize: '0.8rem' }}>
+                      Purchase Price
+                    </Typography>
+                    <Typography sx={{ fontWeight: 400 }}>
+                      {vehicle.purchasePrice ? `$${vehicle.purchasePrice.toLocaleString()}` : 'N/A'}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+              {vehicle.notes && (
+                <Box sx={{
+                  p: 3.5,
+                  mb: 4,
+                  borderRadius: '18px',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e3eefd 100%)',
+                  boxShadow: '0 4px 18px rgba(37,99,235,0.07)',
+                  minHeight: 120,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2
+                }}>
+                  <Typography variant="h6" sx={{
+                    mb: 2,
+                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '1.18rem',
+                    letterSpacing: 0.5
+                  }}>
+                    <NotesIcon sx={{ mr: 1 }} />
+                    Notes
+                  </Typography>
+                  <Typography sx={{
+                    whiteSpace: 'pre-line',
+                    p: 2,
+                    background: '#f4f8fd',
+                    borderRadius: '8px',
+                    fontWeight: 500
+                  }}>
+                    {vehicle.notes}
+                  </Typography>
+                </Box>
+              )}
             </Grid>
           </Grid>
-          {vehicle.notes && (
-            <Card variant="outlined" sx={{ mt: 3 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                  <NotesIcon sx={{ mr: 1 }} />
-                  Notes
-                </Typography>
-                <Typography>{vehicle.notes}</Typography>
-              </CardContent>
-            </Card>
-          )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{
+          px: 4,
+          py: 2.5,
+          borderTop: '2px solid #e3e8f0',
+          background: '#f8fafc',
+          borderBottomLeftRadius: '18px',
+          borderBottomRightRadius: '18px'
+        }}>
           <Button
             onClick={() => setState(prev => ({ ...prev, showVehicleModal: false }))}
             startIcon={<BackIcon />}
+            sx={{
+              borderRadius: '12px',
+              minWidth: 100,
+              borderColor: 'primary.main',
+              color: 'primary.main',
+              fontWeight: 700,
+              '&:hover': {
+                backgroundColor: 'primary.light',
+                color: '#fff'
+              }
+            }}
           >
             Close
           </Button>
@@ -1471,270 +1911,239 @@ const Assignment = () => {
   );
 
   const renderVehicleForm = () => (
-    <Card sx={{ mb: 4, boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
+    <GradientCard sx={{ mb: 4 }}>
       <CardContent>
-        <Typography variant="h5" gutterBottom>
+        <Typography variant="h5" gutterBottom sx={{
+          fontWeight: 700,
+          color: COLORS.PRIMARY,
+          display: 'flex',
+          alignItems: 'center',
+          mb: 3,
+          pb: 1,
+          borderBottom: `2px solid ${alpha(COLORS.PRIMARY, 0.1)}`
+        }}>
+          <CarIcon sx={{ mr: 1.5, fontSize: '2rem' }} />
           {state.formData.id ? 'Edit Vehicle' : 'Add New Vehicle'}
         </Typography>
         <form onSubmit={handleSubmit}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Make"
-                name="make"
-                value={state.formData.make}
-                onChange={handleChange}
-                error={!!state.validationErrors.make}
-                helperText={state.validationErrors.make}
-                required
-              />
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" sx={{
+                mb: 2,
+                fontWeight: 600,
+                color: COLORS.PRIMARY,
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <InfoIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+                Basic Information
+              </Typography>
+              <Grid container spacing={2}>
+                {[
+                  { label: "Make", name: "make", required: true, error: state.validationErrors.make },
+                  { label: "Model", name: "model", required: true, error: state.validationErrors.model },
+                  { label: "Year", name: "year", type: "number", required: true, error: state.validationErrors.year },
+                  { label: "License Plate", name: "licensePlate", required: true, error: state.validationErrors.licensePlate },
+                  { label: "VIN", name: "vin", required: true, error: state.validationErrors.vin },
+                  {
+                    label: "Color",
+                    name: "color",
+                    adornment: <ColorLensIcon fontSize="small" />,
+                    position: "start"
+                  },
+                ].map((field, index) => (
+                  <Grid item xs={12} key={index}>
+                    <TextField
+                      fullWidth
+                      label={field.label}
+                      name={field.name}
+                      type={field.type || "text"}
+                      value={state.formData[field.name]}
+                      onChange={handleChange}
+                      error={!!field.error}
+                      helperText={field.error}
+                      required={field.required}
+                      variant="outlined"
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        [field.position || "start"]: field.adornment ? (
+                          <InputAdornment position={field.position || "start"}>
+                            {field.adornment}
+                          </InputAdornment>
+                        ) : undefined
+                      }}
+                      sx={{ mb: 2 }}
+                    />
+                  </Grid>
+                ))}
+                {[
+                  { label: "Vehicle Type", name: "vehicleType", options: ["Sedan", "SUV", "Truck", "Van", "Hatchback", "Coupe"] },
+                  { label: "Fuel Type", name: "fuelType", options: ["Gasoline", "Diesel", "Electric", "Hybrid", "LPG"] },
+                  { label: "Status", name: "status", options: ["Available", "Assigned", "In Maintenance", "Out of Service"] },
+                ].map((select, index) => (
+                  <Grid item xs={12} key={index}>
+                    <FormControl fullWidth size="small" sx={{ mb: index === 2 ? 0 : 2 }}>
+                      <InputLabel>{select.label}</InputLabel>
+                      <Select
+                        name={select.name}
+                        value={state.formData[select.name]}
+                        onChange={handleChange}
+                        label={select.label}
+                      >
+                        {select.options.map(option => (
+                          <MenuItem key={option} value={option}>{option}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                ))}
+              </Grid>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Model"
-                name="model"
-                value={state.formData.model}
-                onChange={handleChange}
-                error={!!state.validationErrors.model}
-                helperText={state.validationErrors.model}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Year"
-                name="year"
-                type="number"
-                value={state.formData.year}
-                onChange={handleChange}
-                error={!!state.validationErrors.year}
-                helperText={state.validationErrors.year}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="License Plate"
-                name="licensePlate"
-                value={state.formData.licensePlate}
-                onChange={handleChange}
-                error={!!state.validationErrors.licensePlate}
-                helperText={state.validationErrors.licensePlate}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="VIN"
-                name="vin"
-                value={state.formData.vin}
-                onChange={handleChange}
-                error={!!state.validationErrors.vin}
-                helperText={state.validationErrors.vin}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Color"
-                name="color"
-                value={state.formData.color}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Current Mileage"
-                name="currentMileage"
-                type="number"
-                value={state.formData.currentMileage}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Purchase Date"
-                name="purchaseDate"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={state.formData.purchaseDate}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Purchase Price"
-                name="purchasePrice"
-                type="number"
-                value={state.formData.purchasePrice}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Last Service Date"
-                name="lastServiceDate"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={state.formData.lastServiceDate}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Next Service Due"
-                name="nextServiceDue"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={state.formData.nextServiceDue}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Service Interval (miles)"
-                name="serviceInterval"
-                type="number"
-                value={state.formData.serviceInterval}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Engine Size (cc)"
-                name="engineSize"
-                type="number"
-                value={state.formData.engineSize}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Roadworthy Expiry"
-                name="roadworthyExpiry"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={state.formData.roadworthyExpiry}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Registration Expiry"
-                name="registrationExpiry"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={state.formData.registrationExpiry}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Insurance Expiry"
-                name="insuranceExpiry"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={state.formData.insuranceExpiry}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Seating Capacity"
-                name="seatingCapacity"
-                type="number"
-                value={state.formData.seatingCapacity}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  name="status"
-                  value={state.formData.status}
-                  onChange={handleChange}
-                >
-                  <MenuItem value="Available">Available</MenuItem>
-                  <MenuItem value="Assigned">Assigned</MenuItem>
-                  <MenuItem value="In Maintenance">In Maintenance</MenuItem>
-                  <MenuItem value="Out of Service">Out of Service</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Vehicle Type</InputLabel>
-                <Select
-                  name="vehicleType"
-                  value={state.formData.vehicleType}
-                  onChange={handleChange}
-                >
-                  <MenuItem value="Sedan">Sedan</MenuItem>
-                  <MenuItem value="SUV">SUV</MenuItem>
-                  <MenuItem value="Truck">Truck</MenuItem>
-                  <MenuItem value="Van">Van</MenuItem>
-                  <MenuItem value="Hatchback">Hatchback</MenuItem>
-                  <MenuItem value="Coupe">Coupe</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Fuel Type</InputLabel>
-                <Select
-                  name="fuelType"
-                  value={state.formData.fuelType}
-                  onChange={handleChange}
-                >
-                  <MenuItem value="Gasoline">Gasoline</MenuItem>
-                  <MenuItem value="Diesel">Diesel</MenuItem>
-                  <MenuItem value="Electric">Electric</MenuItem>
-                  <MenuItem value="Hybrid">Hybrid</MenuItem>
-                  <MenuItem value="LPG">LPG</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Notes"
-                name="notes"
-                multiline
-                rows={4}
-                value={state.formData.notes}
-                onChange={handleChange}
-              />
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" sx={{
+                mb: 2,
+                fontWeight: 600,
+                color: COLORS.PRIMARY,
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <EngineeringIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+                Technical & Maintenance
+              </Typography>
+              <Grid container spacing={2}>
+                {[
+                  {
+                    label: "Current Mileage",
+                    name: "currentMileage",
+                    type: "number",
+                    adornment: <span>miles</span>,
+                    position: "end"
+                  },
+                  {
+                    label: "Seating Capacity",
+                    name: "seatingCapacity",
+                    type: "number"
+                  },
+                  {
+                    label: "Engine Size",
+                    name: "engineSize",
+                    type: "number",
+                    adornment: <span>cc</span>,
+                    position: "end"
+                  },
+                  {
+                    label: "Service Interval",
+                    name: "serviceInterval",
+                    type: "number",
+                    adornment: <span>miles</span>,
+                    position: "end"
+                  },
+                  {
+                    label: "Purchase Price",
+                    name: "purchasePrice",
+                    type: "number",
+                    adornment: <span>$</span>,
+                    position: "start"
+                  },
+                  { label: "Purchase Date", name: "purchaseDate", type: "date" },
+                  { label: "Last Service Date", name: "lastServiceDate", type: "date" },
+                  { label: "Next Service Due", name: "nextServiceDue", type: "date" },
+                  { label: "Roadworthy Expiry", name: "roadworthyExpiry", type: "date" },
+                  { label: "Registration Expiry", name: "registrationExpiry", type: "date" },
+                  { label: "Insurance Expiry", name: "insuranceExpiry", type: "date" },
+                ].map((field, index) => (
+                  <Grid item xs={12} key={index}>
+                    <TextField
+                      fullWidth
+                      label={field.label}
+                      name={field.name}
+                      type={field.type}
+                      value={state.formData[field.name]}
+                      onChange={handleChange}
+                      variant="outlined"
+                      size="small"
+                      InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        [field.position || "start"]: field.adornment ? (
+                          <InputAdornment position={field.position || "start"}>
+                            {field.adornment}
+                          </InputAdornment>
+                        ) : undefined
+                      }}
+                      sx={{ mb: 2 }}
+                    />
+                  </Grid>
+                ))}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" sx={{
+                    mt: 1,
+                    mb: 2,
+                    fontWeight: 600,
+                    color: COLORS.PRIMARY,
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <NotesIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
+                    Additional Notes
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label="Notes"
+                    name="notes"
+                    multiline
+                    rows={3}
+                    value={state.formData.notes}
+                    onChange={handleChange}
+                    variant="outlined"
+                    size="small"
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button onClick={handleCancel} sx={{ mr: 2 }}>
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            mt: 4,
+            pt: 3,
+            borderTop: `1px solid ${alpha(COLORS.DIVIDER, 0.2)}`
+          }}>
+            <Button
+              onClick={handleCancel}
+              sx={{
+                mr: 2,
+                minWidth: 120,
+                borderRadius: '12px',
+                border: `1px solid ${alpha(COLORS.PRIMARY, 0.5)}`,
+                color: COLORS.PRIMARY,
+                '&:hover': {
+                  backgroundColor: alpha(COLORS.PRIMARY, 0.05)
+                }
+              }}
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="contained" color="primary">
-              {state.formData.id ? 'Update Vehicle' : 'Add Vehicle'}
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={state.formLoading}
+              sx={{
+                minWidth: 190,
+                borderRadius: '12px',
+                backgroundColor: COLORS.PRIMARY,
+                '&:hover': {
+                  backgroundColor: alpha(COLORS.PRIMARY, 0.9)
+                }
+              }}
+            >
+              {state.formLoading ? <CircularProgress size={24} /> : (state.formData.id ? 'Update Vehicle' : 'Add Vehicle')}
             </Button>
           </Box>
         </form>
       </CardContent>
-    </Card>
+    </GradientCard>
   );
 
   const renderVehicleList = () => {
@@ -1762,7 +2171,6 @@ const Assignment = () => {
     const indexOfFirstVehicle = indexOfLastVehicle - state.itemsPerPage;
     const currentVehicles = filteredVehicles.slice(indexOfFirstVehicle, indexOfLastVehicle);
     const totalPages = Math.ceil(filteredVehicles.length / state.itemsPerPage);
-
     return (
       <GradientCard>
         <CardContent sx={{ p: 0 }}>
@@ -1773,8 +2181,8 @@ const Assignment = () => {
             alignItems: 'center',
             borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
           }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Fleet Vehicle List
+            <Typography variant="h6" sx={{ fontWeight: 400 }}>
+              Vehicle List
             </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
@@ -1809,7 +2217,6 @@ const Assignment = () => {
               </Button>
             </Box>
           </Box>
-
           {state.showFilters && (
             <Box sx={{
               p: 2,
@@ -1860,7 +2267,6 @@ const Assignment = () => {
               </FormControl>
             </Box>
           )}
-
           <TableContainer>
             <Table>
               <TableHead>
@@ -1970,29 +2376,38 @@ const Assignment = () => {
                       <TableCell>{vehicle.model}</TableCell>
                       <TableCell>{vehicle.year}</TableCell>
                       <TableCell>
-                        <StatusBadge
-                          overlap="circular"
-                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                          variant="dot"
-                          status={vehicle.status}
-                        >
-                          <Chip
-                            label={vehicle.status}
-                            color={
-                              vehicle.status === 'Available' ? 'success' :
-                              vehicle.status === 'Assigned' ? 'primary' :
-                              vehicle.status === 'In Maintenance' ? 'warning' : 'error'
-                            }
-                            size="small"
-                            sx={{ fontWeight: 600 }}
-                          />
-                        </StatusBadge>
+                        <Chip
+                          label={vehicle.isAssigned ? 'Assigned' : 'Available'}
+                          color={vehicle.isAssigned ? 'primary' : 'success'}
+                          size="small"
+                          sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem' }}
+                        />
                       </TableCell>
                       <TableCell align="right">
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <Tooltip title="View vehicle">
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setState(prev => ({ ...prev, selectedVehicle: vehicle, showViewVehicleModal: true }));
+                              }}
+                              sx={{
+                                mr: 1,
+                                '&:hover': {
+                                  backgroundColor: alpha(COLORS.INFO, 0.1),
+                                  color: COLORS.INFO
+                                }
+                              }}
+                            >
+                              <InfoIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title="Edit vehicle">
                             <IconButton
-                              onClick={() => handleEditVehicle(vehicle)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditVehicle(vehicle);
+                              }}
                               sx={{
                                 mr: 1,
                                 '&:hover': {
@@ -2006,7 +2421,10 @@ const Assignment = () => {
                           </Tooltip>
                           <Tooltip title="Delete vehicle">
                             <IconButton
-                              onClick={() => handleDeleteClick(vehicle)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(vehicle);
+                              }}
                               sx={{
                                 '&:hover': {
                                   backgroundColor: alpha(COLORS.ERROR, 0.1),
@@ -2144,6 +2562,7 @@ const Assignment = () => {
           {state.activeTab === 'available' && renderAvailableVehicles()}
           {state.activeTab === 'vehicleList' && renderVehicleList()}
           {renderRequestModal()}
+          {renderViewVehicleModal()}
           {renderHistoryModal()}
           {renderVehicleModal()}
           {renderDeleteModal()}

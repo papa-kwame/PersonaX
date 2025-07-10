@@ -1,39 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-import { Modal, Button, Badge, Spinner, Alert } from 'react-bootstrap';
 import {
-  CarFront,
-  Calendar,
-  ChatLeftText,
-  CheckCircle,
-  ClockHistory,
-  XCircle,
-  Hourglass,
-  CardChecklist
-} from 'react-bootstrap-icons';
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Typography,
+  Chip,
+  Avatar,
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Alert,
+  CircularProgress,
+  Stack,
+  Divider,
+  Tooltip
+} from '@mui/material';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import CancelIcon from '@mui/icons-material/Cancel';
+import HistoryIcon from '@mui/icons-material/History';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import VehicleRequestForm from './VehicleRequestForm';
+import './VehicleRequestsComponent.css';
 
 const workflowStages = ['Comment', 'Review', 'Commit', 'Approval', 'Completed'];
 
-const statusBadge = (status) => {
+const statusChip = (status) => {
   switch (status) {
     case 0:
-      return <Badge bg="warning" className="d-flex align-items-center gap-1">
-        <Hourglass size={14} /> Pending
-      </Badge>;
+      return <Chip icon={<HourglassEmptyIcon />} label="Pending" color="warning" variant="filled" size="small" />;
     case 1:
-      return <Badge bg="success" className="d-flex align-items-center gap-1">
-        <CheckCircle size={14} /> Approved
-      </Badge>;
+      return <Chip icon={<CheckCircleIcon />} label="Approved" color="success" variant="filled" size="small" />;
     case 2:
-      return <Badge bg="danger" className="d-flex align-items-center gap-1">
-        <XCircle size={14} /> Rejected
-      </Badge>;
+      return <Chip icon={<CancelIcon />} label="Rejected" color="error" variant="filled" size="small" />;
     default:
-      return <Badge bg="secondary" className="d-flex align-items-center gap-1">
-        <ClockHistory size={14} /> Unknown
-      </Badge>;
+      return <Chip icon={<HistoryIcon />} label="Unknown" color="default" variant="filled" size="small" />;
   }
 };
 
@@ -73,7 +83,6 @@ const VehicleRequestsComponent = () => {
       const response = await api.get(`/api/VehicleAssignment/MyVehicleRequests/${userId}`);
       setRequests(response.data);
     } catch (err) {
-      console.error('Error fetching vehicle requests:', err);
       setError('Failed to fetch vehicle requests');
     } finally {
       setLoading(false);
@@ -86,7 +95,6 @@ const VehicleRequestsComponent = () => {
       const response = await api.get(`/api/VehicleAssignment/vehicle-requests/${requestId}/comments`);
       setComments(response.data.comments || []);
     } catch (err) {
-      console.error('Error fetching comments:', err);
       setError('Failed to fetch comments');
     } finally {
       setCommentsLoading(false);
@@ -99,7 +107,6 @@ const VehicleRequestsComponent = () => {
       const response = await api.get(`/api/VehicleAssignment/vehicle-requests/${requestId}/workflow-status`);
       setWorkflowStatus(response.data);
     } catch (err) {
-      console.error('Error fetching workflow status:', err);
       setError('Failed to fetch workflow status');
     } finally {
       setWorkflowLoading(false);
@@ -117,118 +124,100 @@ const VehicleRequestsComponent = () => {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '250px' }}>
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      </div>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight={250}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Alert variant="danger" className="my-3 rounded">
-        {error}
-      </Alert>
+      <Alert severity="error" sx={{ my: 3, borderRadius: 2 }}>{error}</Alert>
     );
   }
 
   return (
-    <div className="p-4 bg-white rounded-3 shadow-sm" style={{ minHeight: '250px', maxHeight: '250px', overflowY: 'auto' }}>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h5 className="d-flex align-items-center gap-2 mb-0">
-          <CarFront className="text-primary" /> My Vehicle Requests
-        </h5>
-        <VehicleRequestForm className="btn-sm" />
-      </div>
-
-      <div className="row">
-        <div className="col-12">
-          {requests.length === 0 ? (
-            <div className="d-flex flex-column align-items-center justify-content-center" 
-                 style={{ 
-                   height: 'calc(250px - 100px)', // Adjust based on your header height
-                   marginTop: '-1rem' // Compensate for padding
-                 }}>
-              <div className="bg-light rounded-circle p-4 mb-3">
-                <CarFront size={32} className="text-muted" />
-              </div>
-              <h6 className="text-muted mb-2">No vehicle requests found</h6>
-              <p className="text-muted small text-center mb-0" style={{ maxWidth: '300px' }}>
-                Click the button above to create a new request
-              </p>
-            </div>
-          ) : (
-            <div className="list-group list-group-flush border-top border-bottom">
-              {requests.map((request) => (
-                <button
-                  key={request.id}
-                  className="list-group-item list-group-item-action p-3 border-0 border-bottom"
-                  onClick={() => handleRequestClick(request)}
-                >
-                  <div className="d-flex align-items-start gap-3">
-                    <div className="bg-primary bg-opacity-10 text-primary rounded-circle p-2 d-flex align-items-center justify-content-center"
-                      style={{ width: '40px', height: '40px' }}>
-                      <CarFront size={18} />
-                    </div>
-                    <div className="flex-grow-1">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <h6 className="mb-1 fw-semibold">
-                          {request.vehicle?.make || 'No vehicle'} {request.vehicle?.model || ''}
-                        </h6>
-                        <div className="ms-2">
-                          {statusBadge(request.status)}
-                        </div>
-                      </div>
-                      <div className="mb-1">
-                        <span className="text-muted small">License: </span>
-                        <span className="fw-semibold">{request.vehicle?.licensePlate || 'N/A'}</span>
-                      </div>
-                      <div className="d-flex align-items-center gap-2 flex-wrap">
-                        <div className="d-flex align-items-center gap-1 text-muted small">
-                          <Calendar size={12} />
-                          <span>{formatDate(request.requestDate)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <Modal show={showModal} onHide={handleCloseModal} size="lg" centered>
-        <Modal.Header closeButton className="border-bottom-0 pb-0">
-          <Modal.Title className="d-flex align-items-center gap-2">
-            <CardChecklist className="text-primary" /> Request Details
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="pt-0">
+    <Box className="vehicle-requests-container">
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Typography variant="h5" display="flex" alignItems="center" gap={1} fontWeight={600}>
+          <DirectionsCarIcon color="primary" /> My Vehicle Request
+        </Typography>
+        <VehicleRequestForm />
+      </Box>
+      <Box>
+        {requests.length === 0 ? (
+          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height={180}>
+            <Avatar sx={{ bgcolor: 'grey.100', mb: 2, width: 56, height: 56 }}>
+              <DirectionsCarIcon sx={{ color: 'grey.400', fontSize: 32 }} />
+            </Avatar>
+            <Typography variant="subtitle1" color="text.secondary">No vehicle requests found</Typography>
+            <Typography variant="body2" color="text.secondary" align="center" maxWidth={300}>
+              Click the button above to create a new request
+            </Typography>
+          </Box>
+        ) : (
+          <Stack spacing={2} className="vehicle-request-list">
+            {requests.map((request) => (
+              <Card
+                key={request.id}
+                variant="outlined"
+                sx={{ cursor: 'pointer', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 4 } }}
+                onClick={() => handleRequestClick(request)}
+              >
+                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{  width: 40, height: 40 }}>
+                    <DirectionsCarIcon fontSize="small" />
+                  </Avatar>
+                  <Box flexGrow={1}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {request.vehicle?.make || 'No vehicle'} {request.vehicle?.model || ''}
+                      </Typography>
+                      {statusChip(request.status)}
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      License: <b>{request.vehicle?.licensePlate || 'N/A'}</b>
+                    </Typography>
+                    <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                      <CalendarMonthIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                      <Typography variant="caption" color="text.secondary">{formatDate(request.requestDate)}</Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
+        )}
+      </Box>
+      <Dialog open={showModal} onClose={handleCloseModal} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AssignmentIcon color="primary" /> Request Details
+        </DialogTitle>
+        <DialogContent dividers>
           {selectedRequest && (
-            <div>
-              <div className="card mb-4 border-0 shadow-sm">
-                <div className="card-body">
-                  <h6 className="card-title text-muted mb-3">REQUEST STATUS</h6>
-                  <div className="d-flex flex-column gap-3">
+            <Box>
+              <Card variant="outlined" sx={{ mb: 3 }}>
+                <CardHeader title={<Typography variant="subtitle2" color="text.secondary">REQUEST STATUS</Typography>} sx={{ pb: 0 }} />
+                <CardContent>
+                  <Box sx={{ width: '100%', mt: 2 }}>
                     <div style={{ overflowX: 'auto' }}>
-                      <div className="d-flex justify-content-between position-relative" style={{ width: '100%' }}>
-                        <div className="position-absolute top-50 start-0 end-0" style={{ height: '2px', backgroundColor: '#e9ecef', zIndex: 1 }}>
+                      <div className="d-flex justify-content-between position-relative align-items-center" style={{ width: '100%', minHeight: '98px' }}>
+                        <div style={{ position: 'absolute', left: 0, right: 0,  transform: 'translateY(-50%)', height: '4px', backgroundColor: '#e9ecef', zIndex: 1 }}>
                           <div
                             className="h-100 bg-primary"
                             style={{
+                              height: '100%',
                               width: `${((workflowStages.indexOf(workflowStatus?.currentStage) + 1) / workflowStages.length) * 100}%`,
+                              background: 'linear-gradient(90deg, #1976d2 60%, #64b5f6 100%)',
+                              borderRadius: '2px',
                               transition: 'width 0.3s ease'
                             }}
                           ></div>
                         </div>
-
                         {workflowStages.map((stage, index) => {
                           const isActive = workflowStatus?.currentStage === stage;
                           const isCompleted = workflowStatus?.completedActions?.[stage];
                           const isPending = !isActive && !isCompleted;
-
                           return (
                             <div
                               key={stage}
@@ -243,7 +232,12 @@ const VehicleRequestsComponent = () => {
                                 style={{
                                   width: '32px',
                                   height: '32px',
-                                  border: isPending ? '1px solid #dee2e6' : 'none'
+                                  border: isPending ? '1px solid #dee2e6' : 'none',
+                                  position: 'relative',
+                                  top: '50%',
+                                  transform: 'translateY(-50%)',
+                                  fontWeight: 600,
+                                  fontSize: 16
                                 }}
                               >
                                 {index + 1}
@@ -256,150 +250,130 @@ const VehicleRequestsComponent = () => {
                         })}
                       </div>
                     </div>
-
                     {workflowStatus?.pendingActions?.length > 0 && (
-                      <div className="alert alert-warning d-flex align-items-center gap-2 mb-0 py-2 border-0">
-                        <ClockHistory size={16} />
-                        <div className="small">
-                          <strong>Pending Action:</strong> {workflowStatus.pendingActions[0].userName} ({workflowStatus.pendingActions[0].role})
-                        </div>
-                      </div>
+                      <Alert severity="warning" icon={<HistoryIcon />} sx={{ py: 1, mb: 0, borderRadius: 1 }}>
+                        <b>Pending Action:</b> {workflowStatus.pendingActions[0].userName} ({workflowStatus.pendingActions[0].role})
+                      </Alert>
                     )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="row g-4">
-                <div className="col-md-5">
-                  <div className="card h-100 border-0 shadow-sm">
-                    <div className="card-header bg-white border-0 d-flex align-items-center gap-2 py-3">
-                      <CarFront size={16} className="text-primary" /> <span className="fw-semibold">Vehicle Information</span>
-                    </div>
-                    <div className="card-body pt-0">
-                      {selectedRequest.vehicle ? (
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label text-muted small mb-1">Make</label>
-                            <p className="mb-0 fw-medium">{selectedRequest.vehicle.make || 'N/A'}</p>
-                          </div>
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label text-muted small mb-1">Model</label>
-                            <p className="mb-0 fw-medium">{selectedRequest.vehicle.model || 'N/A'}</p>
-                          </div>
-          
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label text-muted small mb-1">License Plate</label>
-                            <p className="mb-0 fw-medium">{selectedRequest.vehicle.licensePlate || 'N/A'}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-4">
-                          <div className="bg-light rounded-circle p-3 d-inline-block mb-3">
-                            <CarFront size={24} className="text-muted" />
-                          </div>
-                          <p className="text-muted mb-0">No vehicle assigned</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-md-6">
-                  <div className="card h-100 border-0 shadow-sm">
-                    <div className="card-header bg-white border-0 d-flex align-items-center gap-2 py-3">
-                      <span className="fw-semibold">Request Details </span>
-                    </div>
-                    <div className="card-body pt-0">
-                      <div className="mb-3">
-                        <div className="d-flex align-items-center gap-2">
-                          {statusBadge(selectedRequest.status)}
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label text-muted small mb-1">Request Date</label>
-                        <p className="mb-0 fw-medium">{formatDate(selectedRequest.requestDate)}</p>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label text-muted small mb-1">Duration</label>
-                        <p className="mb-0 fw-medium">
+                  </Box>
+                </CardContent>
+              </Card>
+              <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3} mb={3}>
+                <Card variant="outlined">
+                  <CardHeader
+                    avatar={<DirectionsCarIcon color="primary" />}
+                    title={<Typography fontWeight={600}>Vehicle Information</Typography>}
+                    sx={{ pb: 0 }}
+                  />
+                  <CardContent>
+                    {selectedRequest.vehicle ? (
+                      <Stack spacing={1}>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">Make</Typography>
+                          <Typography fontWeight={500}>{selectedRequest.vehicle.make || 'N/A'}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">Model</Typography>
+                          <Typography fontWeight={500}>{selectedRequest.vehicle.model || 'N/A'}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">License Plate</Typography>
+                          <Typography fontWeight={500}>{selectedRequest.vehicle.licensePlate || 'N/A'}</Typography>
+                        </Box>
+                      </Stack>
+                    ) : (
+                      <Box textAlign="center" py={3}>
+                        <Avatar sx={{ bgcolor: 'grey.100', mb: 2, width: 48, height: 48 }}>
+                          <DirectionsCarIcon sx={{ color: 'grey.400', fontSize: 28 }} />
+                        </Avatar>
+                        <Typography color="text.secondary">No vehicle assigned</Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+                <Card variant="outlined">
+                  <CardHeader title={<Typography fontWeight={600}>Request Details</Typography>} sx={{ pb: 0 }} />
+                  <CardContent>
+                    <Stack spacing={1}>
+                      <Box>{statusChip(selectedRequest.status)}</Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Request Date</Typography>
+                        <Typography fontWeight={500}>{formatDate(selectedRequest.requestDate)}</Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Duration</Typography>
+                        <Typography fontWeight={500}>
                           {selectedRequest.startDate && selectedRequest.endDate
                             ? `${formatDate(selectedRequest.startDate)} to ${formatDate(selectedRequest.endDate)}`
                             : 'Not specified'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="form-label text-muted small mb-1">Reason</label>
-                        <div className="bg-light p-3 rounded">
-                          <p className="mb-0 fw-medium">{selectedRequest.requestReason || 'No reason provided'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-12">
-                  <div className="card border-0 shadow-sm">
-                    <div className="card-header bg-white border-0 d-flex align-items-center gap-2 py-3">
-                      <ChatLeftText size={16} className="text-primary" /> <span className="fw-semibold">Activity & Comments</span>
-                    </div>
-                    <div className="card-body p-0">
-                      {commentsLoading ? (
-                        <div className="d-flex justify-content-center py-4">
-                          <Spinner animation="border" size="sm" />
-                        </div>
-                      ) : comments.length === 0 ? (
-                        <div className="text-center py-4">
-                          <div className="bg-light rounded-circle p-3 d-inline-block mb-3">
-                            <ChatLeftText size={24} className="text-muted" />
-                          </div>
-                          <h6 className="text-muted">No activity yet</h6>
-                          <p className="text-muted small mb-0">Comments and updates will appear here</p>
-                        </div>
-                      ) : (
-                        <div className="overflow-none" style={{ maxHeight: '300px' }}>
-                          {comments.map((comment, index) => (
-                            <div key={index} className="border-bottom p-3">
-                              <div className="d-flex justify-content-between align-items-center mb-2">
-                                <div className="d-flex align-items-center gap-2">
-                                  <Badge bg="light" text="dark" className="text-uppercase small fw-normal">
-                                    {comment.stage}
-                                  </Badge>
-                                  <small className="text-muted">{formatDate(comment.timestamp)}</small>
-                                </div>
-                                {comment.action === 'approve' && (
-                                  <Badge bg="success" className="small">Approved</Badge>
-                                )}
-                                {comment.action === 'reject' && (
-                                  <Badge bg="danger" className="small">Rejected</Badge>
-                                )}
-                              </div>
-                              <div className={`p-3 rounded ${index % 2 === 0 ? 'bg-white' : 'bg-light bg-opacity-50'}`}>
-                                <div className="d-flex gap-2">
-                                  <div className="flex-shrink-0">
-                                    <div className="bg-primary bg-opacity-10 text-primary rounded-circle p-2 d-flex align-items-center justify-content-center"
-                                      style={{ width: '36px', height: '36px' }}>
-                                      {comment.userInitials || comment.user.charAt(0).toUpperCase()}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <h6 className="mb-1 small fw-semibold">{comment.user || 'Unknown User'}</h6>
-                                    <p className="mb-0 small">{comment.comment}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Reason</Typography>
+                        <Box bgcolor="grey.100" p={2} borderRadius={2}>
+                          <Typography fontWeight={500}>{selectedRequest.requestReason || 'No reason provided'}</Typography>
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Box>
+              <Card variant="outlined">
+                <CardHeader
+                  avatar={<ChatBubbleOutlineIcon color="primary" />}
+                  title={<Typography fontWeight={600}>Activity & Comments</Typography>}
+                  sx={{ pb: 0 }}
+                />
+                <CardContent sx={{ p: 0 }}>
+                  {commentsLoading ? (
+                    <Box display="flex" justifyContent="center" py={4}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : comments.length === 0 ? (
+                    <Box textAlign="center" py={4}>
+                      <Avatar sx={{ bgcolor: 'grey.100', mb: 2, width: 48, height: 48 }}>
+                        <ChatBubbleOutlineIcon sx={{ color: 'grey.400', fontSize: 28 }} />
+                      </Avatar>
+                      <Typography color="text.secondary">No activity yet</Typography>
+                      <Typography variant="body2" color="text.secondary">Comments and updates will appear here</Typography>
+                    </Box>
+                  ) : (
+                    <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
+                      {comments.map((comment, index) => (
+                        <Box key={index} px={2} py={2} borderBottom={index !== comments.length - 1 ? 1 : 0} borderColor="grey.100">
+                          <Box display="flex" alignItems="center" gap={2} mb={1}>
+                            <Chip label={comment.stage} size="small" variant="outlined" sx={{ textTransform: 'uppercase' }} />
+                            <Typography variant="caption" color="text.secondary">{formatDate(comment.timestamp)}</Typography>
+                            {comment.action === 'approve' && (
+                              <Chip label="Approved" color="success" size="small" />
+                            )}
+                            {comment.action === 'reject' && (
+                              <Chip label="Rejected" color="error" size="small" />
+                            )}
+                          </Box>
+                          <Box display="flex" gap={2} alignItems="flex-start">
+                            <Avatar sx={{ bgcolor: 'primary.light', color: 'primary.main', width: 36, height: 36, fontWeight: 700 }}>
+                              {comment.userInitials || (comment.user ? comment.user.charAt(0).toUpperCase() : '?')}
+                            </Avatar>
+                            <Box>
+                              <Typography fontWeight={600} variant="body2">{comment.user || 'Unknown User'}</Typography>
+                              <Typography variant="body2">{comment.comment}</Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Box>
           )}
-        </Modal.Body>
-      </Modal>
-    </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal} color="primary" variant="contained">Close</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

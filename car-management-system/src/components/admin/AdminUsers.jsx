@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import {
   Modal,
-  Button as MuiButton,
+  Button,
   Box,
   Typography,
   TextField,
@@ -12,6 +12,15 @@ import {
   CircularProgress,
   Pagination,
   InputAdornment,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Avatar,
+  Stack,
 } from '@mui/material';
 import {
   PersonCheck,
@@ -20,6 +29,7 @@ import {
   PencilSquare,
   People,
   Search,
+  Person,
 } from 'react-bootstrap-icons';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -45,7 +55,7 @@ const AdminUsers = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 10;
+  const usersPerPage = 8;
 
   const loadUsers = async () => {
     try {
@@ -210,14 +220,14 @@ const AdminUsers = () => {
 
   if (busy && users.length === 0)
     return (
-      <div className="text-center py-5">
+      <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" py={8}>
         <CircularProgress />
-        <p className="mt-2">Loading users...</p>
-      </div>
+        <Typography mt={2}>Loading users...</Typography>
+      </Box>
     );
 
   return (
-    <div className="py-4 px-4">
+    <Box py={4} px={{ xs: 1, sm: 4 }}>
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -230,122 +240,121 @@ const AdminUsers = () => {
         pauseOnHover
       />
 
-      <div className="d-flex align-items-center mb-4">
-        <div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
-          <People size={28} className="text-primary" />
-        </div>
-        <div>
-          <h2 className="fw-bold mb-0">User Management</h2>
-          <p className="text-muted mb-0">Manage system users</p>
-        </div>
-        <div className="ms-auto d-flex align-items-center">
-          <TextField
-            label="Search"
-            variant="outlined"
-            value={searchQuery}
-            onChange={handleSearch}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ mr: 2 }}
-          />
-          <button
-            className="btn btn-primary d-flex align-items-center"
-            onClick={() => openModal()}
-            disabled={!isAdmin}
-          >
-            <PlusCircle className="me-2" /> Add User
-          </button>
-        </div>
-      </div>
+      <Stack direction="row" alignItems="center" spacing={3} mb={4}>
+        <Box sx={{ p: 2, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 1 }}>
+          <People sx={{ color: 'primary.main', fontSize: 32 }} />
+        </Box>
+        <Box>
+          <Typography variant="h4" fontWeight={400} color="primary.main">User Management</Typography>
+          <Typography color="text.secondary">Manage system users</Typography>
+        </Box>
+        <Box flexGrow={1} />
+        <TextField
+          label="Search"
+          variant="outlined"
+          value={searchQuery}
+          onChange={handleSearch}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ mr: 2, borderRadius: 4, background: '#f7fafd', minWidth: 200 }}
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => openModal()}
+          disabled={!isAdmin}
+          sx={{ borderRadius: 3, px: 4, py: 1.5, fontWeight: 700, boxShadow: 2 }}
+          startIcon={<People />}
+        >
+          Add User
+        </Button>
+      </Stack>
 
       {error && (
-        <div className="alert alert-danger text-center">Error: {error}</div>
+        <Paper elevation={2} sx={{ p: 2, mb: 3, borderRadius: 3, background: '#fff' }}>
+          <Typography color="error" align="center">Error: {error}</Typography>
+        </Paper>
       )}
 
-      <div className="card shadow-sm border-0">
-        <div className="card-body p-0">
-          <div className="table-responsive rounded">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="bg-light">
-                <tr>
-                  <th>Username</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Department</th>
-                  <th className="text-end">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentUsers.length ? (
-                  currentUsers.map((u) => (
-                    <tr key={u.id}>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
-                            <PersonCheck size={18} className="text-primary" />
-                          </div>
-                          <div>
-                            <div className="fw-medium">{u.userName}</div>
-                            <div className="small text-muted">
-                              {u.isLocked ? (
-                                <span className="text-danger">Inactive</span>
-                              ) : (
-                                <span className="text-success">Active</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="text-muted">{u.email}</td>
-                      <td className="text-muted">{u.phoneNumber || '-'}</td>
-                      <td className="text-muted">{u.department || '-'}</td>
-                      <td className="text-end">
-                        <div className="btn-group btn-group-sm">
-                          <button
-                            className="btn btn-outline-secondary"
-                            onClick={() => openModal(u)}
-                            disabled={!isAdmin}
-                          >
-                            <PencilSquare />
-                          </button>
-                          <button
-                            className="btn btn-outline-danger"
-                            onClick={() => deleteUser(u.id)}
-                            disabled={!isAdmin}
-                          >
-                            <Trash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center py-4 text-muted">
-                      No users found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <Paper elevation={3} sx={{ borderRadius: 4, mb: 4, boxShadow: '0 2px 12px rgba(60,72,100,0.07)' }}>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ background: '#f5f7fa' }}>
+                <TableCell>Username</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Phone</TableCell>
+                <TableCell>Department</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {currentUsers.length ? (
+                currentUsers.map((u) => (
+                  <TableRow key={u.id} hover sx={{ borderRadius: 3, transition: 'background 0.2s' }}>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar sx={{   fontWeight: 700 }}>
+                          <Person />
+                        </Avatar>
+                        <Typography fontWeight={600}>{u.userName}</Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell sx={{ color: 'text.secondary' }}>{u.email}</TableCell>
+                    <TableCell sx={{ color: 'text.secondary' }}>{u.phoneNumber || '-'}</TableCell>
+                    <TableCell sx={{ color: 'text.secondary' }}>{u.department || '-'}</TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          size="small"
+                          onClick={() => openModal(u)}
+                          disabled={!isAdmin}
+                          sx={{ borderRadius: 2, minWidth: 0, px: 2 }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => deleteUser(u.id)}
+                          disabled={!isAdmin}
+                          sx={{ borderRadius: 2, minWidth: 0, px: 2 }}
+                        >
+                          Delete
+                        </Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ color: 'text.secondary', py: 4 }}>
+                    No users found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
       {totalPages > 1 && (
-        <div className="d-flex justify-content-center mt-3">
+        <Box display="flex" justifyContent="center" mt={3}>
           <Pagination
             count={totalPages}
             page={currentPage}
             onChange={handlePageChange}
             color="primary"
           />
-        </div>
+        </Box>
       )}
 
       <Modal open={modalOpen} onClose={closeModal}>
@@ -359,13 +368,12 @@ const AdminUsers = () => {
             bgcolor: 'background.paper',
             boxShadow: 24,
             p: 4,
-            borderRadius: 2,
+            borderRadius: 4,
           }}
         >
-          <Typography variant="h6" mb={2}>
+          <Typography variant="h6" mb={2} fontWeight={700} color="primary.main">
             {editingUser ? 'Edit User' : 'Add New User'}
           </Typography>
-
           <form onSubmit={saveUser}>
             <TextField
               label="Username"
@@ -376,8 +384,8 @@ const AdminUsers = () => {
               margin="normal"
               required
               disabled={!!editingUser}
+              sx={{ borderRadius: 4, background: '#f7fafd' }}
             />
-
             <TextField
               label="Email"
               name="email"
@@ -388,8 +396,8 @@ const AdminUsers = () => {
               margin="normal"
               required
               disabled={!!editingUser}
+              sx={{ borderRadius: 4, background: '#f7fafd' }}
             />
-
             <TextField
               label="Phone Number"
               name="phoneNumber"
@@ -397,8 +405,8 @@ const AdminUsers = () => {
               onChange={handleInput}
               fullWidth
               margin="normal"
+              sx={{ borderRadius: 4, background: '#f7fafd' }}
             />
-
             <TextField
               label="Department"
               name="department"
@@ -406,8 +414,8 @@ const AdminUsers = () => {
               onChange={handleInput}
               fullWidth
               margin="normal"
+              sx={{ borderRadius: 4, background: '#f7fafd' }}
             />
-
             {!editingUser && (
               <>
                 <TextField
@@ -420,6 +428,7 @@ const AdminUsers = () => {
                   margin="normal"
                   required
                   inputProps={{ minLength: 6 }}
+                  sx={{ borderRadius: 4, background: '#f7fafd' }}
                 />
                 <TextField
                   label="Confirm Password"
@@ -431,47 +440,34 @@ const AdminUsers = () => {
                   margin="normal"
                   required
                   inputProps={{ minLength: 6 }}
+                  sx={{ borderRadius: 4, background: '#f7fafd' }}
                 />
               </>
             )}
 
-            {editingUser && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    name="isActive"
-                    checked={form.isActive}
-                    onChange={handleInput}
-                    disabled={!isAdmin}
-                  />
-                }
-                label={form.isActive ? 'Active' : 'Inactive'}
-                sx={{ mt: 2 }}
-              />
-            )}
-
-            <div className="d-flex justify-content-between mt-3">
-              <MuiButton
+            <Stack direction="row" spacing={2} justifyContent="flex-end" mt={3}>
+              <Button
                 variant="outlined"
                 color="secondary"
                 onClick={closeModal}
+                sx={{ borderRadius: 2, px: 4, py: 1.2, fontWeight: 700 }}
               >
                 Cancel
-              </MuiButton>
-              <MuiButton
-                type="submit"
+              </Button>
+              <Button
                 variant="contained"
                 color="primary"
+                type="submit"
+                sx={{ borderRadius: 2, px: 4, py: 1.2, fontWeight: 700 }}
                 disabled={busy}
-                startIcon={busy && <CircularProgress size={16} />}
               >
                 {editingUser ? 'Update' : 'Create'}
-              </MuiButton>
-            </div>
+              </Button>
+            </Stack>
           </form>
         </Box>
       </Modal>
-    </div>
+    </Box>
   );
 };
 

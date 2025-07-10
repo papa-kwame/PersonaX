@@ -1,0 +1,41 @@
+/* Universal Loading Spinner Styles */
+.loading-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 120px;
+  z-index: 1000;
+}
+
+.loading-spinner-container.overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.7);
+  z-index: 2000;
+}
+
+.spinner-circle {
+  border: 5px solid #e3e8f0;
+  border-top: 5px solid #2563eb;
+  border-radius: 50%;
+  animation: spinner-rotate 1s linear infinite;
+  box-shadow: 0 2px 12px rgba(37,99,235,0.10);
+  background: transparent;
+  margin-bottom: 10px;
+}
+
+.spinner-text {
+  color: #4a5568;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+@keyframes spinner-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+} 

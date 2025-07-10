@@ -10,13 +10,17 @@ import {
   Modal,
   Form,
   Badge,
-  Spinner,
   Alert,
-  Dropdown
+  Dropdown,
+  OverlayTrigger,
+  Tooltip
 } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Schedule.css';
 import api from '../../services/api';
+import LoadingSpinner from '../LoadingSpinner';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const SchedulePage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -40,6 +44,9 @@ const SchedulePage = () => {
   const [success, setSuccess] = useState(null);
   const [filter, setFilter] = useState('all');
   const [progressUpdates, setProgressUpdates] = useState([]);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [allProgressUpdates, setAllProgressUpdates] = useState([]);
+  const [loadingProgress, setLoadingProgress] = useState(false);
 
   const [scheduleData, setScheduleData] = useState({
     assignedMechanicId: '',
@@ -79,14 +86,26 @@ const SchedulePage = () => {
           api.get('api/MaintenanceRequest/progress-updates')
         ]);
 
+        const getEventDate = (schedule) => {
+          if (
+            schedule.completedDate &&
+            schedule.completedDate !== '0001-01-01T00:00:00' &&
+            schedule.status === 'Completed'
+          ) {
+            return schedule.completedDate;
+          }
+          return schedule.scheduledDate;
+        };
+
         const activitiesData = schedulesResponse.data.reduce((acc, schedule) => {
-          const date = new Date(formatDateString(schedule.scheduledDate)).toISOString().split('T')[0];
+          const eventDate = getEventDate(schedule);
+          const date = new Date(formatDateString(eventDate)).toISOString().split('T')[0];
           if (!acc[date]) acc[date] = [];
 
           acc[date].push({
             id: schedule.id,
             title: schedule.reason,
-            time: formatTime(schedule.scheduledDate),
+            time: formatTime(eventDate),
             type: 'maintenance',
             licensePlate: schedule.licensePlate || 'N/A',
             vehicleMake: schedule.vehicleMake || 'N/A',
@@ -97,7 +116,8 @@ const SchedulePage = () => {
             mechanic: schedule.assignedMechanicName || 'Unassigned',
             comments: schedule.comments || 'No comments',
             requestId: schedule.maintenanceRequestId,
-            repairType: schedule.repairType || 'N/A'
+            repairType: schedule.repairType || 'N/A',
+            completedDate: schedule.completedDate || null
           });
           return acc;
         }, {});
@@ -225,7 +245,7 @@ const SchedulePage = () => {
 
   const handleScheduleMaintenance = async () => {
     if (!scheduleData.assignedMechanicId) {
-      setError('Please select a mechanic');
+      toast.error('Please select a mechanic');
       return;
     }
 
@@ -248,14 +268,26 @@ const SchedulePage = () => {
         api.get('api/MaintenanceRequest/approved-requests')
       ]);
 
+      const getEventDate = (schedule) => {
+        if (
+          schedule.completedDate &&
+          schedule.completedDate !== '0001-01-01T00:00:00' &&
+          schedule.status === 'Completed'
+        ) {
+          return schedule.completedDate;
+        }
+        return schedule.scheduledDate;
+      };
+
       const activitiesData = schedulesResponse.data.reduce((acc, schedule) => {
-        const date = new Date(formatDateString(schedule.scheduledDate)).toISOString().split('T')[0];
+        const eventDate = getEventDate(schedule);
+        const date = new Date(formatDateString(eventDate)).toISOString().split('T')[0];
         if (!acc[date]) acc[date] = [];
 
         acc[date].push({
           id: schedule.id,
           title: schedule.reason,
-          time: formatTime(schedule.scheduledDate),
+          time: formatTime(eventDate),
           type: 'maintenance',
           licensePlate: schedule.licensePlate || 'N/A',
           vehicleMake: schedule.vehicleMake || 'N/A',
@@ -266,7 +298,8 @@ const SchedulePage = () => {
           mechanic: schedule.assignedMechanicName || 'Unassigned',
           comments: schedule.comments || 'No comments',
           requestId: schedule.maintenanceRequestId,
-          repairType: schedule.repairType || 'N/A'
+          repairType: schedule.repairType || 'N/A',
+          completedDate: schedule.completedDate || null
         });
         return acc;
       }, {});
@@ -275,11 +308,10 @@ const SchedulePage = () => {
       setSchedules(schedulesResponse.data);
       setApprovedRequests(approvedRequestsResponse.data);
       setShowScheduleModal(false);
-      setSuccess('Maintenance scheduled successfully!');
-      setTimeout(() => setSuccess(null), 5000);
+      toast.success('Schedule Requested successfully!');
     } catch (err) {
       console.error('Error scheduling maintenance:', err);
-      setError(err.response?.data?.message || 'Failed to schedule maintenance');
+      toast.error(err.response?.data?.message || 'Failed to schedule maintenance');
     } finally {
       setLoading(prev => ({ ...prev, scheduling: false }));
     }
@@ -336,64 +368,31 @@ const SchedulePage = () => {
             const dateString = date.toISOString().split('T')[0];
             const isCurrentMonth = date.getMonth() === currentDate.getMonth();
             const isWeekend = [0, 6].includes(date.getDay());
-            const activityCount = getDayActivityCount(date);
             const dayActivities = filteredActivities[dateString] || [];
-
-            const getPriorityColor = (priority) => {
-              switch (priority) {
-                case 'high':
-                  return '#ff0000';
-                case 'medium':
-                  return '#ffa500';
-                case 'low':
-                  return '#008000';
-                default:
-                  return '#000000';
-              }
-            };
 
             return (
               <div
                 key={`day-${index}`}
-                className={`day-column ${isToday(date) ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${!isCurrentMonth ? 'other-month' : ''}`}
+                className={`day-cell ${isToday(date) ? 'today' : ''} ${isWeekend ? 'weekend' : ''} ${!isCurrentMonth ? 'other-month' : ''}`}
                 onClick={() => handleDayClick(date)}
               >
-                {loading.schedules ? (
-                  <div className="loading-indicator">
-                    <Spinner animation="border" size="sm" variant="primary" />
-                  </div>
-                ) : (
-                  <>
-                    {activityCount > 0 && (
-                      <div className="activities-preview">
-                        {dayActivities.slice(0, 3).map((activity, i) => (
+                <div className="day-number">{date.getDate()}</div>
+                {dayActivities.length > 0 ? (
+                  dayActivities.map((activity, i) => (
                           <div
                             key={i}
-                            className={`activity-preview ${activity.priority.toLowerCase()}`}
-                            style={{ borderLeft: `3px solid ${getPriorityColor(activity.priority)}` }}
+                      className={`activity-badge ${activity.status ? activity.status.toLowerCase() : ''}`}
+                      title={activity.title}
                           >
-                            <div className="activity-title">
                               {activity.repairType}
                             </div>
-                            <div className="activity-vehicle">
-                              {activity.licensePlate}
-                            </div>
-                          </div>
-                        ))}
-
-                        {activityCount > 3 && (
-                          <div className="more-activities">
-                            +{activityCount - 3} more
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {activityCount === 0 && isCurrentMonth && (
+                  ))
+                ) : (
+                  isCurrentMonth && (
                       <div className="empty-day">
                         <button
                           className="add-activity-btn"
-                          onClick={(e) => {
+                        onClick={e => {
                             e.stopPropagation();
                             setShowRequestModal(true);
                           }}
@@ -402,8 +401,7 @@ const SchedulePage = () => {
                           <span>Schedule</span>
                         </button>
                       </div>
-                    )}
-                  </>
+                  )
                 )}
               </div>
             );
@@ -432,27 +430,24 @@ const SchedulePage = () => {
           <Row key={weekIndex} className="week-row g-0">
             {week.map((date, dayIndex) => {
               const isCurrentMonth = date.getMonth() === currentDate.getMonth();
-              const activityCount = getDayActivityCount(date);
+              const dateString = date.toISOString().split('T')[0];
+              const dayActivities = filteredActivities[dateString] || [];
               return (
                 <Col
                   key={dayIndex}
-                  className={`day-cell ${isCurrentMonth ? 'current-month' : 'other-month'} ${
-                    isToday(date) ? 'today' : ''
-                  }`}
+                  className={`day-cell ${isCurrentMonth ? 'current-month' : 'other-month'} ${isToday(date) ? 'today' : ''}`}
                   onClick={() => isCurrentMonth && handleDayClick(date)}
                 >
                   <div className="day-number">{date.getDate()}</div>
-                  <div className="day-activities-preview">
-                    {loading.schedules ? (
-                      <Spinner animation="border" size="sm" />
-                    ) : (
-                      isCurrentMonth && activityCount > 0 && (
-                        <div className="activity-count">
-                          {activityCount} {activityCount === 1 ? 'activity' : 'activities'}
+                  {dayActivities.map((activity, i) => (
+                    <div
+                      key={i}
+                      className={`activity-badge ${activity.status ? activity.status.toLowerCase() : ''}`}
+                      title={activity.title}
+                    >
+                      {activity.repairType}
                         </div>
-                      )
-                    )}
-                  </div>
+                  ))}
                 </Col>
               );
             })}
@@ -501,7 +496,6 @@ const SchedulePage = () => {
             <div className="activity-list">
               {dayActivities.map(activity => {
                 const activityProgress = progressUpdates.find(update => update.scheduleId === activity.id);
-
                 return (
                   <div key={activity.id} className={`activity-card activity-${activity.type}`}>
                     <div className="activity-time-badge">
@@ -519,11 +513,12 @@ const SchedulePage = () => {
                           {activity.priority}
                         </Badge>
                         <Badge pill bg={getStatusBadgeColor(activity.status)} className="ms-2">
-                          {activity.status}
+                          {activity.status}  {new Date(activity.completedDate).toLocaleString()}
                         </Badge>
+              
+                    
                       </div>
                     </div>
-
                     <div className="activity-main">
                       <div className="activity-details-grid">
                         <div className="detail-item">
@@ -532,51 +527,76 @@ const SchedulePage = () => {
                             {activity.vehicleMake} {activity.vehicleModel}
                           </span>
                         </div>
-
                         <div className="detail-item">
                           <span className="detail-label">License Plate:</span>
-                          <span className="detail-value">{activity.licensePlate}</span>
+                          <span className="detail-value" style={{ display: 'flex', alignItems: 'center', minHeight: 44 }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              position: 'relative',
+                              background: '#fff',
+                              border: '2.5px solid #222',
+                              borderRadius: '6px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+                              fontFamily: 'inherit, sans-serif',
+                              fontWeight: 300,
+                              fontSize: 36,
+                              color: '#181818',
+                              letterSpacing: 2,
+                              width: 290,
+                              height: 66,
+                              padding: '0 12px',
+                              margin: '2px 0',
+                              userSelect: 'all',
+                              overflow: 'hidden',
+                            }}>
+                              {activity.licensePlate}
+                              <span style={{ position: 'absolute', top: 3, right: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <img
+                                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Flag_of_Ghana.svg/640px-Flag_of_Ghana.svg.png"
+                                  alt="Ghana Flag"
+                                  style={{ width: 22, height: 14, border: '1px solid #222', borderRadius: 2, marginBottom: 1 }}
+                                />
+                                <span style={{ fontWeight: 700, color: '#181818', fontSize: 10, letterSpacing: 1, marginTop: 0 }}>GH</span>
+                              </span>
+                            </span>
+                          </span>
                         </div>
-
                         <div className="detail-item-mechanic">
                           <span className="detail-label">Assigned Mechanic:</span>
                           <span className="detail-value"> {activity.mechanic}</span>
                         </div>
                       </div>
-
-                      <div className="activity-reason">
-                        <h6>Reason:</h6>
-                        <p>{activity.reason}</p>
-                      </div>
-
+                      <div className="section-header"><i className="bi bi-info-circle"></i> Reason</div>
+                      <div className="activity-reason">{activity.reason}</div>
                       {activity.comments && (
+                        <>
+                          <div className="section-header"><i className="bi bi-chat-left-text"></i> Mechanic Notes</div>
                         <div className="activity-comments">
-                          <h6>Mechanic Notes:</h6>
                           <div className="comments-box">
                             <i className="bi bi-chat-left-quote"></i>
-                            <p>{activity.comments}</p>
+                              <span>{activity.comments}</span>
                           </div>
                         </div>
+                        </>
                       )}
-
+                      {(activityProgress || activity.completedDate) && (
+                        <>
+                          <div className="section-header"><i className="bi bi-flag"></i> Completion Info</div>
+                          <div className="completion-info">
                       {activityProgress && (
-                        <div className="activity-progress">
-                       
-                          <div className="progress-box">
-                          
-                            <p><strong>Expected Completion:</strong> {new Date(activityProgress.expectedCompletionDate).toLocaleString()}</p>
+                              <span className="progress-box"><strong>Expected:</strong> {new Date(activityProgress.expectedCompletionDate).toLocaleString()}</span>
+                            )}
 
                           </div>
-                        </div>
+                        </>
                       )}
-                                            {activityProgress && (
-                        <div className="activity-progress">
-                       
+                      {activityProgress && activityProgress.comment && (
+                        <div className="section-header"><i className="bi bi-chat-left-dots"></i> Progress Comment</div>
+                      )}
+                      {activityProgress && activityProgress.comment && (
                           <div className="progress-box">
-                          
-             
-                            <p><strong>Comment:</strong> {activityProgress.comment}</p>
-                          </div>
+                          <span><strong>Comment:</strong> {activityProgress.comment}</span>
                         </div>
                       )}
                     </div>
@@ -624,7 +644,7 @@ const SchedulePage = () => {
         <Modal.Header closeButton className="modal-header">
           <Modal.Title>
             <i className="bi bi-calendar-plus me-2"></i>
-            Schedule Maintenance
+            Schedule Request
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -642,7 +662,38 @@ const SchedulePage = () => {
               </div>
               <div className="detail-item">
                 <span className="detail-label">License Plate:</span>
-                <span className="detail-value">{selectedRequest.licensePlate}</span>
+                <span className="detail-value" style={{ display: 'flex', alignItems: 'center', minHeight: 44 }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    position: 'relative',
+                    background: '#fff',
+                    border: '2.5px solid #222',
+                    borderRadius: '6px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+                    fontFamily: 'Impact, Arial Black, Arial, sans-serif',
+                    fontWeight: 900,
+                    fontSize: 26,
+                    color: '#181818',
+                    letterSpacing: 2,
+                    width: 210,
+                    height: 44,
+                    padding: '0 12px',
+                    margin: '2px 0',
+                    userSelect: 'all',
+                    overflow: 'hidden',
+                  }}>
+                    {selectedRequest.licensePlate}
+                    <span style={{ position: 'absolute', top: 3, right: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <img
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Flag_of_Ghana.svg/640px-Flag_of_Ghana.svg.png"
+                        alt="Ghana Flag"
+                        style={{ width: 22, height: 14, border: '1px solid #222', borderRadius: 2, marginBottom: 1 }}
+                      />
+                      <span style={{ fontWeight: 700, color: '#181818', fontSize: 10, letterSpacing: 1, marginTop: 0 }}>GH</span>
+                    </span>
+                  </span>
+                </span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Priority:</span>
@@ -723,13 +774,12 @@ const SchedulePage = () => {
           >
             {loading.scheduling ? (
               <>
-                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                Scheduling...
+                <LoadingSpinner size="sm" text="Scheduling..." fullPage={false} />
               </>
             ) : (
               <>
                 <i className="bi bi-check-circle me-2"></i>
-                Schedule Maintenance
+                Request
               </>
             )}
           </Button>
@@ -758,8 +808,7 @@ const SchedulePage = () => {
         <Modal.Body>
           {loading.requests ? (
             <div className="text-center py-4">
-              <Spinner animation="border" />
-              <p className="mt-2">Loading requests...</p>
+              <LoadingSpinner size="sm" text="Loading requests..." fullPage={false} />
             </div>
           ) : approvedRequests.length > 0 ? (
             <ListGroup variant="flush" className="request-list">
@@ -830,21 +879,21 @@ const SchedulePage = () => {
     );
   };
 
+  const fetchAllProgressUpdatesModal = async () => {
+    setLoadingProgress(true);
+    try {
+      const response = await api.get('api/MaintenanceRequest/progress-updates');
+      setAllProgressUpdates(response.data);
+    } catch (err) {
+      setAllProgressUpdates([]);
+    } finally {
+      setLoadingProgress(false);
+    }
+  };
+
   return (
     <Container className="schedule-container">
-      {success && (
-        <Alert variant="success" onClose={() => setSuccess(null)} dismissible className="mt-3">
-          <i className="bi bi-check-circle-fill me-2"></i>
-          {success}
-        </Alert>
-      )}
-
-      {error && !showScheduleModal && (
-        <Alert variant="danger" onClose={() => setError(null)} dismissible className="mt-3">
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          {error}
-        </Alert>
-      )}
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
 
       <Row className="mb-4 align-items-center">
         <Col md={6}>
@@ -881,9 +930,6 @@ const SchedulePage = () => {
             >
               Week
             </Button>
-            <Button variant={viewMode === 'week' ? 'primary' : 'outline-primary'} onClick={goToToday}>
-              Today
-            </Button>
           </ButtonGroup>
           <ButtonGroup className="me-3">
             <Button variant="outline-secondary" onClick={goToPrevious}>
@@ -892,7 +938,7 @@ const SchedulePage = () => {
             <Button variant="outline-secondary" onClick={goToToday}>
               <div>
                 {viewMode === 'week'
-                  ? `Week of ${currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                  ? ` ${currentDate.toLocaleDateString('en-US', { month: 'long',  year: 'numeric' })}`
                   : currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </div>
             </Button>
@@ -903,6 +949,22 @@ const SchedulePage = () => {
           <Button variant="primary" onClick={() => setShowRequestModal(true)}>
             Requests ({approvedRequests.length})
           </Button>
+          <OverlayTrigger
+            placement="bottom"
+            overlay={<Tooltip id="progress-tooltip">View Progress Updates</Tooltip>}
+          >
+            <Button
+              variant="light"
+              className="rounded-circle ms-2 d-flex align-items-center justify-content-center"
+              style={{ border: '1px solid #ececec', boxShadow: 'none', width: 40, height: 40, padding: 0 }}
+              onClick={() => {
+                setShowProgressModal(true);
+                fetchAllProgressUpdatesModal();
+              }}
+            >
+              <i className="bi bi-list-check" style={{ fontSize: 20, color: '#2563eb' }}></i>
+            </Button>
+          </OverlayTrigger>
         </Col>
       </Row>
 
@@ -918,14 +980,90 @@ const SchedulePage = () => {
 
       {loading.schedules ? (
         <div className="text-center py-5 loading-state">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3">Loading schedule data...</p>
+          <LoadingSpinner size="md" text="Loading schedule data..." fullPage={false} />
         </div>
       ) : viewMode === 'week' ? renderWeekView() : renderMonthView()}
 
       {renderDayModal()}
       {renderRequestListModal()}
       {renderScheduleModal()}
+
+      <Modal
+        show={showProgressModal}
+        onHide={() => setShowProgressModal(false)}
+        size="lg"
+        centered
+        dialogClassName="progress-modal-lg"
+        backdropClassName="progress-modal-backdrop"
+      >
+        <Modal.Header closeButton style={{ border: 'none', background: '#f7f8fa', borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+          <Modal.Title className="fw-bold d-flex align-items-center" style={{ fontSize: 22 }}>
+            <i className="bi bi-list-check me-2 text-primary"></i> Progress Updates
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ background: '#f7f8fa', borderBottomLeftRadius: 16, borderBottomRightRadius: 16, padding: 32, minHeight: 500 }}>
+          {loadingProgress ? (
+            <div className="text-center py-4">
+              <LoadingSpinner size="md" text="Loading..." fullPage={false} />
+            </div>
+          ) : allProgressUpdates.length === 0 ? (
+            <div className="text-center text-muted py-5">
+              <i className="bi bi-emoji-neutral" style={{ fontSize: 48, color: '#b0b8c1' }}></i>
+              <div className="mt-3" style={{ fontSize: 20, fontWeight: 600 }}>No progress updates found.</div>
+              <div style={{ color: '#8a99b3', fontSize: 16, marginTop: 8 }}>Mechanics will post updates here as work progresses.</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {allProgressUpdates.map((update, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 18,
+                    background: '#fff',
+                    borderRadius: 18,
+                    boxShadow: '0 2px 16px rgba(37,99,235,0.07)',
+                    padding: '22px 28px',
+                    margin: 0,
+                    border: 'none',
+                    transition: 'box-shadow 0.18s, background 0.18s',
+                  }}
+                >
+                  <div style={{ flexShrink: 0, marginRight: 12 }}>
+                    <i className="bi bi-tools" style={{ fontSize: 28, color: '#2563eb', opacity: 0.85 }}></i>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: '#222', marginBottom: 2 }}>
+                      {update.vehicle?.make} {update.vehicle?.model}
+                      <span style={{ color: '#6c757d', fontWeight: 500, fontSize: 15, marginLeft: 10 }}>
+                        ({update.vehicle?.plate})
+                      </span>
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#2563eb', fontSize: 15, marginBottom: 2 }}>
+                      {update.mechanic}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginTop: 6, fontSize: 15 }}>
+                      <div style={{ color: '#374151' }}>
+                        <i className="bi bi-calendar-event me-1" style={{ color: '#2563eb' }}></i>
+                        <span style={{ fontWeight: 500 }}>Expected:</span> {update.expectedCompletionDate ? new Date(update.expectedCompletionDate).toLocaleString() : '-'}
+                      </div>
+                      <div style={{ color: '#374151' }}>
+                        <i className="bi bi-chat-left-text me-1" style={{ color: '#2563eb' }}></i>
+                        <span style={{ fontWeight: 500 }}>Comment:</span> {update.comment || '-'}
+                      </div>
+                      <div style={{ color: '#6c757d' }}>
+                        <i className="bi bi-clock-history me-1" style={{ color: '#2563eb' }}></i>
+                        <span style={{ fontWeight: 500 }}>Updated:</span> {update.timestamp ? new Date(update.timestamp).toLocaleString() : '-'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
     </Container>
   );
 };

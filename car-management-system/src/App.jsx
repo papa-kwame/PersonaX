@@ -148,7 +148,7 @@ function App() {
 
             <Route path="/mechanic" element={
               <ProtectedRoute requiredRoles={['Mechanic']}>
-                <MechanicDashboard />
+                <MechanicDashboard/>
               </ProtectedRoute>
             } />
 
