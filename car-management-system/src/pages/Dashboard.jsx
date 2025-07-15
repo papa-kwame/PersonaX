@@ -45,7 +45,7 @@ export default function Dashboard() {
           api.get("/VehicleAssignment/AllRequests"),
           api.get("/Vehicles"),
           api.get("/VehicleAssignment/AllAssignments"),
-          api.get("/MaintenanceRequest"),
+          api.get("/MaintenanceRequest/active-requests"),
         ]);
 
         const vehiclesData = vehiclesRes.data || [];

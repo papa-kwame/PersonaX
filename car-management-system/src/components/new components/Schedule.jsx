@@ -774,7 +774,7 @@ const SchedulePage = () => {
           >
             {loading.scheduling ? (
               <>
-                <LoadingSpinner size="sm" text="Scheduling..." fullPage={false} />
+                <LoadingSpinner size="12px" text="Scheduling..." />
               </>
             ) : (
               <>
@@ -801,7 +801,7 @@ const SchedulePage = () => {
           <Modal.Title>
             <div className='me22'>
               <i className="bi bi-list-check me-2 me333"></i>
-              Approved Requests ({approvedRequests.length})
+              Approved Requests 
             </div>
           </Modal.Title>
         </Modal.Header>

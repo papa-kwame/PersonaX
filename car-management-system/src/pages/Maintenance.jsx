@@ -165,9 +165,9 @@ const StatusBadge = styled(Chip)(({ theme, status }) => {
 const PriorityBadge = styled(Chip)(({ theme, priority }) => {
   let color;
   switch (priority) {
-    case 'High': color = theme.palette.error.main; break;
-    case 'Medium': color = theme.palette.warning.main; break;
     case 'Low': color = theme.palette.success.main; break;
+    case 'Medium': color = theme.palette.warning.main; break;
+    case 'High': color = theme.palette.error.main; break;
     case 'Critical': color = theme.palette.error.dark; break;
     default: color = theme.palette.grey[500];
   }
@@ -262,6 +262,10 @@ const MaintenanceRequestApp = () => {
   const [requestComments, setRequestComments] = useState([]);
   const [requestDocuments, setRequestDocuments] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
+  const [openRejectModal, setOpenRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectingRequestId, setRejectingRequestId] = useState(null);
+  const [rejectLoading, setRejectLoading] = useState(false);
 
   const processStageButtonRef = useRef(null);
 
@@ -303,15 +307,19 @@ const MaintenanceRequestApp = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [requestsRes, vehiclesRes, historyRes] = await Promise.all([
+        const [requestsRes, vehiclesRes, historyRes, myRequestsRes] = await Promise.all([
           api.get('/api/MaintenanceRequest/active-requests'),
           api.get('/api/Vehicles'),
-          api.get('/api/MaintenanceRequest/approved-rejected')
+          api.get('/api/MaintenanceRequest/approved-rejected'),
+          api.get(`/api/MaintenanceRequest/my-requests?userId=${userId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
         ]);
 
         setRequests(requestsRes.data.map(formatRequestData));
         setVehicles(vehiclesRes.data);
         setHistory(historyRes.data.map(formatRequestData));
+        setMyRequests(myRequestsRes.data.map(formatRequestData));
 
         const pendingRes = await api.get(`/api/MaintenanceRequest/my-pending-actions?userId=${userId}`, {
           headers: {
@@ -340,12 +348,6 @@ const MaintenanceRequestApp = () => {
   useEffect(() => {
     setActiveTab('myRequests');
   }, []);
-
-  useEffect(() => {
-    if (activeTab === 'myRequestsTab') {
-      fetchMyRequests();
-    }
-  }, [activeTab]);
 
   useEffect(() => {
     console.log('Selected Request State:', selectedRequest);
@@ -495,8 +497,9 @@ const MaintenanceRequestApp = () => {
         });
       }
       showNotification('Stage processed successfully!');
-      const [requestsRes, pendingRes] = await Promise.all([
-        api.get('/api/MaintenanceRequest'),
+      const [requestsRes, historyRes, pendingRes] = await Promise.all([
+        api.get('/api/MaintenanceRequest/active-requests'),
+        api.get('/api/MaintenanceRequest/approved-rejected'),
         api.get(`/api/MaintenanceRequest/my-pending-actions?userId=${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -504,6 +507,7 @@ const MaintenanceRequestApp = () => {
         })
       ]);
       setRequests(requestsRes.data.map(formatRequestData));
+      setHistory(historyRes.data.map(formatRequestData));
       setPendingActions(pendingRes.data.map(formatRequestData));
       setOpenStageDialog(false);
       setStageComments('');
@@ -519,24 +523,34 @@ const MaintenanceRequestApp = () => {
     }
   };
 
-  const handleRejectRequest = async (id) => {
+  const handleRejectRequest = (id) => {
+    const request = requests.find(r => r.id === id);
+    if (!request) {
+      showNotification('Request not found', 'error');
+      return;
+    }
+
+    if (request.currentStage !== 'Approve') {
+      showNotification('Only the final role can reject the request', 'error');
+      return;
+    }
+
+    setRejectingRequestId(id);
+    setRejectionReason('');
+    setOpenRejectModal(true);
+  };
+
+  const confirmRejectRequest = async () => {
+    if (!rejectionReason.trim()) {
+      showNotification('Please enter a reason for rejection', 'error');
+      return;
+    }
+    setRejectLoading(true);
+    // Debug logging for troubleshooting
+    console.log('Rejecting ID:', rejectingRequestId, 'User ID:', userId, 'Reason:', rejectionReason);
     try {
-      const request = requests.find(r => r.id === id);
-      if (!request) {
-        showNotification('Request not found', 'error');
-        return;
-      }
-
-      if (request.currentStage !== 'Approve') {
-        showNotification('Only the final role can reject the request', 'error');
-        return;
-      }
-
-      const rejectionReason = prompt("Please enter the reason for rejection:");
-      if (rejectionReason === null) return;
-
       await api.post(
-        `/api/MaintenanceRequest/${id}/reject?userId=${userId}`,
+        `/api/MaintenanceRequest/${rejectingRequestId}/reject?userId=${userId}`,
         rejectionReason,
         {
           headers: {
@@ -549,7 +563,7 @@ const MaintenanceRequestApp = () => {
       showNotification('Request rejected successfully!');
 
       const [requestsRes, pendingRes] = await Promise.all([
-        api.get('/api/MaintenanceRequest/AllRequests'),
+        api.get('/api/MaintenanceRequest/active-requests'),
         api.get(`/api/MaintenanceRequest/my-pending-actions?userId=${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -559,12 +573,16 @@ const MaintenanceRequestApp = () => {
 
       setRequests(requestsRes.data.map(formatRequestData));
       setPendingActions(pendingRes.data.map(formatRequestData));
+      setOpenRejectModal(false);
+      setRejectionReason('');
+      setRejectingRequestId(null);
     } catch (error) {
-      const errorMessage = error.response?.data?.title ||
-        error.response?.data?.message ||
-        error.message ||
-        'Failed to reject request';
+      // Enhanced error notification for easier debugging
+      const errorMessage = `Status: ${error.response?.status || 'N/A'} | ${error.response?.data?.title || error.response?.data?.message || error.message || 'Failed to reject request'}`;
       showNotification(errorMessage, 'error');
+      console.error('Reject API error:', error);
+    } finally {
+      setRejectLoading(false);
     }
   };
 
@@ -1261,16 +1279,6 @@ const MaintenanceRequestApp = () => {
           >
             Process Current Stage
           </StyledButton>
-        )}
-
-        {isCommitStage && (
-          <StyledTextField
-            label="Estimated Cost ($)"
-            type="number"
-            value={formData.estimatedCost}
-            onChange={(e) => setFormData(prev => ({ ...prev, estimatedCost: e.target.value }))}
-            inputProps={{ min: 0, step: 0.01 }}
-          />
         )}
 
         {isFinalStage && (
@@ -2095,7 +2103,7 @@ const MaintenanceRequestApp = () => {
                           {request.vehicleMake} {request.vehicleModel} ({request.licensePlate})
                         </Typography>
                         <Typography variant="body2" sx={{ color: professionalColors.textSecondary }}>
-                          {request.requestType} • Completed on {format(request.completionDate, 'PP')}
+                          {request.requestType} 
                         </Typography>
                       </Box>
                       <Box sx={{
@@ -2156,6 +2164,49 @@ const MaintenanceRequestApp = () => {
               onClick={() => setOpenHistoryDialog(false)}
             >
               Close
+            </StyledButton>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={openRejectModal}
+          onClose={() => setOpenRejectModal(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: '16px' } }}
+        >
+          <DialogTitle sx={{ fontWeight: 600, borderBottom: `1px solid ${professionalColors.border}`, backgroundColor: professionalColors.surface, fontSize: '1.25rem' }}>
+            Reject Maintenance Request
+          </DialogTitle>
+          <DialogContent sx={{ py: 3 }}>
+            <StyledTextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Rejection Reason"
+              value={rejectionReason}
+              onChange={e => setRejectionReason(e.target.value)}
+              required
+              autoFocus
+            />
+          </DialogContent>
+          <DialogActions sx={{ p: 2, borderTop: `1px solid ${professionalColors.border}`, backgroundColor: professionalColors.surface }}>
+            <StyledButton
+              onClick={() => setOpenRejectModal(false)}
+              sx={{ color: professionalColors.textSecondary, '&:hover': { backgroundColor: alpha(professionalColors.textSecondary, 0.05) } }}
+              disabled={rejectLoading}
+            >
+              Cancel
+            </StyledButton>
+            <StyledButton
+              onClick={confirmRejectRequest}
+              variant="contained"
+              color="error"
+              sx={{ backgroundColor: professionalColors.error, '&:hover': { backgroundColor: alpha(professionalColors.error, 0.9) } }}
+              disabled={rejectLoading}
+              startIcon={rejectLoading ? <CircularProgress size={20} color="inherit" /> : null}
+            >
+              {rejectLoading ? 'Rejecting...' : 'Reject'}
             </StyledButton>
           </DialogActions>
         </Dialog>

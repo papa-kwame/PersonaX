@@ -603,9 +603,12 @@ const Assignment = () => {
             borderRadius: 4,
             boxShadow: '0 4px 24px rgba(25, 118, 210, 0.08)',
             p: 0,
-            borderLeft: `6px solid`,
             borderColor: stat.color,
             background: '#fff',
+            boxShadow: '0 12px 40px 0 rgba(60, 80, 180, 0.18)',
+            border: '1.5px solid rgba(10, 11, 14, 0.17)',
+            backdropFilter: 'blur(8px)',
+            position: 'relative',
             minWidth: 0
           }}>
             <CardContent sx={{ p: 3 ,width: '474px' }}>
@@ -1176,32 +1179,7 @@ const Assignment = () => {
                     { label: 'VIN', value: vehicle.vin },
                     { label: 'Color', value: vehicle.color },
                     { label: 'Vehicle Type', value: vehicle.vehicleType },
-                    {
-                      label: 'Status',
-                      value: (
-                        <Box sx={{ display: 'inline-flex', alignItems: 'center', mt: 0.5 }}>
-                          <Box
-                            sx={{
-                              background: statusColor,
-                              color: '#fff',
-                              fontWeight: 300,
-                              fontSize: '0.95em',
-                              borderRadius: '999px',
-                              px: 2,
-                              py: 0.5,
-                              boxShadow: '0 1px 6px rgba(0,0,0,0.08)',
-                              letterSpacing: 0.5,
-                              mr: 1,
-                              minWidth: 80,
-                              textAlign: 'center',
-                              transition: 'all 0.18s',
-                            }}
-                          >
-                            {vehicle.status}
-                          </Box>
-                        </Box>
-                      )
-                    }
+                   
                   ].map((item, index) => (
                     <Grid item xs={6} key={index}>
                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', fontWeight: 500 }}>
@@ -2199,14 +2177,6 @@ const Assignment = () => {
                   sx: { borderRadius: '12px' }
                 }}
               />
-              <Button
-                variant="outlined"
-                startIcon={<FilterIcon />}
-                sx={{ borderRadius: '12px' }}
-                onClick={() => setState(prev => ({ ...prev, showFilters: !prev.showFilters }))}
-              >
-                Filters
-              </Button>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}

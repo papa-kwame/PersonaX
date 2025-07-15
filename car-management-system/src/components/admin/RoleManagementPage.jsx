@@ -42,21 +42,15 @@ import {
   PersonOff,
   Shield,
   Search,
+  People,
   Business,
   Check,
   Close,
   MoreVert,
   Lock,
   LockOpen,
+  Person
 } from '@mui/icons-material';
-import {
-  PersonCheck,
-  PlusCircle,
-  Trash,
-  PencilSquare,
-  People,
-  Person,
-} from 'react-bootstrap-icons';
 
 const API_BASE = 'https://localhost:7092/api';
 const API_ENDPOINTS = {
@@ -248,7 +242,7 @@ const RoleManagementPage = () => {
     setAnchorEl(null);
   };
 
-  // Helper: filter out 'default' department from all lists/dropdowns
+8  // Helper: filter out 'default' department from all lists/dropdowns
   const filteredDepartments = Array.isArray(data.departments)
     ? data.departments.filter(
         d =>
@@ -271,8 +265,8 @@ const RoleManagementPage = () => {
       />
       
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-        <Box sx={{  borderRadius: '50%', p: 2, mr: 2 }}>
-          <LockOpen color="primary" />
+        <Box sx={{  borderRadius: '50%', p: 2, mr: 2,backgroundColor: '#00000022' }}>
+          <LockOpen color="primary"  />
         </Box>
         <Box>
           <Typography variant="h6" component="h2" sx={{ fontWeight: '300' }}>
@@ -345,10 +339,10 @@ const RoleManagementPage = () => {
                           <TableRow key={user.id} hover sx={{ borderRadius: 3, transition: 'background 0.2s' }}>
                             <TableCell>
                               <Stack direction="row" alignItems="center" spacing={2}>
-                                <Avatar sx={{  fontWeight: 700 }}>
+                                <Avatar sx={{ bgcolor: '#e3e8f0', color: '#4a5a6a', fontWeight: 700 }}>
                                   <Person />
                                 </Avatar>
-                                <Typography fontWeight={700} sx={{ textTransform: 'capitalize' }}>{user.name || user.email.split('@')[0]}</Typography>
+                                <Typography fontWeight={400} sx={{ textTransform: 'capitalize' }}>{user.name || user.email.split('@')[0]}</Typography>
                               </Stack>
                             </TableCell>
                             <TableCell sx={{ color: 'text.secondary' }}>{user.email}</TableCell>
@@ -419,33 +413,7 @@ const RoleManagementPage = () => {
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
             Manage System Roles
           </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-            <TextField
-              variant="outlined"
-                      placeholder="Search roles..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1);
-                      }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ width: 300, mr: 2 }}
-            />
-                  <Button 
-              variant="contained"
-              color="primary"
-              onClick={() => setShowCreateRoleModal(true)}
-              startIcon={<AddCircleOutline />}
-            >
-              Create Role
-                  </Button>
-          </Box>
+ 
           <TableContainer component={Paper} sx={{ borderRadius: 4, boxShadow: '0 2px 12px rgba(60,72,100,0.07)' }}>
             <Table>
               <TableHead sx={{ bgcolor: '#f5f7fa' }}>
@@ -488,16 +456,7 @@ const RoleManagementPage = () => {
               </TableBody>
                     </Table>
           </TableContainer>
-          {filteredUsers.length > itemsPerPage && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Pagination
-                count={totalPages}
-                page={currentPage}
-                onChange={paginate}
-                color="primary"
-              />
-            </Box>
-          )}
+
           <Modal open={showCreateRoleModal} onClose={() => setShowCreateRoleModal(false)}>
             <Box sx={{ ...modalStyle, width: 400, borderRadius: 4, p: 4 }}>
               <Typography variant="h6" component="h2" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>

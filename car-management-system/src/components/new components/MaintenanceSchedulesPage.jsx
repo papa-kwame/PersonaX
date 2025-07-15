@@ -19,6 +19,16 @@ import {
   Description as DescriptionIcon,
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
+import {
+  PersonCheck,
+  PlusCircle,
+  Trash,
+  PencilSquare,
+  People,
+  Search,
+  Person,
+  Hourglass
+} from 'react-bootstrap-icons';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ProgressUpdates from './ProgressUpdates';
@@ -37,7 +47,6 @@ const MaintenanceDashboard = () => {
   const [viewMode, setViewMode] = useState('list');
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
 
-  // Form states
   const [completeForm, setCompleteForm] = useState({
     laborHours: 0,
     totalCost: 0,
@@ -48,7 +57,6 @@ const MaintenanceDashboard = () => {
     comment: ''
   });
 
-  // Add state for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const assignmentsPerPage = 9;
   const totalPages = Math.ceil(schedules.length / assignmentsPerPage);
@@ -277,7 +285,7 @@ const MaintenanceDashboard = () => {
                     mb: 1,
                     gap: 2
                   }}>
-                    <span style={{ fontSize: 24, marginLeft: 8, marginRight: 12 }}>🔍</span>
+                    <Search fontSize={24} />
                     <TextField
                       fullWidth
                       variant="standard"
@@ -285,15 +293,15 @@ const MaintenanceDashboard = () => {
                       value={searchText}
                       onChange={e => setSearchText(e.target.value)}
                       InputProps={{ disableUnderline: true, sx: { fontSize: 20, pl: 1, background: 'transparent' } }}
-                      sx={{ flex: 1, fontWeight: 600, fontSize: 20, background: 'transparent' }}
+                      sx={{ flex: 1, fontWeight: 300, fontSize: 15, background: 'transparent' }}
                     />
                     <Button
                       variant="outlined"
                       color="primary"
-                      startIcon={<span style={{ fontSize: 20 }}>⏳</span>}
+                      startIcon={<Hourglass/>}
                       endIcon={<span style={{ fontSize: 18 }}>{filtersOpen ? '▲' : '▼'}</span>}
                       onClick={() => setFiltersOpen(f => !f)}
-                      sx={{ fontWeight: 700, borderRadius: 3, px: 2, py: 1, fontSize: 16 }}
+                      sx={{ fontWeight: 300, borderRadius: 3, px: 2, py: 1, fontSize: 16 }}
                     >
                       Filters
                     </Button>
@@ -361,10 +369,10 @@ const MaintenanceDashboard = () => {
                   </Collapse>
                 </Box>
                 {/* Two-column layout: schedules list (left), progress updates (right) */}
-                <Box sx={{ display: 'flex', gap: 4, mt: 3, width: '100%', maxWidth: 1400, mx: 'auto' }}>
+                <Box sx={{ display: 'flex', gap: 4, mt: 3, width: '100%', maxWidth: 1150, mx: 'auto',minHeight:'600px' }}>
                   {/* Schedules List */}
                   <Paper elevation={3} sx={{ flex: 1.2, p: 2, borderRadius: 4, minWidth: 400, maxHeight: 700, overflowY: 'auto' }}>
-                    <Typography variant="h6" fontWeight={900} color="primary.main" sx={{ mb: 2 }}>
+                    <Typography variant="h6" fontWeight={500}  sx={{ mb: 2 }}>
                       Scheduled Maintenance
                     </Typography>
                     {filteredSchedules.length === 0 ? (
@@ -384,8 +392,8 @@ const MaintenanceDashboard = () => {
                               sx={{
                                 mb: 2,
                                 borderRadius: 3,
-                                boxShadow: '0 2px 8px rgba(25, 118, 210, 0.10)',
-                                background: selectedSchedule && selectedSchedule.id === schedule.id ? '#e3f0ff' : '#f9fafd',
+                               boxShadow:'rgba(0, 0, 0, 0.16) 0px 1px 4px',
+                                background: selectedSchedule && selectedSchedule.id === schedule.id ? '#fff' : '#f9fafd',
                                 position: 'relative',
                                 pl: 3,
                                 pr: 3,
@@ -821,12 +829,10 @@ const MaintenanceDashboard = () => {
       </Box>
  
       <Box sx={{
-        flex: { xs: 'unset', md: 3 },
         minWidth: 0,
         width: { xs: '100%', md: '30%' },
         borderRadius: 4,
-        p: { xs: 1, sm: 2, md: 3 },
-        maxHeight: { md: '80vh' },
+        maxHeight: { md: '100vh' },
         overflowY: 'auto',
         position: 'sticky',
 

@@ -56,6 +56,8 @@ const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 8;
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const loadUsers = async () => {
     try {
@@ -167,20 +169,29 @@ const AdminUsers = () => {
 
   const deleteUser = async (id) => {
     if (!isAdmin) return;
+    setUserToDelete(users.find((u) => u.id === id));
+    setDeleteModalOpen(true);
+  };
 
-    const confirmDelete = window.confirm('Are you sure you want to delete this user?');
-    if (!confirmDelete) return;
-
+  const confirmDeleteUser = async () => {
+    if (!isAdmin || !userToDelete) return;
     try {
       setBusy(true);
-      await api.delete(`/api/Auth/users/${id}`);
+      await api.delete(`/api/Auth/users/${userToDelete.id}`);
       await loadUsers();
       toast.success('User deleted successfully');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete user');
     } finally {
       setBusy(false);
+      setDeleteModalOpen(false);
+      setUserToDelete(null);
     }
+  };
+
+  const cancelDeleteUser = () => {
+    setDeleteModalOpen(false);
+    setUserToDelete(null);
   };
 
   const toggleLock = async (id) => {
@@ -302,7 +313,7 @@ const AdminUsers = () => {
                         <Avatar sx={{   fontWeight: 700 }}>
                           <Person />
                         </Avatar>
-                        <Typography fontWeight={600}>{u.userName}</Typography>
+                        <Typography fontWeight={400}>{u.userName}</Typography>
                       </Stack>
                     </TableCell>
                     <TableCell sx={{ color: 'text.secondary' }}>{u.email}</TableCell>
@@ -465,6 +476,50 @@ const AdminUsers = () => {
               </Button>
             </Stack>
           </form>
+        </Box>
+      </Modal>
+
+      <Modal open={deleteModalOpen} onClose={cancelDeleteUser}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 380,
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 4,
+          }}
+        >
+          <Typography variant="h6" mb={2} fontWeight={700} color="error.main">
+            Confirm Deletion
+          </Typography>
+          <Typography mb={3} color="text.secondary">
+            Are you sure you want to delete user{' '}
+            <b>{userToDelete?.userName}</b>? This action cannot be undone.
+          </Typography>
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={cancelDeleteUser}
+              sx={{ borderRadius: 2, px: 4, py: 1.2, fontWeight: 700 }}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={confirmDeleteUser}
+              sx={{ borderRadius: 2, px: 4, py: 1.2, fontWeight: 700 }}
+              disabled={busy}
+            >
+              Delete
+            </Button>
+          </Stack>
         </Box>
       </Modal>
     </Box>

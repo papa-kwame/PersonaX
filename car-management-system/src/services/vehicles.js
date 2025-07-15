@@ -85,3 +85,13 @@ export const getAllVehiclesSimple = async () => {
     throw error;
   }
 };
+
+export const getVehiclesWithDueDates = async (days = 30) => {
+  try {
+    const response = await api.get(`/api/vehicles/due-dates?days=${days}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching vehicles with due dates:', error);
+    throw error;
+  }
+};

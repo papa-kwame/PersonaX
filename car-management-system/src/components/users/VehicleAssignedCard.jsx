@@ -365,7 +365,6 @@ const GhanaianLicensePlate = ({ licensePlate }) => {
           color: '#181818',
           fontSize: 34,
           lineHeight: 1,
-          textShadow: '0 1px 0 #fff, 0 2px 2px #bbb',
         }}>{suffix}</Typography>
       </Box>
       {/* Ghana flag and GH at top right */}
@@ -375,7 +374,6 @@ const GhanaianLicensePlate = ({ licensePlate }) => {
           alt="Ghana Flag"
           style={{ width: 32, height: 20, border: '1px solid #222', borderRadius: 2, marginBottom: 1 }}
         />
-        <Typography variant="caption" sx={{ fontWeight:700, color: '#181818', fontSize: 13, letterSpacing: 1, mt: 0.5 }}>GH</Typography>
       </Box>
       {/* GH at bottom right */}
       <Typography variant="caption" sx={{

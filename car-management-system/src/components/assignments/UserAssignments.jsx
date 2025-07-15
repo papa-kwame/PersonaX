@@ -72,6 +72,8 @@ import PendingActionsRoundedIcon from '@mui/icons-material/PendingActionsRounded
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useRef} from 'react';
 
 // Custom styled components
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -656,6 +658,12 @@ const VehicleAssignmentApp = () => {
   const [processStageError, setProcessStageError] = useState(null);
   const [processStageSuccess, setProcessStageSuccess] = useState(false);
   const [processedRequests, setProcessedRequests] = useState([]);
+  const [detailsFromHistory, setDetailsFromHistory] = useState(false); // <-- add this
+  const [highlightedRequest, setHighlightedRequest] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const highlightId = new URLSearchParams(location.search).get('highlight');
+  const pendingRefs = useRef({});
 
   const [formData, setFormData] = useState({
     vehicleId: '',
@@ -669,21 +677,25 @@ const VehicleAssignmentApp = () => {
   const formatRequestData = (request) => {
     const formatted = {
       ...request,
+      id: request.id || request.requestId || request._id,
       priority: reverseMappings.priority[request.priority] || request.priority,
       status: reverseMappings.status[request.status] || request.status,
       requestedByUserName: request.userName || request.requestedByUserName,
-      requestedByUserEmail: request.email || request.userEmail,
+      requestedByUserEmail: request.email || request.userEmail || request.requestedByUserEmail || '',
+      requestReason: request.requestReason || request.reason || '',
+      requestType: request.requestType || request.type || '',
+      completionDate: request.completionDate || request.completedDate || request.dateCompleted || '',
       vehicle: request.vehicle || {},
     };
 
-    if (request.requestDate) {
-      formatted.requestDate = safeFormat(request.requestDate, 'PPpp');
+    if (formatted.requestDate) {
+      formatted.requestDate = safeFormat(formatted.requestDate, 'PPpp');
     }
-    if (request.completionDate) {
-      formatted.completionDate = safeFormat(request.completionDate, 'PPpp');
+    if (formatted.completionDate) {
+      formatted.completionDate = safeFormat(formatted.completionDate, 'PPpp');
     }
-    if (request.approvedDate) {
-      formatted.approvedDate = safeFormat(request.approvedDate, 'PPpp');
+    if (formatted.approvedDate) {
+      formatted.approvedDate = safeFormat(formatted.approvedDate, 'PPpp');
     }
 
     return formatted;
@@ -696,13 +708,16 @@ const VehicleAssignmentApp = () => {
         const [requestsRes, vehiclesRes, historyRes, myRequestsRes] = await Promise.all([
           api.get('/api/VehicleAssignment/RequestsBeforeApproval'),
           api.get('/api/Vehicles'),
-          api.get('/api/VehicleAssignment/AllAssignments'),
+          api.get('/api/VehicleAssignment/ApprovedRequests'), // <-- updated endpoint
           api.get(`/api/VehicleAssignment/MyVehicleRequests/${userId}`, {
             headers: {
               Authorization: `Bearer ${token}`
             }
           })
         ]);
+
+        // TEMP: Log the API response for debugging
+        console.log('History API data:', historyRes.data);
 
         setRequests(requestsRes.data.map(formatRequestData));
         setVehicles(vehiclesRes.data);
@@ -732,6 +747,38 @@ const VehicleAssignmentApp = () => {
       fetchData();
     }
   }, [isAuthenticated, token, userId]);
+
+  useEffect(() => {
+    if (activeTab === 'myRequests' && highlightId && pendingRefs.current[highlightId]) {
+      setHighlightedRequest(highlightId);
+      pendingRefs.current[highlightId].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Remove highlight param from URL
+      const params = new URLSearchParams(location.search);
+      params.delete('highlight');
+      navigate({ search: params.toString() }, { replace: true });
+      // Remove highlight after 5 seconds
+      const timeout = setTimeout(() => setHighlightedRequest(null), 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [pendingActions, highlightId, location.search, navigate, activeTab]);
+
+  useEffect(() => {
+    // After history is loaded, fetch workflowStatus for each
+    const fetchAllWorkflowStatuses = async () => {
+      if (!history.length) return;
+      const updatedHistory = await Promise.all(history.map(async (req) => {
+        try {
+          const res = await api.get(`/api/VehicleAssignment/vehicle-requests/${req.id}/workflow-status`);
+          return { ...req, workflowStatus: res.data };
+        } catch {
+          return req; // fallback if error
+        }
+      }));
+      setHistory(updatedHistory);
+    };
+    fetchAllWorkflowStatuses();
+    // eslint-disable-next-line
+  }, [history.length]);
 
   const fetchWorkflowStatus = async (requestId) => {
     try {
@@ -844,8 +891,9 @@ const VehicleAssignmentApp = () => {
           showNotification(response.data.message, 'success');
         }
       }
-      const [requestsRes, pendingRes] = await Promise.all([
-        api.get('/api/VehicleAssignment/AllRequests'),
+      const [requestsRes, historyRes, pendingRes] = await Promise.all([
+        api.get('/api/VehicleAssignment/RequestsBeforeApproval'),
+        api.get('/api/VehicleAssignment/ApprovedRequests'),
         api.get(`/api/VehicleAssignment/my-pending-actions?userId=${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -853,12 +901,16 @@ const VehicleAssignmentApp = () => {
         })
       ]);
       setRequests(requestsRes.data.map(formatRequestData));
+      setHistory(historyRes.data.map(formatRequestData));
       setPendingActions(pendingRes.data.map(formatRequestData));
       setProcessStageSuccess(true);
       setProcessedRequests(prev => [...prev, selectedRequest.id]);
       setStageComments('');
       fetchWorkflowStatus(selectedRequest.id);
       fetchRequestComments(selectedRequest.id);
+      // Close the modal after successful process
+      setOpenStageDialog(false);
+      setProcessStageSuccess(false);
     } catch (error) {
       const errorMessage = error.response?.data?.title ||
                         error.response?.data?.message ||
@@ -966,6 +1018,21 @@ const VehicleAssignmentApp = () => {
       case 'Approved': return <ThumbUpIcon fontSize="small" />;
       default: return <ScheduleIcon fontSize="small" />;
     }
+  };
+
+  // Helper to get Approve action timestamp for history cards
+  const getApproveDate = (request) => {
+    if (
+      request.workflowStatus &&
+      request.workflowStatus.completedActions &&
+      request.workflowStatus.completedActions.Approve &&
+      request.workflowStatus.completedActions.Approve.length > 0
+    ) {
+      // Use the last Approve action (in case of multiple)
+      const approveAction = request.workflowStatus.completedActions.Approve.slice(-1)[0];
+      return approveAction.timestamp;
+    }
+    return request.completionDate || request.completedDate || request.dateCompleted || null;
   };
 
   if (loading) {
@@ -1138,6 +1205,7 @@ const VehicleAssignmentApp = () => {
                       onClick={() => {
                         setSelectedRequest(request);
                         setOpenDetailsDialog(true);
+                        setDetailsFromHistory(false); // <-- add this
                         fetchWorkflowStatus(request.id);
                         fetchRequestComments(request.id);
                       }}
@@ -1307,26 +1375,29 @@ const VehicleAssignmentApp = () => {
                   {pendingActions.map((request) => (
                     <StyledPaper
                       key={request.id}
+                      ref={el => pendingRefs.current[request.id] = el}
                       elevation={0}
-                      onClick={() => {
-                        setSelectedRequest(request);
-                        setOpenDetailsDialog(true);
-                        fetchWorkflowStatus(request.id);
-                        fetchRequestComments(request.id);
-                      }}
                       sx={{
                         cursor: 'pointer',
                         p: 2.5,
                         borderRadius: 2,
                         transition: 'all 0.2s ease',
-                        backgroundColor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'divider',
+                        backgroundColor: highlightedRequest === String(request.id) ? 'rgba(59,130,246,0.08)' : 'background.paper',
+                        border: highlightedRequest === String(request.id) ? '2.5px solid #2563eb' : '1px solid',
+                        borderColor: highlightedRequest === String(request.id) ? '#2563eb' : 'divider',
+                        boxShadow: highlightedRequest === String(request.id) ? '0 4px 24px rgba(37,99,235,0.12)' : undefined,
                         '&:hover': {
                           transform: 'translateY(-2px)',
                           boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                           borderColor: 'primary.light'
-                        }
+                        },
+                      }}
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setOpenDetailsDialog(true);
+                        setDetailsFromHistory(false); // <-- add this
+                        fetchWorkflowStatus(request.id);
+                        fetchRequestComments(request.id);
                       }}
                     >
                       <Box sx={{
@@ -1485,6 +1556,7 @@ const VehicleAssignmentApp = () => {
                       onClick={() => {
                         setSelectedRequest(request);
                         setOpenDetailsDialog(true);
+                        setDetailsFromHistory(false); // <-- add this
                         fetchWorkflowStatus(request.id);
                         fetchRequestComments(request.id);
                       }}
@@ -1821,16 +1893,18 @@ const VehicleAssignmentApp = () => {
                   workflowStatus={workflowStatus}
                   requestComments={requestComments}
                 />
-                <ActionButtons
-                  request={selectedRequest}
-                  onProcessStage={() => {
-                    setOpenStageDialog(true);
-                    fetchWorkflowStatus(selectedRequest.id);
-                  }}
-                  onRejectRequest={() => handleRejectRequest(selectedRequest.id)}
-                  currentTab={activeTab}
-                  isProcessed={processedRequests.includes(selectedRequest.id)}
-                />
+                {!detailsFromHistory && (
+                  <ActionButtons
+                    request={selectedRequest}
+                    onProcessStage={() => {
+                      setOpenStageDialog(true);
+                      fetchWorkflowStatus(selectedRequest.id);
+                    }}
+                    onRejectRequest={() => handleRejectRequest(selectedRequest.id)}
+                    currentTab={activeTab}
+                    isProcessed={processedRequests.includes(selectedRequest.id)}
+                  />
+                )}
               </>
             )}
           </DialogContent>
@@ -1947,6 +2021,9 @@ const VehicleAssignmentApp = () => {
                     onClick={() => {
                       setSelectedRequest(request);
                       setOpenDetailsDialog(true);
+                      setDetailsFromHistory(true); 
+                      fetchWorkflowStatus(request.id);
+                      fetchRequestComments(request.id);
                     }}
                     sx={{
                       cursor: 'pointer',
@@ -1975,10 +2052,10 @@ const VehicleAssignmentApp = () => {
                     }}>
                       <Box sx={{ flex: 1, minWidth: 200 }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                          {request.requestReason} - Requested by {request.requestedByUserEmail}
+                          {(request.requestReason || request.reason || 'No reason provided') + ' - Requested by ' + ( request.userName || 'Unknown')}
                         </Typography>
                         <Typography variant="body2" sx={{ color: professionalColors.textSecondary }}>
-                          {request.requestType} • Completed on {safeFormat(request.completionDate, 'PP')}
+                          {(request.requestType || 'Vehicle Request')}    Completed on {getApproveDate(request) ? safeFormat(getApproveDate(request), 'PP') : 'N/A'}
                         </Typography>
                       </Box>
                       <Box sx={{

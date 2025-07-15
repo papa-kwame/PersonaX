@@ -166,6 +166,7 @@
   width: 250px;
 }
 
+
 .day-cell:last-child {
   border-right: none;
 }
@@ -397,7 +398,7 @@
   border-radius: 50%;
   height: 20px;
   width: 20px;
-  background-color: #259dffe8;
+  background-color: #dddee0ac;
   font-size: 22px;
   padding: 20px;
   display: flex;
@@ -693,7 +694,9 @@
   box-shadow: 0 8px 32px rgba(37, 99, 235, 0.10);
   border: none;
 }
-
+.requests-modal{
+  background-color: #00000022;
+}
 .request-list {
   display: flex;
   flex-direction: column;

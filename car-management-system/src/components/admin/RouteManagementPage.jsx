@@ -281,7 +281,7 @@ const RouteManagementPage = () => {
   };
 
   const saveRoute = async () => {
-    if (!currentRoute.name?.trim() || !currentRoute.department) {
+    if (!currentRoute.name?.trim() || (!currentRoute.department && !currentRoute.isDefault)) {
       addToast('Route name and department are required', 'error');
       return;
     }
@@ -474,8 +474,8 @@ const RouteManagementPage = () => {
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar sx={{ bgcolor: 'primary.light', width: 56, height: 56, mr: 2 }}>
-            <LockIcon color="primary" />
+          <Avatar sx={{ width: 56, height: 56, mr: 2,backgroundColor: '#00000022' }}>
+            <LockIcon color="black" />
           </Avatar>
           <Box>
             <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
@@ -502,22 +502,7 @@ const RouteManagementPage = () => {
       </Box>
 
       <Card sx={{ boxShadow: 'none', backgroundColor: 'transparent' }}>
-        <Tabs
-          value={activeTab}
-          onChange={(event, newValue) => setActiveTab(newValue)}
-          sx={{ px: 3, pt: 2 }}
-          variant="fullWidth"
-        >
-          <Tab
-            value="routes"
-            label={
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <ShieldIcon sx={{ mr: 1 }} fontSize="small" />
-                <Typography>Routes</Typography>
-              </Box>
-            }
-          />
-        </Tabs>
+
 
         <Box sx={{ p: 3 }}>
           {loading && !routes.length ? (
@@ -607,7 +592,7 @@ const RouteManagementPage = () => {
           ) : (
             <Box sx={{ textAlign: 'center', py: 5 }}>
               <Avatar sx={{ bgcolor: 'primary.light', width: 64, height: 64, mb: 2, mx: 'auto' }}>
-                <ShieldIcon color="primary" />
+                <ShieldIcon color="black" />
               </Avatar>
               <Typography variant="h5" sx={{ color: '#2c3e50', mb: 2 }}>
                 No routes created yet
@@ -664,7 +649,7 @@ const RouteManagementPage = () => {
                     variant="outlined"
                     value={currentRoute.name}
                     onChange={(e) => setCurrentRoute({ ...currentRoute, name: e.target.value })}
-                    placeholder="e.g. Payroll Approval"
+                    placeholder="e.g. Vehicle Approval"
                     error={!currentRoute.name?.trim()}
                     helperText={!currentRoute.name?.trim() ? "Route name is required" : ""}
                     sx={{ mb: 3 }}
@@ -681,17 +666,20 @@ const RouteManagementPage = () => {
                         }
                       }}
                       disabled={currentRoute.isDefault}
-                      error={!currentRoute.department}
+                      error={!currentRoute.department && !currentRoute.isDefault}
                       label="Department"
                     >
                       <MenuItem value="">
                         <em>Select department</em>
                       </MenuItem>
-                      {departmentOptions.map(dept => (
+                      {departmentOptions.filter(dept => dept.toLowerCase() !== 'default').map(dept => (
                         <MenuItem key={dept} value={dept}>{dept}</MenuItem>
                       ))}
+                      {currentRoute.isDefault && (
+                        <MenuItem value="Default">Default</MenuItem>
+                      )}
                     </Select>
-                    {!currentRoute.department && <Typography variant="caption" color="error">Department is required</Typography>}
+                    {!currentRoute.department && !currentRoute.isDefault && <Typography variant="caption" color="error">Department is required</Typography>}
                   </FormControl>
                 </Grid>
               </Grid>
@@ -718,7 +706,7 @@ const RouteManagementPage = () => {
                         setCurrentRoute({
                           ...currentRoute,
                           isDefault,
-                          department: isDefault ? 'Default' : currentRoute.department
+                          department: isDefault ? 'Default' : ''
                         });
                       }}
                     />
@@ -825,7 +813,6 @@ const RouteManagementPage = () => {
                     <Select
                       value={selectedUserRole}
                       onChange={(e) => setSelectedUserRole(e.target.value)}
-                      disabled={currentRoute.users.some(u => u.role === selectedUserRole)}
                     >
                       {requiredRolesInOrder.map(role => (
                         <MenuItem
@@ -902,7 +889,7 @@ const RouteManagementPage = () => {
             <Button
               variant="contained"
               onClick={saveRoute}
-              disabled={loading || !currentRoute.name || !currentRoute.department || currentRoute.users.length !== 4}
+              disabled={loading || !currentRoute.name || (!currentRoute.department && !currentRoute.isDefault)}
               sx={{
                 backgroundColor: '#4e73df',
                 '&:hover': { backgroundColor: '#3a5ba0' }

@@ -203,6 +203,7 @@ export default function kVehicleForm() {
         break;
       case 'licensePlate':
         if (!value) error = 'License plate is required';
+        else if (!LICENSE_PLATE_REGEX.test(value.trim())) error = 'Format: GC 4-23, GC 4444-23, GC 55-Z';
         break;
       case 'vin':
         if (!value || value.length < 17) error = 'VIN must be 17 characters';
@@ -227,6 +228,7 @@ export default function kVehicleForm() {
       errors.year = `Year must be between 1900 and ${currentYear + 1}`;
     }
     if (!formData.licensePlate) errors.licensePlate = 'License plate is required';
+    else if (!LICENSE_PLATE_REGEX.test(formData.licensePlate.trim())) errors.licensePlate = 'Format: GC 4-23, GC 4444-23, GC 55-Z';
     if (!formData.vin || formData.vin.length < 17) errors.vin = 'VIN must be 17 characters';
 
     setValidationErrors(errors);
@@ -257,6 +259,8 @@ export default function kVehicleForm() {
     { value: 'LPG', label: 'LPG' }
   ];
 
+  const LICENSE_PLATE_REGEX = /^[A-Z]{2} \d{1,4}-([A-Z]|\d{2})$/i;
+
   const fields = [
     { name: 'make', label: 'Make', required: true },
     { name: 'model', label: 'Model', required: true },
@@ -267,7 +271,7 @@ export default function kVehicleForm() {
       required: true,
       inputProps: { min: 1900, max: new Date().getFullYear() + 1 }
     },
-    { name: 'licensePlate', label: 'License Plate', required: true },
+    { name: 'licensePlate', label: 'License Plate', required: true, inputProps: { pattern: '[A-Za-z]{2} \\d{1,4}-([A-Za-z]|\\d{2})' } },
     { name: 'vin', label: 'VIN', required: true },
     {
       name: 'currentMileage',
@@ -283,7 +287,7 @@ export default function kVehicleForm() {
       label: 'Purchase Price',
       type: 'number',
       inputProps: { step: 0.01, min: 0 },
-      InputProps: { startAdornment: '$' }
+      InputProps: { startAdornment: '₵' }
     },
     { name: 'lastServiceDate', label: 'Last Service Date', type: 'date' },
     { name: 'nextServiceDue', label: 'Next Service Due', type: 'date' },
@@ -396,7 +400,11 @@ export default function kVehicleForm() {
                         value={formData[field.name]}
                         onChange={handleChange}
                         error={!!validationErrors[field.name]}
-                        helperText={validationErrors[field.name]}
+                        helperText={
+                          field.name === 'licensePlate'
+                            ? (validationErrors.licensePlate || 'Format: GC 4-23, GC 4444-23, GC 55-Z')
+                            : validationErrors[field.name]
+                        }
                         required={field.required}
                         variant="outlined"
                         size="small"
@@ -482,30 +490,7 @@ export default function kVehicleForm() {
                   ))}
 
                   <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{
-                      mt: 1,
-                      mb: 2,
-                      fontWeight: 600,
-                      color: COLORS.PRIMARY,
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}>
-                      <NotesIcon sx={{ mr: 1, fontSize: '1.2rem' }} />
-                      Additional Notes
-                    </Typography>
 
-                    <TextField
-                      fullWidth
-                      label="Notes"
-                      name="notes"
-                      multiline
-                      rows={4}
-                      value={formData.notes}
-                      onChange={handleChange}
-                      variant="outlined"
-                      size="small"
-                      InputLabelProps={{ shrink: true }}
-                    />
                   </Grid>
                 </Grid>
               </Grid>

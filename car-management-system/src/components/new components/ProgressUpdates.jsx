@@ -2,7 +2,16 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import api from '../../services/api';
 
-// Hash a string into a consistent color
+import {
+  PersonCheck,
+  PlusCircle,
+  Trash,
+  PencilSquare,
+  People,
+  Search,
+  Person,
+  ChatSquare
+} from 'react-bootstrap-icons';
 const getColor = (str) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -48,14 +57,12 @@ const ProgressUpdates = ({ userId }) => {
       maxWidth: 600,
       margin: '0 auto',
       padding: '1.5rem 0',
-      background: 'rgba(255, 255, 255, 0.7)',
+      background: 'rgb(255, 255, 255)',
       borderRadius: 22,
-      boxShadow: '0 8px 32px rgba(37,99,235,0.13)',
-      backdropFilter: 'blur(10px)',
+      boxShadow:' rgba(0, 0, 0, 0.16) 0px 1px 4px',
       position: 'relative',
-      minHeight: 690,
+      minHeight: 804,
       overflow: 'visible',
-      border: '1.5px solid #e0eaff',
       transition: 'box-shadow 0.3s',
     }}>
       {/* Header */}
@@ -120,8 +127,10 @@ const ProgressUpdates = ({ userId }) => {
                     boxShadow: '0 1px 6px rgba(37, 100, 235, 0.37)',
                     
                   }}>
-                    <span style={{ marginRight: 6, fontSize: 18 }}>💬</span>
+                    <div style={{marginRight:'20px',display:'flex', alignItems:'center', gap:'10px'}}>
+                    <ChatSquare/>
                     {update.comment || <span style={{ color: '#b0b8c1' }}>No comment</span>}
+                    </div>
             
                   <div style={{
                     display: 'flex',

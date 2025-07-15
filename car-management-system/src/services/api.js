@@ -29,4 +29,13 @@ api.interceptors.response.use(response => response, error => {
   return Promise.reject(error);
 });
 
+/**
+ * Soft delete a notification by ID
+ * @param {string} id - Notification ID (GUID)
+ * @returns {Promise}
+ */
+api.softDeleteNotification = function(id) {
+  return api.delete(`/api/Notifications/${id}`);
+};
+
 export default api;

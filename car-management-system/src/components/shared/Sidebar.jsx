@@ -1,8 +1,28 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useAuth } from '../../context/AuthContext';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Collapse from '@mui/material/Collapse';
+import Divider from '@mui/material/Divider';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import DashboardIcon from '@mui/icons-material/Speed';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import BuildIcon from '@mui/icons-material/Build';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import GroupIcon from '@mui/icons-material/Group';
+import SecurityIcon from '@mui/icons-material/Security';
+import RouteIcon from '@mui/icons-material/AltRoute';
+import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 
 export default function Sidebar({ className = "" }) {
   const location = useLocation();
@@ -25,36 +45,36 @@ export default function Sidebar({ className = "" }) {
 
   // Menu configuration
   let menuItems = [
-    { path: '/vehicles', icon: 'bi-truck', label: 'Vehicles', roles: ['Admin'] },
+    { path: '/vehicles', icon: <DirectionsCarIcon />, label: 'Vehicles', roles: ['Admin'] },
   ];
 
   if (hasRole('Admin')) {
     menuItems.unshift({
       path: '/dashboard',
-      icon: 'bi-speedometer',
+      icon: <DashboardIcon />,
       label: 'Dashboard',
       roles: ['Admin'],
     });
   } else if (hasRole('User')) {
     menuItems.unshift({
       path: '/userdashboard',
-      icon: 'bi-speedometer',
+      icon: <DashboardIcon />,
       label: 'User Dashboard',
       roles: ['User'],
     });
   }
 
   const maintenanceMenuItems = [
-    { path: '/maintenance', icon: 'bi-tools', label: 'Maintenance Requests' },
-    { path: '/requestsss', icon: 'bi-calendar-check', label: 'Vehicle Requests' },
+    { path: '/maintenance', icon: <BuildIcon />, label: 'Maintenance Requests' },
+    { path: '/requestsss', icon: <AssignmentIcon />, label: 'Vehicle Requests' },
   ];
 
   const adminMenuItems = [
-    { path: '/admin/users', icon: 'bi-people-fill', label: 'User Management' },
-    { path: '/admin/roles', icon: 'bi-shield-lock', label: 'Role Management' },
-    { path: '/admin/routes', icon: 'bi-signpost-split-fill', label: 'Routes' },
-    { path: '/admin/logger', icon: 'bi-fuel-pump', label: 'Fuel Logger' },
-     { path: '/schedule', icon: 'bi-calendar', label: 'Schedule' },
+    { path: '/admin/users', icon: <GroupIcon />, label: 'User Management' },
+    { path: '/admin/roles', icon: <SecurityIcon />, label: 'Role Management' },
+    { path: '/admin/routes', icon: <RouteIcon />, label: 'Routes' },
+    { path: '/admin/logger', icon: <LocalGasStationIcon />, label: 'Fuel Logger' },
+    { path: '/schedule', icon: <CalendarTodayIcon />, label: 'Schedule' },
   ];
 
   const authData = JSON.parse(localStorage.getItem('authData'));
@@ -62,199 +82,209 @@ export default function Sidebar({ className = "" }) {
   const shouldShowRequestsMenu = hasRole('Admin') || hasRouteRoles;
 
   return (
-    <div
-      className={`sidebar d-flex flex-column ${className}`}
-      style={{
-        width: '280px',
-        height: '100vh',
-        position: 'sticky',
-        top: 0,
-        left: 0,
-        padding: '1.5rem 0.75rem',
-        overflowY: 'auto',
-        zIndex: 1000,
-        background: 'linear-gradient(180deg, #2c3e50 0%, #1a1a2e 100%)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '2px 0 15px rgba(0, 0, 0, 0.2)',
-        color: '#f8f9fa',
+    <Drawer
+      variant="permanent"
+      anchor="left"
+      PaperProps={{
+        sx: {
+          width: 280,
+          background: '#111',
+          color: '#fff',
+          borderRight: 'none',
+          boxShadow: 3,
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          [`& .MuiDrawer-paper`]: {
+            width: 280,
+            boxSizing: 'border-box',
+            background: '#111',
+            color: '#fff',
+            borderRight: 'none',
+            boxShadow: 3,
+            position: 'sticky',
+            top: 0,
+            height: '100vh',
+          },
+        },
       }}
+      className={className}
     >
-      <ul className="nav flex-column gap-2">
-        {menuItems.map((item) =>
-          item.roles.some(role => hasRole(role)) && (
-            <li key={item.path} className="nav-item">
-              <Link
-                to={item.path}
-                className={`nav-link d-flex align-items-center px-3 py-2 rounded fw-medium ${
-                  isActive(item.path) 
-                    ? 'bg-primary text-white shadow' 
-                    : 'text-light hover-bg-primary-soft'
-                }`}
-                style={{
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}
-              >
-                <i className={`bi ${item.icon} me-3 fs-5`} />
-                <span>{item.label}</span>
-              </Link>
-            </li>
-          )
-        )}
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%'  }}>
 
-        {shouldShowRequestsMenu && (
-          <li className="nav-item mt-3">
-            <button
-              className={`btn w-100 text-start d-flex align-items-center justify-content-between px-3 py-2 rounded fw-medium ${
-                isActive('/maintenance') || expandedMenus.maintenance 
-                  ? 'bg-primary text-white shadow' 
-                  : 'text-light hover-bg-primary-soft'
-              }`}
-              onClick={() => toggleMenu('maintenance')}
-              style={{
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                border: 'none',
-              }}
-            >
-              <span className="d-flex align-items-center">
-                <i className="bi bi-clipboard2-pulse me-3 fs-5" />
-                <span>Requests</span>
-              </span>
-              <i 
-                className={`bi ${expandedMenus.maintenance ? 'bi-chevron-up' : 'bi-chevron-down'} fs-6`}
-                style={{ transition: 'transform 0.3s ease' }}
-              />
-            </button>
+        <List sx={{ pt: 1, pb: 1 ,mt: 7}}>
+          {menuItems.map((item) =>
+            item.roles.some(role => hasRole(role)) && (
+              <ListItem key={item.path} disablePadding sx={{ mb: 1 ,  width: '80%'}}>
+                <ListItemButton
+                  component={Link}
+                  to={item.path}
+                  selected={isActive(item.path)}
+                  sx={{
+                    width: '100%',
+                    mx: 'auto',
+                    borderRadius: 999,
+                    px: 2.5,
+                    py: 1.2,
+                    color: isActive(item.path) ? '#fff' : '#eee',
+                    background: isActive(item.path) ? '#fff' : 'none',
+                    fontWeight: isActive(item.path) ? 700 : 500,
+                    boxShadow: isActive(item.path) ? 1 : 0,
+                    '&:hover': {
+                      background: isActive(item.path) ? '#222' : 'rgba(255,255,255,0.08)',
+                      color: '#fff',
+                    },
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <ListItemIcon sx={{ color: isActive(item.path) ? '#fff' : '#eee', minWidth: 36 }}>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.label} />
+                </ListItemButton>
+              </ListItem>
+            )
+          )}
 
-            <div 
-              className="overflow-hidden"
-              style={{
-                maxHeight: expandedMenus.maintenance ? '200px' : '0',
-                transition: 'max-height 0.3s ease-in-out',
-              }}
-            >
-              <ul className="mt-2 ms-4 ps-2" >
-                {maintenanceMenuItems.map((item) => (
-                  <li key={item.path} className="nav-item mb-2">
-                    <Link
-                      to={item.path}
-                      className={`nav-link d-flex align-items-center px-3 py-2 rounded ${
-                        isActive(item.path) 
-                          ? 'bg-primary text-white shadow-sm' 
-                          : 'text-light hover-bg-primary-soft'
-                      }`}
-                      style={{
-                        transition: 'all 0.3s ease',
-                        fontSize: '0.9rem',
-                      }}
-                    >
-                      <i className={`bi ${item.icon} me-2`} />
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </li>
-        )}
+          {shouldShowRequestsMenu && (
+            <>
+              <ListItem disablePadding sx={{ mb: 1 }}>
+                <ListItemButton
+                  onClick={() => toggleMenu('maintenance')}
+                  sx={{
+                    width: '80%',
+                    mx: 'auto',
+                    borderRadius: 999,
+                    px: 2.5,
+                    py: 1.2,
+                    color: expandedMenus.maintenance ? '#fff' : '#eee',
+                    background: expandedMenus.maintenance ? '#222' : 'none',
+                    fontWeight: expandedMenus.maintenance ? 700 : 500,
+                    boxShadow: expandedMenus.maintenance ? 1 : 0,
+                    '&:hover': {
+                      background: expandedMenus.maintenance ? '#222' : 'rgba(255,255,255,0.08)',
+                      color: '#fff',
+                    },
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <ListItemIcon sx={{ color: expandedMenus.maintenance ? '#fff' : '#fff', minWidth: 36 }}>
+                    <BuildIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Requests" />
+                  {expandedMenus.maintenance ? <ExpandLess sx={{ color: '#fff' }} /> : <ExpandMore />}
+                </ListItemButton>
+              </ListItem>
+              <Collapse in={expandedMenus.maintenance} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding sx={{ pl: 0, ml: 0 }}>
+                  {maintenanceMenuItems.map((item, idx) => (
+                    <Box key={item.path} sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                      <Box sx={{ width: 18, minWidth: 18, height: 70, borderLeft: idx === 0 ? '2px solid #222' : '2px solid #222', ml: 3, mr: 1, opacity: 0.7 }} />
+                      <ListItem disablePadding sx={{ mb: 1, width: 'calc(80% - 18px)' }}>
+                        <ListItemButton
+                          component={Link}
+                          to={item.path}
+                          selected={isActive(item.path)}
+                          sx={{
+                            width: '100%',
+                            borderRadius: 999,
+                            px: 2,
+                            py: 1,
+                            color: isActive(item.path) ? '#fff' : '#fff',
+                            background: isActive(item.path) ? '#fff' : 'none',
+                            fontWeight: isActive(item.path) ? 700 : 500,
+                            fontSize: '0.97rem',
+                            '&:hover': {
+                              background: isActive(item.path) ? '#fff' : 'rgba(255,255,255,0.08)',
+                              color: '#fff',
+                            },
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          <ListItemIcon sx={{ color: isActive(item.path) ? '#111' : '#bbb', minWidth: 36 }}>{item.icon}</ListItemIcon>
+                          <ListItemText primary={item.label} />
+                        </ListItemButton>
+                      </ListItem>
+                    </Box>
+                  ))}
+                </List>
+              </Collapse>
+            </>
+          )}
 
-        {hasRole('Admin') && (
-          <li className="nav-item mt-3">
-            <button
-              className={`btn w-100 text-start d-flex align-items-center justify-content-between px-3 py-2 rounded fw-medium ${
-                isActive('/admin') || expandedMenus.admin 
-                  ? 'bg-dark text-white shadow' 
-                  : 'text-light hover-bg-dark-soft'
-              }`}
-              onClick={() => toggleMenu('admin')}
-              style={{
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                border: 'none',
-              }}
-            >
-              <span className="d-flex align-items-center">
-                <i className="bi bi-shield-shaded me-3 fs-5" />
-                <span>Admin</span>
-              </span>
-              <i 
-                className={`bi ${expandedMenus.admin ? 'bi-chevron-up' : 'bi-chevron-down'} fs-6`}
-                style={{ transition: 'transform 0.3s ease' }}
-              />
-            </button>
-
-            <div 
-              className="overflow-hidden"
-              style={{
-                maxHeight: expandedMenus.admin ? '300px' : '0',
-                transition: 'max-height 0.3s ease-in-out',
-              }}
-            >
-              <ul className="mt-2 ms-4 ps-2">
-                {adminMenuItems.map((item) => (
-                  <li key={item.path} className="nav-item mb-2">
-                    <Link
-                      to={item.path}
-                      className={`nav-link d-flex align-items-center px-3 py-2 rounded ${
-                        isActive(item.path) 
-                          ? 'bg-dark text-white shadow-sm' 
-                          : 'text-light hover-bg-dark-soft'
-                      }`}
-                      style={{
-                        transition: 'all 0.3s ease',
-                        fontSize: '0.9rem',
-                      }}
-                    >
-                      <i className={`bi ${item.icon} me-2`} />
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </li>
-        )}
-      </ul>
-
-      <div className="mt-auto mb-3 px-3 py-2 text-muted" style={{ fontSize: '0.8rem' }}>
-        <div className="d-flex align-items-center">
-          <i className="bi bi-info-circle me-2"></i>
-          <span>v1.0.0</span>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .hover-bg-primary-soft:hover {
-          background-color: rgba(13, 110, 253, 0.15) !important;
-        }
-        .hover-bg-dark-soft:hover {
-          background-color: rgba(33, 37, 41, 0.15) !important;
-        }
-        .sidebar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .sidebar::-webkit-scrollbar-track {
-          background: rgba(255,255,255,0.1);
-        }
-        .sidebar::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.2);
-          border-radius: 3px;
-        }
-        .sidebar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255,255,255,0.3);
-        }
-        .nav-link {
-          position: relative;
-        }
-        .nav-link:hover {
-          transform: translateX(5px);
-        }
-            ul {
-    list-style: none;
-    padding-left: 0;
-  }
-  li::marker {
-    display: none;
-  }
-      `}</style>
-    </div>
+          {hasRole('Admin') && (
+            <>
+              <ListItem disablePadding sx={{ mb: 1 }}>
+                <ListItemButton
+                  onClick={() => toggleMenu('admin')}
+                  sx={{
+                    width: '80%',
+                    mx: 'auto',
+                    borderRadius: 999,
+                    px: 2.5,
+                    py: 1.2,
+                    color: expandedMenus.admin ? '#fff' : '#eee',
+                    background: expandedMenus.admin ? '#222' : 'none',
+                    fontWeight: expandedMenus.admin ? 700 : 500,
+                    boxShadow: expandedMenus.admin ? 1 : 0,
+                    '&:hover': {
+                      background: expandedMenus.admin ? '#222' : 'rgba(255,255,255,0.08)',
+                      color: '#fff',
+                    },
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <ListItemIcon sx={{ color: expandedMenus.admin ? '#fff' : '#eee', minWidth: 36 }}>
+                    <SecurityIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Admin" />
+                  {expandedMenus.admin ? <ExpandLess sx={{ color: '#fff' }} /> : <ExpandMore />}
+                </ListItemButton>
+              </ListItem>
+              <Collapse in={expandedMenus.admin} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding sx={{ pl: 0, ml: 0 }}>
+                  {adminMenuItems.map((item, idx) => (
+                    <Box key={item.path} sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                      <Box sx={{ width: 18, minWidth: 18, height: 60, borderLeft: idx === 0 ? '2px solid #222' : '2px solid #222', ml: 3, mr: 1, opacity: 0.7 }} />
+                      <ListItem disablePadding sx={{ mb: 1, width: 'calc(80% - 18px)' }}>
+                        <ListItemButton
+                          component={Link}
+                          to={item.path}
+                          selected={isActive(item.path)}
+                          sx={{
+                            width: '100%',
+                            borderRadius: 999,
+                            px: 2,
+                            py: 1,
+                            color: isActive(item.path) ? '#fff' : '#fff',
+                            background: isActive(item.path) ? '#fff' : 'none',
+                            fontWeight: isActive(item.path) ? 700 : 500,
+                            fontSize: '0.97rem',
+                            '&:hover': {
+                              background: isActive(item.path) ? '#fff' : 'rgba(255,255,255,0.08)',
+                              color: '#fff',
+                            },
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          <ListItemIcon sx={{ color: isActive(item.path) ? '#111' : '#bbb', minWidth: 36 }}>{item.icon}</ListItemIcon>
+                          <ListItemText primary={item.label} />
+                        </ListItemButton>
+                      </ListItem>
+                    </Box>
+                  ))}
+                </List>
+              </Collapse>
+            </>
+          )}
+        </List>
+        <Box sx={{ flexGrow: 1 }} />
+        <Divider sx={{ my: 2 }} />
+        <Box sx={{ px: 3, py: 2, color: 'text.secondary', fontSize: '0.85rem' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <i className="bi bi-info-circle" style={{ marginRight: 8 }}></i>
+            <span>v1.0.0</span>
+          </Box>
+        </Box>
+      </Box>
+    </Drawer>
   );
 }
