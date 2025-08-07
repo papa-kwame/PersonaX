@@ -74,7 +74,10 @@ export default function RequestForm() {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth={false} sx={{ 
+      maxWidth: '100% !important',
+      px: { xs: 2, sm: 3, md: 4 }
+    }}>
       <Box sx={{ mt: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom align="center">
           Vehicle Request Form

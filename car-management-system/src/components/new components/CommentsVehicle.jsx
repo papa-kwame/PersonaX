@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatDateDisplay } from '../../utils/dateUtils';
 import { useAuth } from '../../context/AuthContext';
 import {
   Paper,
@@ -174,7 +175,7 @@ const CommentsVehicle = () => {
             const stage = getStageColor(comment.stage);
             const commentDate = new Date(comment.timestamp);
             const formattedTime = commentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const formattedDate = commentDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            const formattedDate = formatDateDisplay(commentDate);
             return (
               <Box
                 key={idx}

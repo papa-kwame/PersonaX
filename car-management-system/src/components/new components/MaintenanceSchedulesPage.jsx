@@ -35,7 +35,7 @@ import ProgressUpdates from './ProgressUpdates';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
-const MaintenanceDashboard = () => {
+const MaintenanceDashboard = ({ sidebarExpanded = true }) => {
   const { userId } = useAuth();
   const [activeTab, setActiveTab] = useState('assignments');
   const [schedules, setSchedules] = useState([]);
@@ -236,11 +236,12 @@ const MaintenanceDashboard = () => {
       display: 'flex',
       flexDirection: { xs: 'column', md: 'row' },
       gap: 3,
-      width: '100%',
+      width: sidebarExpanded ? '100%' : 'calc(100% + 100px)',
       alignItems: 'flex-start',
       mt: 2,
       px: { xs: 1, sm: 2, md: 4 },
-      pb: 4
+      pb: 4,
+      transition: 'width 0.3s ease-in-out'
     }}>
       {/* Main Schedule/Assignments Section (70%) */}
       <Box sx={{
@@ -275,7 +276,7 @@ const MaintenanceDashboard = () => {
                 }}>
                   <Box sx={{
                     width: '100%',
-                    maxWidth: 1200,
+                    maxWidth: '100%',
                     display: 'flex',
                     alignItems: 'center',
                     background: 'rgba(255,255,255,0.85)',
@@ -369,7 +370,7 @@ const MaintenanceDashboard = () => {
                   </Collapse>
                 </Box>
                 {/* Two-column layout: schedules list (left), progress updates (right) */}
-                <Box sx={{ display: 'flex', gap: 4, mt: 3, width: '100%', maxWidth: 1150, mx: 'auto',minHeight:'600px' }}>
+                <Box sx={{ display: 'flex', gap: 4, mt: 3, width: '100%', maxWidth: '100%', mx: 'auto',minHeight:'600px' }}>
                   {/* Schedules List */}
                   <Paper elevation={3} sx={{ flex: 1.2, p: 2, borderRadius: 4, minWidth: 400, maxHeight: 700, overflowY: 'auto' }}>
                     <Typography variant="h6" fontWeight={500}  sx={{ mb: 2 }}>

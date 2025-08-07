@@ -1,5 +1,6 @@
 // src/components/vehicles/DocumentStatusCard.jsx
 import { useState, useEffect } from 'react';
+import { formatDateDisplay } from '../../utils/dateUtils';
 import { FiEdit2, FiSave, FiX } from 'react-icons/fi';
 
 export default function DocumentStatusCard({ 
@@ -34,13 +35,13 @@ export default function DocumentStatusCard({
       setStatusText(`Expires in ${days} days`);
     } else {
       setStatus('valid');
-      setStatusText(`Valid until ${new Date(date).toLocaleDateString()}`);
+      setStatusText(`Valid until ${formatDateDisplay(date)}`);
     }
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString();
+    return formatDateDisplay(dateString);
   };
 
   const handleEditClick = () => {

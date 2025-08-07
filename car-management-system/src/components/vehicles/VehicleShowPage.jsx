@@ -164,7 +164,7 @@ export default function VehicleShowPage() {
           <DetailItem label="Engine Size" value={vehicle.engineSize ? `${vehicle.engineSize} cc` : 'N/A'} icon={<FiTool />} />
           <DetailItem label="Seating Capacity" value={vehicle.seatingCapacity} icon={<FiUser />} />
           <DetailItem label="Purchase Date" value={formatDate(vehicle.purchaseDate)} icon={<FiCalendar />} />
-          <DetailItem label="Purchase Price" value={vehicle.purchasePrice ? `$${vehicle.purchasePrice.toLocaleString()}` : 'N/A'} icon={<FiDollarSign />} />
+          <DetailItem label="Purchase Price" value={vehicle.purchasePrice ? `GH₵${vehicle.purchasePrice.toLocaleString()}` : 'N/A'} icon={<FiDollarSign />} />
           {vehicle.notes && (
             <div className="detail-item full-width">
               <div className="detail-label"><FiFileText /> Notes:</div>

@@ -21,9 +21,9 @@ export const getVehicleById = async (id) => {
   }
 };
 
-export const createVehicle = async (vehicleData) => {
+export const createVehicle = async (vehicleData, userId) => {
   try {
-    const response = await api.post('/api/vehicles', vehicleData);
+    const response = await api.post(`/api/vehicles?userId=${userId}`, vehicleData);
     return response.data;
   } catch (error) {
     console.error('Error creating vehicle:', error);
@@ -31,9 +31,9 @@ export const createVehicle = async (vehicleData) => {
   }
 };
 
-export const updateVehicle = async (id, vehicleData) => {
+export const updateVehicle = async (id, vehicleData, userId) => {
   try {
-    const response = await api.put(`/api/vehicles/${id}`, vehicleData);
+    const response = await api.put(`/api/vehicles/${id}?userId=${userId}`, vehicleData);
     return response.data;
   } catch (error) {
     console.error(`Error updating vehicle ${id}:`, error);

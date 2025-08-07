@@ -5,10 +5,20 @@ import UserMaintenanceRequests from '../new components/UserMaintenanceRequests';
 import CompactFuelStats from '../fuel/CompactFuelStats';
 import FuelLogList from '../fuel/FuelLogList';
 import VehicleRequestsComponent from '../new components/VehicleRequestsComponent';
+import { styled } from '@mui/material/styles';
+
+const DashboardContainer = styled(Box)({
+  maxWidth: '100% !important',
+  margin: '0 auto',
+  padding: '20px',
+  '@media (min-width: 1200px)': {
+    maxWidth: '100% !important',
+  },
+});
 
 const UserDashboard = () => {
   return (
-    <Box
+    <DashboardContainer
       sx={{
         width: '100%',
         maxWidth: '1800px',
@@ -50,7 +60,7 @@ const UserDashboard = () => {
           </Grid>
         </Grid>
       </Grid>
-    </Box>
+    </DashboardContainer>
   );
 };
 

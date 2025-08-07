@@ -35,7 +35,10 @@ const PersonalMaintenanceRequest = () => {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth={false} sx={{ 
+      maxWidth: '100% !important',
+      px: { xs: 2, sm: 3, md: 4 }
+    }}>
       <Paper elevation={3} style={{ padding: '20px', margin: '20px' }}>
         <Typography variant="h4" gutterBottom>
           Create Maintenance Request

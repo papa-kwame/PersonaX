@@ -25,7 +25,8 @@ import {
   ListItem,
   ListItemText,
   Tabs,
-  Tab
+  Tab,
+  Tooltip
 } from '@mui/material';
 import {
   DirectionsCar as CarIcon,
@@ -42,19 +43,24 @@ import {
   Error as ErrorIcon,
   CheckCircle as CheckIcon,
   Event as EventIcon,
-  Star as StarIcon
+  Star as StarIcon,
+  CloudUploadRounded as CloudUploadRoundedIcon,
+  DownloadRounded as DownloadRoundedIcon,
+  InsertDriveFileRounded as InsertDriveFileRoundedIcon,
 } from '@mui/icons-material';
 import { FiClock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import VehicleRequestForm from '../new components/VehicleRequestForm';
 import { styled } from '@mui/system';
+import { format } from 'date-fns';
+import { formatDate as formatDateUtil, formatDateDisplay } from '../../utils/dateUtils';
 
 const API_URL = 'https://localhost:7092/api';
 
-const StyledCard = styled(Card)(({ theme }) => ({
+const StyledCard = styled(Card)(({ theme, sidebarExpanded }) => ({
   width: '100%',
-  minWidth: 600,
-  maxWidth: 600,
+  minWidth: sidebarExpanded ? 600 : 700,
+  maxWidth: sidebarExpanded ? 600 : 700,
   minHeight: 430,
   borderRadius: 16,
   boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
@@ -264,7 +270,7 @@ const VehicleCard = ({ vehicle, onClick, upcomingMaintenanceCount, nextMaintenan
                 fontWeight: 600,
                 color: 'warning.dark'
               }}>
-                Next service: {new Date(nextMaintenanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                Next service: {formatDateDisplay(nextMaintenanceDate)}
               </Typography>
             </Box>
           )}
@@ -399,13 +405,9 @@ const GhanaianLicensePlate = ({ licensePlate }) => {
   );
 };
 
-const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(dateString).toLocaleDateString(undefined, options);
-};
 
-const VehicleAssignedCard = () => {
+
+const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
   const theme = useTheme();
   const [vehicles, setVehicles] = useState([]);
   const [schedules, setSchedules] = useState([]);
@@ -422,6 +424,9 @@ const VehicleAssignedCard = () => {
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [scheduleToUpdate, setScheduleToUpdate] = useState(null);
   const [updateForm, setUpdateForm] = useState({ status: '', comments: '', expectedCompletionDate: '' });
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
+  const [fetchingDocs, setFetchingDocs] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -486,6 +491,50 @@ const VehicleAssignedCard = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleDocumentUpload = async (requestId, file) => {
+    try {
+      const authData = getAuthData();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      await axios.post(`${API_URL}/MaintenanceRequest/${requestId}/upload-document?userId=${authData.userId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${authData.token}`
+        }
+      });
+
+      // Refresh documents after upload
+      if (uploadedDocuments.length > 0) {
+        await fetchUploadedDocuments(requestId);
+      }
+    } catch (error) {
+      console.error('Error uploading document:', error);
+    }
+  };
+
+  const handleDocumentDownload = async (documentId, fileName) => {
+    try {
+      const authData = getAuthData();
+      const response = await axios.get(`${API_URL}/MaintenanceRequest/documents/${documentId}`, {
+        responseType: 'blob',
+        headers: {
+          Authorization: `Bearer ${authData.token}`
+        }
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading document:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const authData = getAuthData();
@@ -497,21 +546,103 @@ const VehicleAssignedCard = () => {
       return;
     }
 
+    // Validate form data
+    if (!formData.requestType || !formData.description || !formData.priority) {
+      alert("Please fill in all required fields: Request Type, Description, and Priority");
+      return;
+    }
+
     const payload = { ...formData, VehicleId: vehicleId };
 
     try {
       setProcessing(true);
-      await axios.post(`${API_URL}/MaintenanceRequest/personal?userId=${authData.userId}`, payload);
+      console.log('Starting combined request submission and file upload...');
+      console.log('Payload:', payload);
+      console.log('Upload file state:', uploadFile);
+      console.log('File to upload:', uploadFile?.name || 'No file');
+      console.log('File object:', uploadFile);
+      
+      // Step 1: Create the maintenance request
+      const res = await axios.post(`${API_URL}/MaintenanceRequest/personal?userId=${authData.userId}`, payload, {
+        headers: { Authorization: `Bearer ${authData.token}` }
+      });
+      
+      console.log('✅ Request created successfully:', res.data);
+      
+      let uploadSuccess = false;
+      
+      // Step 2: Upload document if provided
+      if (uploadFile && res.data && res.data.requestId) {
+        console.log('📁 Uploading file:', uploadFile.name);
+        console.log('📁 File size:', uploadFile.size, 'bytes');
+        console.log('📁 File type:', uploadFile.type);
+        console.log('📁 Request ID:', res.data.requestId);
+        
+        const formDataObj = new FormData();
+        formDataObj.append('file', uploadFile);
+        
+        // Log FormData contents
+        console.log('📁 FormData entries:');
+        for (let [key, value] of formDataObj.entries()) {
+          console.log(`  ${key}:`, value);
+        }
+        
+        try {
+          console.log('📁 Making upload request to:', `${API_URL}/MaintenanceRequest/${res.data.requestId}/upload-document?userId=${authData.userId}`);
+          
+          const uploadRes = await axios.post(`${API_URL}/MaintenanceRequest/${res.data.requestId}/upload-document?userId=${authData.userId}`, formDataObj, {
+            headers: { 
+              'Content-Type': 'multipart/form-data', 
+              Authorization: `Bearer ${authData.token}` 
+            }
+          });
+          console.log('✅ File uploaded successfully:', uploadRes.data);
+          uploadSuccess = true;
+        } catch (uploadError) {
+          console.error('❌ Error uploading file:', uploadError);
+          console.error('❌ Error response:', uploadError.response?.data);
+          console.error('❌ Error status:', uploadError.response?.status);
+          console.error('❌ Error message:', uploadError.message);
+          uploadSuccess = false;
+        }
+      }
+      
+      // Step 3: Show success message
       setSubmitSuccess(true);
+      
+      // Step 4: Fetch and display uploaded documents
+      if (res.data && res.data.requestId) {
+        try {
+          await fetchUploadedDocuments(res.data.requestId);
+        } catch (fetchError) {
+          console.error('❌ Error fetching documents:', fetchError);
+        }
+      }
+      
+      // Step 5: Show final success message
+      const successMessage = uploadFile 
+        ? (uploadSuccess 
+            ? `✅ Request submitted successfully with file "${uploadFile.name}" uploaded!`
+            : `⚠️ Request submitted successfully but file upload failed.`)
+        : '✅ Request submitted successfully!';
+      
+      alert(successMessage);
+      
+      // Step 6: Reset form and close modal
       setTimeout(() => {
         setShowRequestModal(false);
         setSubmitSuccess(false);
         setFormData({ requestType: '', description: '', priority: '' });
+        setUploadFile(null);
+        setUploadedDocuments([]);
         setProcessing(false);
-      }, 1500);
+      }, 3000);
+      
     } catch (error) {
       setProcessing(false);
-      console.error('Error submitting request:', error);
+      console.error('❌ Error in combined submission:', error);
+      console.error('Error details:', error.response?.data);
+      alert('❌ Failed to submit request. Please try again.');
     }
   };
 
@@ -547,8 +678,26 @@ const VehicleAssignedCard = () => {
     }
   };
 
+  const fetchUploadedDocuments = async (requestId) => {
+    setFetchingDocs(true);
+    try {
+      const authData = getAuthData();
+      const response = await axios.get(`${API_URL}/MaintenanceRequest/${requestId}/documents`, {
+        headers: { Authorization: `Bearer ${authData.token}` }
+      });
+      console.log('Documents response:', response.data);
+      // The API returns { RequestId, Documents } structure
+      setUploadedDocuments(response.data.documents || []);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      setUploadedDocuments([]);
+    } finally {
+      setFetchingDocs(false);
+    }
+  };
+
   return (
-    <StyledCard>
+    <StyledCard sidebarExpanded={sidebarExpanded}>
       <CardContent sx={{ flexGrow: 1, p: 3 }}>
         <Box sx={{
           display: 'flex',
@@ -809,21 +958,7 @@ const VehicleAssignedCard = () => {
                     <DetailItem label="Engine Size" value={selectedVehicle.engineSize ? `${selectedVehicle.engineSize} cc` : null} icon={<SpeedIcon />} />
                     <DetailItem label="Seating" value={selectedVehicle.seatingCapacity} icon={<PeopleIcon />} />
                   </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{
-                      mb: 2,
-                      fontWeight: 700,
-                      letterSpacing: 1,
-                      textTransform: 'uppercase',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}>
-                      <MoneyIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                      Registration
-                    </Typography>
-                    <DetailItem label="Purchase Date" value={formatDate(selectedVehicle.purchaseDate)} icon={<CalendarIcon />} />
-                    <DetailItem label="Purchase Price" value={selectedVehicle.purchasePrice ? `$${selectedVehicle.purchasePrice.toLocaleString()}` : null} icon={<MoneyIcon />} />
-                  </Box>
+                
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" sx={{
                       mb: 2,
@@ -834,11 +969,10 @@ const VehicleAssignedCard = () => {
                       alignItems: 'center'
                     }}>
                       <StarIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                      Status
+                    Maintenance
                     </Typography>
-                    <DetailItem label="Mileage" value={`${selectedVehicle.currentMileage?.toLocaleString() || '--'} miles`} icon={<SpeedIcon />} />
-                    <DetailItem label="Last Service" value={formatDate(selectedVehicle.lastServiceDate)} icon={<ToolIcon />} />
-                    <DetailItem label="Next Maintenance" value={getNextMaintenanceDate(selectedVehicle.id) ? formatDate(getNextMaintenanceDate(selectedVehicle.id)) : 'Not scheduled'} icon={<FiClock />} />
+                                            <DetailItem label="Last Service" value={formatDateUtil(selectedVehicle.lastServiceDate)} icon={<ToolIcon />} />
+                        <DetailItem label="Next Maintenance" value={getNextMaintenanceDate(selectedVehicle.id) ? formatDateUtil(getNextMaintenanceDate(selectedVehicle.id)) : 'Not scheduled'} icon={<FiClock />} />
                   </Box>
                 </Box>
               </Box>
@@ -870,7 +1004,7 @@ const VehicleAssignedCard = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                           <CalendarIcon color="primary" sx={{ mr: 1 }} />
                           <Typography variant="subtitle1" fontWeight={700} sx={{ mr: 2 }}>
-                            {formatDate(schedule.scheduledDate)}
+                            {formatDateUtil(schedule.scheduledDate)}
                           </Typography>
                           <Chip
                             label={schedule.status}
@@ -922,14 +1056,16 @@ const VehicleAssignedCard = () => {
         }}
       >
         <Box sx={{
-          width: '90%',
-          maxWidth: 400,
+          width: '95%',
+          maxWidth: 640,
           bgcolor: 'background.paper',
-          borderRadius: 3,
-          boxShadow: 24,
-          p: 4,
+          borderRadius: 4,
+          boxShadow: '0 8px 32px rgba(25,118,210,0.12)',
+          p: { xs: 2, sm: 4 },
           outline: 'none',
-          border: '1px solid rgba(0, 0, 0, 0.1)'
+          border: '1.5px solid #e3e6f0',
+          background: 'linear-gradient(135deg, #f7faff 0%, #e3e6f0 100%)',
+          position: 'relative',
         }}>
           {submitSuccess ? (
             <Box sx={{
@@ -953,7 +1089,7 @@ const VehicleAssignedCard = () => {
                 alignItems: 'center',
                 mb: 3,
                 pb: 2,
-                borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
+                borderBottom: 'none'
               }}>
                 <Typography variant="h5" fontWeight="bold" sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
                   <ToolIcon sx={{ mr: 1.5 }} />
@@ -971,95 +1107,188 @@ const VehicleAssignedCard = () => {
                   <CloseIcon />
                 </IconButton>
               </Box>
+              <Divider sx={{ mb: 2.5, borderColor: '#e3e6f0' }} />
               <Box component="form" onSubmit={handleSubmit}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>This maintenance request will be associated with your assigned vehicle.</Typography>
-                <TextField
-                  select
-                  fullWidth
-                  label="Request Type"
-                  name="requestType"
-                  value={formData.requestType}
-                  onChange={handleChange}
-                  margin="normal"
-                  required
-                  size="medium"
-                  sx={{ mb: 2 }}
-                  SelectProps={{
-                    MenuProps: {
-                      PaperProps: {
-                        sx: {
-                          maxHeight: 300,
-                          boxShadow: '0 5px 15px rgba(0, 0, 0, 0.1)',
-                          border: '1px solid rgba(0, 0, 0, 0.1)'
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 2, sm: 0 },
+                    alignItems: 'stretch',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                  }}
+                >
+                  <Box sx={{ width: { xs: '100%', sm: '50%' }, pr: { xs: 0, sm: 2 }, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'stretch' }}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Request Type"
+                      name="requestType"
+                      value={formData.requestType}
+                      onChange={handleChange}
+                      margin="normal"
+                      required
+                      size="medium"
+                      sx={{ mb: 2.5, borderRadius: 2, background: '#f7faff' }}
+                      SelectProps={{
+                        MenuProps: {
+                          PaperProps: { borderRadius: 2 }
                         }
-                      }
-                    }
-                  }}
-                >
-                  <MenuItem value="">Select request type</MenuItem>
-                  <MenuItem value="RoutineMaintenance">Routine Maintenance</MenuItem>
-                  <MenuItem value="Repair">Repair</MenuItem>
-                  <MenuItem value="Inspection">Inspection</MenuItem>
-                  <MenuItem value="TireReplacement">Tire Replacement</MenuItem>
-                  <MenuItem value="BrakeService">Brake Service</MenuItem>
-                  <MenuItem value="OilChange">Oil Change</MenuItem>
-                  <MenuItem value="Upgrade">Upgrade</MenuItem>
-                  <MenuItem value="Emergency">Emergency</MenuItem>
-                  <MenuItem value="Other">Other</MenuItem>
-                </TextField>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  margin="normal"
-                  required
-                  multiline
-                  rows={4}
-                  placeholder="Describe the issue or service needed..."
-                  size="medium"
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    sx: {
-                      '&:hover fieldset': {
-                        borderColor: 'primary.main !important'
-                      }
-                    }
-                  }}
-                />
-                <TextField
-                  select
-                  fullWidth
-                  label="Priority"
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleChange}
-                  margin="normal"
-                  required
-                  size="medium"
-                  sx={{ mb: 3 }}
-                >
-                  <MenuItem value="">Select priority level</MenuItem>
-                  <MenuItem value="Low">
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'success.main', mr: 1 }} />
-                      Low (can wait 1-2 weeks)
-                    </Box>
-                  </MenuItem>
-                  <MenuItem value="Medium">
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'warning.main', mr: 1 }} />
-                      Medium (needs attention in a few days)
-                    </Box>
-                  </MenuItem>
-                  <MenuItem value="High">
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main', mr: 1 }} />
-                      High (requires immediate attention)
-                    </Box>
-                  </MenuItem>
-                </TextField>
+                      }}
+                    >
+                      <MenuItem value="">Select request type</MenuItem>
+                      <MenuItem value="RoutineMaintenance">Routine Maintenance</MenuItem>
+                      <MenuItem value="Repair">Repair</MenuItem>
+                      <MenuItem value="Inspection">Inspection</MenuItem>
+                      <MenuItem value="TireReplacement">Tire Replacement</MenuItem>
+                      <MenuItem value="BrakeService">Brake Service</MenuItem>
+                      <MenuItem value="OilChange">Oil Change</MenuItem>
+                      <MenuItem value="Upgrade">Upgrade</MenuItem>
+                      <MenuItem value="Emergency">Emergency</MenuItem>
+                      <MenuItem value="Other">Other</MenuItem>
+                    </TextField>
+                    <TextField
+                      fullWidth
+                      label="Description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      margin="normal"
+                      required
+                      multiline
+                      rows={4}
+                      placeholder="Describe the issue or service needed..."
+                      size="medium"
+                      sx={{ mb: 2.5, borderRadius: 2, background: '#f7faff' }}
+                      InputProps={{
+                        sx: {
+                          '&:hover fieldset': {
+                            borderColor: 'primary.main !important'
+                          }
+                        }
+                      }}
+                    />
+                    <TextField
+                      select
+                      fullWidth
+                      label="Priority"
+                      name="priority"
+                      value={formData.priority}
+                      onChange={handleChange}
+                      margin="normal"
+                      required
+                      size="medium"
+                      sx={{ mb: 3, borderRadius: 2, background: '#f7faff' }}
+                    >
+                      <MenuItem value="">Select priority level</MenuItem>
+                      <MenuItem value="Low">
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'success.main', mr: 1 }} />
+                          Low (can wait 1-2 weeks)
+                        </Box>
+                      </MenuItem>
+                      <MenuItem value="Medium">
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'warning.main', mr: 1 }} />
+                          Medium (needs attention in a few days)
+                        </Box>
+                      </MenuItem>
+                      <MenuItem value="High">
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main', mr: 1 }} />
+                          High (requires immediate attention)
+                        </Box>
+                      </MenuItem>
+                    </TextField>
+                  </Box>
+                  <Box
+                    sx={{
+                      width: { xs: '100%', sm: '50%' },
+                      pl: { xs: 0, sm: 2 },
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      mt: { xs: 2, sm: 0 },
+                    }}
+                  >
+                    <input
+                      type="file"
+                      id="maintenance-upload"
+                      style={{ display: 'none' }}
+                      onChange={e => {
+                        console.log('File selected:', e.target.files[0]);
+                        setUploadFile(e.target.files[0]);
+                      }}
+                    />
+                    <label htmlFor="maintenance-upload" style={{ width: '100%' }}>
+                      <Box
+                        sx={{
+                          border: '2px dashed #b0b8c1',
+                          borderRadius: 3,
+                          background: 'rgba(25,118,210,0.03)',
+                          p: 2.5,
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          transition: 'border 0.2s, background 0.2s',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 1,
+                          mb: 0.5,
+                          '&:hover': {
+                            borderColor: '#1976d2',
+                            background: 'rgba(25,118,210,0.07)'
+                          }
+                        }}
+                        onClick={() => document.getElementById('maintenance-upload').click()}
+                      >
+                        {uploadFile ? (
+                          <>
+                            <CheckIcon sx={{ color: '#4caf50', fontSize: 32, mb: 1 }} />
+                            <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 600 }}>
+                              File Selected: {uploadFile.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Click to change file
+                            </Typography>
+                          </>
+                        ) : (
+                          <>
+                            <ToolIcon sx={{ color: '#1976d2', fontSize: 32, mb: 1 }} />
+                            <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 600 }}>
+                              Click to upload a document
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              PDF, DOCX, XLSX up to 10MB
+                            </Typography>
+                          </>
+                        )}
+                      </Box>
+                    </label>
+                    {uploadFile && (
+                      <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {uploadFile.name}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setUploadFile(null);
+                            document.getElementById('maintenance-upload').value = '';
+                          }}
+                          sx={{ p: 0.5 }}
+                        >
+                          <CloseIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
                 <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                   <Button
                     type="submit"
@@ -1067,16 +1296,18 @@ const VehicleAssignedCard = () => {
                     fullWidth
                     size="large"
                     sx={{
-                      mt: 1,
+                      mt: 2,
                       borderRadius: 3,
-                      py: 1.5,
+                      py: 1.7,
                       fontWeight: 700,
-                      fontSize: '1rem',
-                      background: 'linear-gradient(45deg, #1976d2 30%, #2196f3 90%)',
+                      fontSize: '1.08rem',
+                      background: 'linear-gradient(90deg, #1976d2 0%, #2196f3 100%)',
                       letterSpacing: '0.5px',
                       textTransform: 'none',
+                      boxShadow: '0 4px 16px rgba(25,118,210,0.10)',
                       '&:hover': {
-                        background: 'linear-gradient(45deg, #1565c0 30%, #1e88e5 90%)'
+                        background: 'linear-gradient(90deg, #1565c0 0%, #1e88e5 100%)',
+                        boxShadow: '0 6px 24px rgba(25,118,210,0.16)'
                       }
                     }}
                     disabled={processing}
@@ -1085,6 +1316,61 @@ const VehicleAssignedCard = () => {
                     {processing ? 'Processing...' : 'Submit Request'}
                   </Button>
                 </motion.div>
+                {uploadedDocuments.length > 0 && (
+                  <Box sx={{ mb: 2, mt: 1, p: 2, border: 'none', borderRadius: 3, background: 'rgba(25,118,210,0.06)', boxShadow: '0 2px 12px rgba(25,118,210,0.07)' }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, color: 'primary.main', fontWeight: 700, letterSpacing: 0.5 }}>
+                      Uploaded Documents
+                    </Typography>
+                    {fetchingDocs ? (
+                      <CircularProgress size={20} sx={{ display: 'block', mx: 'auto', my: 2 }} />
+                    ) : (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {uploadedDocuments.map((doc, idx) => (
+                          <Box key={doc.documentId || idx} sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: '#fff',
+                            borderRadius: 2.5,
+                            boxShadow: '0 1px 6px rgba(25,118,210,0.08)',
+                            px: 2,
+                            py: 1.2,
+                            mb: 0.5,
+                            gap: 2,
+                            minHeight: 48,
+                          }}>
+                            <Box sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              bgcolor: 'rgba(25,118,210,0.10)',
+                              borderRadius: 1.5,
+                              width: 36,
+                              height: 36,
+                              mr: 1.5,
+                            }}>
+                              <InsertDriveFileRoundedIcon sx={{ color: '#1976d2', fontSize: 22 }} />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: '#222', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{doc.fileName}</Typography>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+                                {doc.uploadDate ? `Uploaded: ${formatDateDisplay(doc.uploadDate, true)}` : ''}
+                              </Typography>
+                            </Box>
+                            <Tooltip title="Download" arrow>
+                              <span>
+                                <IconButton edge="end" color="primary" sx={{ ml: 1, bgcolor: 'rgba(25,118,210,0.08)', '&:hover': { bgcolor: 'rgba(25,118,210,0.18)' } }}
+                                  onClick={() => handleDocumentDownload(doc.documentId, doc.fileName)}
+                                >
+                                  <DownloadRoundedIcon />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+                )}
               </Box>
             </>
           )}

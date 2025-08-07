@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDate, formatDateDisplay } from '../../utils/dateUtils';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   getVehicles,
@@ -35,7 +36,7 @@ import {
   PersonCheck
 } from 'react-bootstrap-icons';
 
-const VehicleList = () => {
+const VehicleList = ({ sidebarExpanded = true }) => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -379,7 +380,12 @@ const VehicleList = () => {
   }, [error, success]);
 
   return (
-    <Container fluid className="py-4 px-4" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+    <Container fluid className="py-4 px-4" style={{ 
+      backgroundColor: '#f8f9fa', 
+      minHeight: '100vh',
+      width: sidebarExpanded ? '100%' : 'calc(100% + 100px)',
+      transition: 'width 0.3s ease-in-out'
+    }}>
       <Row className="mb-4 align-items-center">
         <Col>
           <div className="d-flex align-items-center justify-content-between">
@@ -699,13 +705,13 @@ const VehicleList = () => {
                             <td>{vehicle.year}</td>
                             <td>{vehicle.currentMileage.toLocaleString()}</td>
                             <td className={isExpired(vehicle.roadworthyExpiry) ? 'text-danger' : ''}>
-                              {vehicle.roadworthyExpiry ? new Date(vehicle.roadworthyExpiry).toLocaleDateString() : 'N/A'}
+                              {vehicle.roadworthyExpiry ? formatDateDisplay(vehicle.roadworthyExpiry) : 'N/A'}
                             </td>
                             <td className={isExpired(vehicle.registrationExpiry) ? 'text-danger' : ''}>
-                              {vehicle.registrationExpiry ? new Date(vehicle.registrationExpiry).toLocaleDateString() : 'N/A'}
+                              {vehicle.registrationExpiry ? formatDateDisplay(vehicle.registrationExpiry) : 'N/A'}
                             </td>
                             <td className={isExpired(vehicle.nextServiceDue) ? 'text-danger' : ''}>
-                              {vehicle.nextServiceDue ? new Date(vehicle.nextServiceDue).toLocaleDateString() : 'N/A'}
+                              {vehicle.nextServiceDue ? formatDateDisplay(vehicle.nextServiceDue) : 'N/A'}
                             </td>
                             <td>
                               <Button 

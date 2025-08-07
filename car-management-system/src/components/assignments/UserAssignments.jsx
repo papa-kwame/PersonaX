@@ -35,7 +35,8 @@ import {
   StepLabel,
   useTheme,
   alpha,
-  styled
+  styled,
+  Pagination
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -664,6 +665,7 @@ const VehicleAssignmentApp = () => {
   const navigate = useNavigate();
   const highlightId = new URLSearchParams(location.search).get('highlight');
   const pendingRefs = useRef({});
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState({
     vehicleId: '',
@@ -1035,14 +1037,19 @@ const VehicleAssignmentApp = () => {
     return request.completionDate || request.completedDate || request.dateCompleted || null;
   };
 
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
+
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{
+      <Container maxWidth={false} sx={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         height: '80vh',
-        backgroundColor: professionalColors.background
+        backgroundColor: professionalColors.background,
+        maxWidth: '100% !important'
       }}>
         <CircularProgress size={60} thickness={4} sx={{ color: professionalColors.primary }} />
       </Container>
@@ -1050,12 +1057,13 @@ const VehicleAssignmentApp = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{
+    <Container maxWidth={false} sx={{
       py: 4,
       backgroundColor: professionalColors.background,
-      minHeight: '100vh'
+      maxHeight: '80vh',
+      maxWidth: '100% !important'
     }}>
-      <StyledPaper elevation={3}>
+      <StyledPaper elevation={2}>
         <Box sx={{
           p: 4,
           borderBottom: `1px solid ${professionalColors.border}`,
@@ -1193,156 +1201,166 @@ const VehicleAssignmentApp = () => {
           />
         </Tabs>
 
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3 , height: '600px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {activeTab === 'inbox' && (
             <>
               {requests.length > 0 ? (
-                <List sx={{ '& > * + *': { mt: 1.5 } }}>
-                  {requests.map((request) => (
-                    <StyledPaper
-                      key={request.id}
-                      elevation={0}
-                      onClick={() => {
-                        setSelectedRequest(request);
-                        setOpenDetailsDialog(true);
-                        setDetailsFromHistory(false); // <-- add this
-                        fetchWorkflowStatus(request.id);
-                        fetchRequestComments(request.id);
-                      }}
-                      sx={{
-                        cursor: 'pointer',
-                        p: 2.5,
-                        borderRadius: 2,
-                        transition: 'all 0.2s ease',
-                        backgroundColor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                          borderColor: 'primary.light'
-                        }
-                      }}
-                    >
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        flexWrap: 'wrap',
-                        [theme.breakpoints.down('sm')]: {
-                          flexDirection: 'column',
-                          alignItems: 'flex-start',
-                          gap: 1.5
-                        }
-                      }}>
-                        <Box sx={{
-                          flex: 1,
-                          minWidth: 250,
-                          [theme.breakpoints.down('sm')]: {
-                            width: '100%'
-                          }
-                        }}>
-                          <Typography variant="subtitle1" sx={{
-                            fontWeight: 700,
-                            color: 'text.primary',
-                            display: 'flex',
-                            alignItems: 'center',
-                          }}>
-                            Vehicle Request
-                          </Typography>
-
+                <>
+                  <Box sx={{ flex: 1, overflow: 'auto' }}>
+                    <List sx={{ '& > * + *': { mt: 1.5 } }}>
+                      {requests.map((request) => (
+                        <StyledPaper
+                          key={request.id}
+                          elevation={0}
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setOpenDetailsDialog(true);
+                            setDetailsFromHistory(false);
+                            fetchWorkflowStatus(request.id);
+                            fetchRequestComments(request.id);
+                          }}
+                          sx={{
+                            cursor: 'pointer',
+                            p: 2.5,
+                            borderRadius: 2,
+                            transition: 'all 0.2s ease',
+                            backgroundColor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            '&:hover': {
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                              borderColor: 'primary.light'
+                            }
+                          }}
+                        >
                           <Box sx={{
                             display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
                             flexWrap: 'wrap',
-                            gap: 2,
                             [theme.breakpoints.down('sm')]: {
                               flexDirection: 'column',
-                              gap: 1
+                              alignItems: 'flex-start',
+                              gap: 1.5
                             }
                           }}>
-                            <div>
-                              <Typography variant="body2" sx={{
+                            <Box sx={{
+                              flex: 1,
+                              minWidth: 250,
+                              [theme.breakpoints.down('sm')]: {
+                                width: '100%'
+                              }
+                            }}>
+                              <Typography variant="subtitle1" sx={{
+                                fontWeight: 700,
+                                mb: 0.5,
+                                color: 'text.primary',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 1,
-                                color: 'text.secondary',
-                                mb: '9px'
+                                gap: 1
                               }}>
-                                {request.requestedByUserEmail}
+                                Vehicle Assignment Request
                               </Typography>
 
-                              <Typography variant="body2" sx={{
+                              <Box sx={{
                                 display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                color: 'text.secondary'
+                                flexWrap: 'wrap',
+                                gap: 2,
+                                mt: 1.5,
+                                mb: 1.5,
+                                [theme.breakpoints.down('sm')]: {
+                                  flexDirection: 'column',
+                                  gap: 1
+                                }
                               }}>
-                                {request.vehicle ? (
-                                  <>
-                                    <div>{request.vehicle.make} {request.vehicle.model} </div>
-                                    <Chip
-                                      label={request.vehicle.licensePlate}
-                                      size="small"
-                                      sx={{
-                                        height: 20,
-                                        ml: 1,
-                                        fontSize: '0.9rem',
-                                        backgroundColor: alpha(theme.palette.success.main, 0.1),
-                                        color: theme.palette.success.dark
-                                      }}
-                                    />
-                                  </>
-                                ) : 'N/A'}
-                              </Typography>
-                            </div>
+                                <Typography variant="body2" sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  color: 'text.secondary'
+                                }}>
+                                  {request.requestedByUserEmail}
+                                </Typography>
+
+                                <Typography variant="body2" sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  color: 'text.secondary'
+                                }}>
+                                  {request.vehicle ? (
+                                    <>
+                                      {request.vehicle.make} {request.vehicle.model}
+                                      <Chip
+                                        label={request.vehicle.licensePlate}
+                                        size="small"
+                                        sx={{
+                                          height: 20,
+                                          ml: 1,
+                                          fontSize: '0.7rem',
+                                          backgroundColor: alpha(theme.palette.success.main, 0.1),
+                                          color: theme.palette.success.dark
+                                        }}
+                                      />
+                                    </>
+                                  ) : 'N/A'}
+                                </Typography>
+                              </Box>
+                            </Box>
+
+                            <Box sx={{
+                              display: 'flex',
+                              gap: 1.5,
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                              [theme.breakpoints.down('sm')]: {
+                                width: '100%',
+                                justifyContent: 'flex-start'
+                              }
+                            }}>
+                              <StatusBadge
+                                label={request.status}
+                                size="small"
+                                status={request.status}
+                                icon={getStatusIcon(request.status)}
+                                sx={{
+                                  px: 1.5,
+                                  py: 0.5,
+                                  fontSize: '0.8rem'
+                                }}
+                              />
+                              <Chip
+                                label={request.currentStage}
+                                size="small"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: '0.75rem',
+                                  backgroundColor: alpha(theme.palette.info.main, 0.15),
+                                  color: theme.palette.info.dark,
+                                  border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                                  height: 24
+                                }}
+                              />
+                            </Box>
                           </Box>
-                        </Box>
-
-                        <Box sx={{
-                          display: 'flex',
-                          gap: 1.5,
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          [theme.breakpoints.down('sm')]: {
-                            width: '100%',
-                            justifyContent: 'flex-start'
-                          }
-                        }}>
-                          <StatusBadge
-                            label={request.status}
-                            size="small"
-                            status={request.status}
-                            icon={getStatusIcon(request.status)}
-                            sx={{
-                              px: 1.5,
-                              py: 0.5,
-                              fontSize: '0.8rem'
-                            }}
-                          />
-                          <Chip
-                            label={request.currentStage}
-                            size="small"
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: '0.75rem',
-                              backgroundColor: alpha(theme.palette.info.main, 0.15),
-                              color: theme.palette.info.dark,
-                              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
-                              height: 24
-                            }}
-                          />
-                        </Box>
-                      </Box>
-                    </StyledPaper>
-                  ))}
-                </List>
+                        </StyledPaper>
+                      ))}
+                    </List>
+                  </Box>
+                </>
               ) : (
                 <Box sx={{
                   textAlign: 'center',
                   p: 6,
                   border: `1px dashed ${professionalColors.border}`,
                   borderRadius: '8px',
-                  backgroundColor: alpha(professionalColors.primary, 0.02)
+                  backgroundColor: alpha(professionalColors.primary, 0.02),
+                  height: '600px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center'
                 }}>
                   <AssignmentIcon sx={{
                     fontSize: 80,
@@ -1371,155 +1389,175 @@ const VehicleAssignmentApp = () => {
           {activeTab === 'myRequests' && (
             <>
               {pendingActions.length > 0 ? (
-                <List sx={{ '& > * + *': { mt: 1.5 } }}>
-                  {pendingActions.map((request) => (
-                    <StyledPaper
-                      key={request.id}
-                      ref={el => pendingRefs.current[request.id] = el}
-                      elevation={0}
-                      sx={{
-                        cursor: 'pointer',
-                        p: 2.5,
-                        borderRadius: 2,
-                        transition: 'all 0.2s ease',
-                        backgroundColor: highlightedRequest === String(request.id) ? 'rgba(59,130,246,0.08)' : 'background.paper',
-                        border: highlightedRequest === String(request.id) ? '2.5px solid #2563eb' : '1px solid',
-                        borderColor: highlightedRequest === String(request.id) ? '#2563eb' : 'divider',
-                        boxShadow: highlightedRequest === String(request.id) ? '0 4px 24px rgba(37,99,235,0.12)' : undefined,
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                          borderColor: 'primary.light'
-                        },
-                      }}
-                      onClick={() => {
-                        setSelectedRequest(request);
-                        setOpenDetailsDialog(true);
-                        setDetailsFromHistory(false); // <-- add this
-                        fetchWorkflowStatus(request.id);
-                        fetchRequestComments(request.id);
-                      }}
-                    >
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        flexWrap: 'wrap',
-                        [theme.breakpoints.down('sm')]: {
-                          flexDirection: 'column',
-                          alignItems: 'flex-start',
-                          gap: 1.5
-                        }
-                      }}>
-                        <Box sx={{
-                          flex: 1,
-                          minWidth: 250,
-                          [theme.breakpoints.down('sm')]: {
-                            width: '100%'
-                          }
-                        }}>
-                          <Typography variant="subtitle1" sx={{
-                            fontWeight: 700,
-                            mb: 0.5,
-                            color: 'text.primary',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1
-                          }}>
-                            Vehicle Request
-                          </Typography>
-
+                <>
+                  <Box sx={{ flex: 1, overflow: 'auto' }}>
+                    <List sx={{ '& > * + *': { mt: 1.5 } }}>
+                      {pendingActions.map((request) => (
+                        <StyledPaper
+                          key={request.id}
+                          ref={el => pendingRefs.current[request.id] = el}
+                          elevation={0}
+                          sx={{
+                            cursor: 'pointer',
+                            p: 2.5,
+                            borderRadius: 2,
+                            transition: 'all 0.2s ease',
+                            backgroundColor: highlightedRequest === String(request.id) ? 'rgba(59,130,246,0.08)' : 'background.paper',
+                            border: highlightedRequest === String(request.id) ? '2.5px solid #2563eb' : '1px solid',
+                            borderColor: highlightedRequest === String(request.id) ? '#2563eb' : 'divider',
+                            boxShadow: highlightedRequest === String(request.id) ? '0 4px 24px rgba(37,99,235,0.12)' : undefined,
+                            '&:hover': {
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                              borderColor: 'primary.light'
+                            },
+                          }}
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setOpenDetailsDialog(true);
+                            setDetailsFromHistory(false);
+                            fetchWorkflowStatus(request.id);
+                            fetchRequestComments(request.id);
+                          }}
+                        >
                           <Box sx={{
                             display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
                             flexWrap: 'wrap',
-                            gap: 2,
-                            mt: 1.5,
-                            mb: 1.5,
                             [theme.breakpoints.down('sm')]: {
                               flexDirection: 'column',
-                              gap: 1
+                              alignItems: 'flex-start',
+                              gap: 1.5
                             }
                           }}>
-                            <Typography variant="body2" sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                              color: 'text.secondary'
+                            <Box sx={{
+                              flex: 1,
+                              minWidth: 250,
+                              [theme.breakpoints.down('sm')]: {
+                                width: '100%'
+                              }
                             }}>
-                              {request.requestedByUserEmail}
-                            </Typography>
+                              <Typography variant="subtitle1" sx={{
+                                fontWeight: 700,
+                                mb: 0.5,
+                                color: 'text.primary',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1
+                              }}>
+                                Vehicle Assignment Request
+                              </Typography>
 
-                            <Typography variant="body2" sx={{
+                              <Box sx={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 2,
+                                mt: 1.5,
+                                mb: 1.5,
+                                [theme.breakpoints.down('sm')]: {
+                                  flexDirection: 'column',
+                                  gap: 1
+                                }
+                              }}>
+                                <Typography variant="body2" sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  color: 'text.secondary'
+                                }}>
+                                  {request.requestedByUserEmail}
+                                </Typography>
+
+                                <Typography variant="body2" sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  color: 'text.secondary'
+                                }}>
+                                  {request.vehicle ? (
+                                    <>
+                                      {request.vehicle.make} {request.vehicle.model}
+                                      <Chip
+                                        label={request.vehicle.licensePlate}
+                                        size="small"
+                                        sx={{
+                                          height: 20,
+                                          ml: 1,
+                                          fontSize: '0.7rem',
+                                          backgroundColor: alpha(theme.palette.success.main, 0.1),
+                                          color: theme.palette.success.dark
+                                        }}
+                                      />
+                                    </>
+                                  ) : 'N/A'}
+                                </Typography>
+                              </Box>
+                            </Box>
+
+                            <Box sx={{
                               display: 'flex',
+                              gap: 1.5,
                               alignItems: 'center',
-                              gap: 1,
-                              color: 'text.secondary'
+                              flexWrap: 'wrap',
+                              [theme.breakpoints.down('sm')]: {
+                                width: '100%',
+                                justifyContent: 'flex-start'
+                              }
                             }}>
-                              {request.vehicle ? (
-                                <>
-                                  {request.vehicle.make} {request.vehicle.model}
-                                  <Chip
-                                    label={request.vehicle.licensePlate}
-                                    size="small"
-                                    sx={{
-                                      height: 20,
-                                      ml: 1,
-                                      fontSize: '0.7rem',
-                                      backgroundColor: alpha(theme.palette.success.main, 0.1),
-                                      color: theme.palette.success.dark
-                                    }}
-                                  />
-                                </>
-                              ) : 'N/A'}
-                            </Typography>
+                              <StatusBadge
+                                label={request.status}
+                                size="small"
+                                status={request.status}
+                                icon={getStatusIcon(request.status)}
+                                sx={{
+                                  px: 1.5,
+                                  py: 0.5,
+                                  fontSize: '0.8rem'
+                                }}
+                              />
+                              <Chip
+                                label={request.currentStage}
+                                size="small"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: '0.75rem',
+                                  backgroundColor: alpha(theme.palette.info.main, 0.15),
+                                  color: theme.palette.info.dark,
+                                  border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                                  height: 24
+                                }}
+                              />
+                            </Box>
                           </Box>
-                        </Box>
-
-                        <Box sx={{
-                          display: 'flex',
-                          gap: 1.5,
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          [theme.breakpoints.down('sm')]: {
-                            width: '100%',
-                            justifyContent: 'flex-start'
-                          }
-                        }}>
-                          <StatusBadge
-                            label={request.status}
-                            size="small"
-                            status={request.status}
-                            icon={getStatusIcon(request.status)}
-                            sx={{
-                              px: 1.5,
-                              py: 0.5,
-                              fontSize: '0.8rem'
-                            }}
-                          />
-                          <Chip
-                            label={request.currentStage}
-                            size="small"
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: '0.75rem',
-                              backgroundColor: alpha(theme.palette.info.main, 0.15),
-                              color: theme.palette.info.dark,
-                              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
-                              height: 24
-                            }}
-                          />
-                        </Box>
-                      </Box>
-                    </StyledPaper>
-                  ))}
-                </List>
+                        </StyledPaper>
+                      ))}
+                    </List>
+                  </Box>
+                  {pendingActions.length > 4 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 0 }}>
+                      <Pagination
+                        count={Math.ceil(pendingActions.length / 4)}
+                        page={currentPage}
+                        onChange={handlePageChange}
+                        color="primary"
+                        size="large"
+                      />
+                    </Box>
+                  )}
+                </>
               ) : (
                 <Box sx={{
                   textAlign: 'center',
                   p: 6,
                   border: `1px dashed ${professionalColors.border}`,
                   borderRadius: '8px',
-                  backgroundColor: alpha(professionalColors.primary, 0.02)
+                  backgroundColor: alpha(professionalColors.primary, 0.02),
+                  height: '600px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center'
                 }}>
                   <AssignmentIcon sx={{
                     fontSize: 80,
@@ -1548,153 +1586,162 @@ const VehicleAssignmentApp = () => {
           {activeTab === 'myVehicleRequests' && (
             <>
               {myRequests.length > 0 ? (
-                <List sx={{ '& > * + *': { mt: 2 } }}>
-                  {myRequests.map((request) => (
-                    <StyledPaper
-                      key={request.id}
-                      elevation={0}
-                      onClick={() => {
-                        setSelectedRequest(request);
-                        setOpenDetailsDialog(true);
-                        setDetailsFromHistory(false); // <-- add this
-                        fetchWorkflowStatus(request.id);
-                        fetchRequestComments(request.id);
-                      }}
-                      sx={{
-                        cursor: 'pointer',
-                        p: 2.5,
-                        borderRadius: 2,
-                        transition: 'all 0.2s ease',
-                        backgroundColor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                          borderColor: 'primary.light'
-                        }
-                      }}
-                    >
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        flexWrap: 'wrap',
-                        [theme.breakpoints.down('sm')]: {
-                          flexDirection: 'column',
-                          alignItems: 'flex-start',
-                          gap: 1.5
-                        }
-                      }}>
-                        <Box sx={{
-                          flex: 1,
-                          minWidth: 250,
-                          [theme.breakpoints.down('sm')]: {
-                            width: '100%'
-                          }
-                        }}>
-                          <Typography variant="subtitle1" sx={{
-                            fontWeight: 700,
-                            mb: 0.5,
-                            color: 'text.primary',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1
-                          }}>
-                            Vehicle Request
-                          </Typography>
-
+                <>
+                  <Box sx={{ flex: 1, overflow: 'auto' }}>
+                    <List sx={{ '& > * + *': { mt: 1.5 } }}>
+                      {myRequests.map((request) => (
+                        <StyledPaper
+                          key={request.id}
+                          elevation={0}
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setOpenDetailsDialog(true);
+                            setDetailsFromHistory(false);
+                            fetchWorkflowStatus(request.id);
+                            fetchRequestComments(request.id);
+                          }}
+                          sx={{
+                            cursor: 'pointer',
+                            p: 2.5,
+                            borderRadius: 2,
+                            transition: 'all 0.2s ease',
+                            backgroundColor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            '&:hover': {
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                              borderColor: 'primary.light'
+                            }
+                          }}
+                        >
                           <Box sx={{
                             display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
                             flexWrap: 'wrap',
-                            gap: 2,
-                            mt: 1.5,
-                            mb: 1.5,
                             [theme.breakpoints.down('sm')]: {
                               flexDirection: 'column',
-                              gap: 1
+                              alignItems: 'flex-start',
+                              gap: 1.5
                             }
                           }}>
-                            <Typography variant="body2" sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                              color: 'text.secondary'
+                            <Box sx={{
+                              flex: 1,
+                              minWidth: 250,
+                              [theme.breakpoints.down('sm')]: {
+                                width: '100%'
+                              }
                             }}>
-                              {request.requestedByUserEmail}
-                            </Typography>
+                              <Typography variant="subtitle1" sx={{
+                                fontWeight: 700,
+                                mb: 0.5,
+                                color: 'text.primary',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1
+                              }}>
+                                Vehicle Assignment Request
+                              </Typography>
 
-                            <Typography variant="body2" sx={{
+                              <Box sx={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 2,
+                                mt: 1.5,
+                                mb: 1.5,
+                                [theme.breakpoints.down('sm')]: {
+                                  flexDirection: 'column',
+                                  gap: 1
+                                }
+                              }}>
+                                <Typography variant="body2" sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  color: 'text.secondary'
+                                }}>
+                                  {request.requestedByUserEmail}
+                                </Typography>
+
+                                <Typography variant="body2" sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1,
+                                  color: 'text.secondary'
+                                }}>
+                                  {request.vehicle ? (
+                                    <>
+                                      {request.vehicle.make} {request.vehicle.model}
+                                      <Chip
+                                        label={request.vehicle.licensePlate}
+                                        size="small"
+                                        sx={{
+                                          height: 20,
+                                          ml: 1,
+                                          fontSize: '0.7rem',
+                                          backgroundColor: alpha(theme.palette.success.main, 0.1),
+                                          color: theme.palette.success.dark
+                                        }}
+                                      />
+                                    </>
+                                  ) : 'N/A'}
+                                </Typography>
+                              </Box>
+                            </Box>
+
+                            <Box sx={{
                               display: 'flex',
+                              gap: 1.5,
                               alignItems: 'center',
-                              gap: 1,
-                              color: 'text.secondary'
+                              flexWrap: 'wrap',
+                              [theme.breakpoints.down('sm')]: {
+                                width: '100%',
+                                justifyContent: 'flex-start'
+                              }
                             }}>
-                              {request.vehicle ? (
-                                <>
-                                  {request.vehicle.make} {request.vehicle.model}
-                                  <Chip
-                                    label={request.vehicle.licensePlate}
-                                    size="small"
-                                    sx={{
-                                      height: 20,
-                                      ml: 1,
-                                      fontSize: '0.7rem',
-                                      backgroundColor: alpha(theme.palette.success.main, 0.1),
-                                      color: theme.palette.success.dark
-                                    }}
-                                  />
-                                </>
-                              ) : 'N/A'}
-                            </Typography>
+                              <StatusBadge
+                                label={request.status}
+                                size="small"
+                                status={request.status}
+                                icon={getStatusIcon(request.status)}
+                                sx={{
+                                  px: 1.5,
+                                  py: 0.5,
+                                  fontSize: '0.8rem'
+                                }}
+                              />
+                              <Chip
+                                label={request.currentStage}
+                                size="small"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: '0.75rem',
+                                  backgroundColor: alpha(theme.palette.info.main, 0.15),
+                                  color: theme.palette.info.dark,
+                                  border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                                  height: 24
+                                }}
+                              />
+                            </Box>
                           </Box>
-                        </Box>
-
-                        <Box sx={{
-                          display: 'flex',
-                          gap: 1.5,
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          [theme.breakpoints.down('sm')]: {
-                            width: '100%',
-                            justifyContent: 'flex-start'
-                          }
-                        }}>
-                          <StatusBadge
-                            label={request.status}
-                            size="small"
-                            status={request.status}
-                            icon={getStatusIcon(request.status)}
-                            sx={{
-                              px: 1.5,
-                              py: 0.5,
-                              fontSize: '0.8rem'
-                            }}
-                          />
-                          <Chip
-                            label={request.currentStage}
-                            size="small"
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: '0.75rem',
-                              backgroundColor: alpha(theme.palette.info.main, 0.15),
-                              color: theme.palette.info.dark,
-                              border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
-                              height: 24
-                            }}
-                          />
-                        </Box>
-                      </Box>
-                    </StyledPaper>
-                  ))}
-                </List>
+                        </StyledPaper>
+                      ))}
+                    </List>
+                  </Box>
+                </>
               ) : (
                 <Box sx={{
                   textAlign: 'center',
                   p: 6,
                   border: `1px dashed ${professionalColors.border}`,
                   borderRadius: '8px',
-                  backgroundColor: alpha(professionalColors.primary, 0.02)
+                  backgroundColor: alpha(professionalColors.primary, 0.02),
+                  height: '600px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center'
                 }}>
                   <AssignmentIcon sx={{
                     fontSize: 80,

@@ -33,7 +33,10 @@ export default function Admin()  { const navigate = useNavigate();
           p: 3
         }}
       >
-        <Container maxWidth="sm">
+        <Container maxWidth={false} sx={{ 
+          maxWidth: '100% !important',
+          px: { xs: 2, sm: 3, md: 4 }
+        }}>
           <Stack spacing={4} alignItems="center">
             <Typography variant="h3" fontWeight={700}>
               Welcome

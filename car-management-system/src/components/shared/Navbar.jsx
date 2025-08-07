@@ -51,6 +51,7 @@ import logo from "../../../src/assets/persol.png";
 import ico from "../../assets/icon-img.jpg";
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import ActivityIndicator from './ActivityIndicator';
 
 export default function Navbar() {
   const theme = useTheme();
@@ -247,6 +248,7 @@ export default function Navbar() {
             </Link>
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <ActivityIndicator />
 
             <IconButton
               size="large"

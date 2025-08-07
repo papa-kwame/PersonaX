@@ -47,9 +47,11 @@ const API_URL = 'https://localhost:7092/api';
 
 // Styled components with exact pixel measurements from original CSS
 const UserVehicleManagementContainer = styled(Container)({
-  padding: '32px', // 2rem
-  maxWidth: '1200px',
-  margin: '0 auto'
+  maxWidth: '100% !important',
+  padding: '20px',
+  '@media (min-width: 1200px)': {
+    maxWidth: '100% !important',
+  },
 });
 
 const PageHeader = styled(Box)({

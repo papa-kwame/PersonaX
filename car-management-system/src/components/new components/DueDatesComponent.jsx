@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateDisplay } from '../../utils/dateUtils';
 import './DueDatesComponent.css';
 import { getVehiclesWithDueDates } from '../../services/vehicles';
 
@@ -32,7 +33,7 @@ const DueDatesComponent = () => {
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString();
+    return formatDateDisplay(date);
   };
 
   const handleThresholdChange = (e) => {

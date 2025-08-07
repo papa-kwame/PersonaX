@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDateDisplay } from '../utils/dateUtils';
 import { dummyRequests } from '../components/approval/dummyData';
 import MechanicQuoteForm from '../components/mechanic/MechanicQuoteForm';
 import MechanicWorkOrders from '../components/mechanic/MechanicWorkOrders';
@@ -133,7 +134,7 @@ const MechanicDashboard = () => {
                               <strong>Mileage:</strong> {request.mileage}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              <strong>Date:</strong> {new Date(request.createdAt).toLocaleDateString()}
+                              <strong>Date:</strong> {formatDateDisplay(request.createdAt)}
                             </Typography>
                           </Stack>
                         </Box>
@@ -194,7 +195,7 @@ const MechanicDashboard = () => {
                               <strong>Mileage:</strong> {request.mileage}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              <strong>Date:</strong> {new Date(request.createdAt).toLocaleDateString()}
+                              <strong>Date:</strong> {formatDateDisplay(request.createdAt)}
                             </Typography>
                           </Stack>
                         </Box>

@@ -301,6 +301,7 @@ const AdminUsers = () => {
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Department</TableCell>
+                    <TableCell>Status</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -313,12 +314,29 @@ const AdminUsers = () => {
                         <Avatar sx={{   fontWeight: 700 }}>
                           <Person />
                         </Avatar>
-                        <Typography fontWeight={400}>{u.userName}</Typography>
+                        <Typography fontWeight={400}>{u.fullName}</Typography>
                       </Stack>
                     </TableCell>
                     <TableCell sx={{ color: 'text.secondary' }}>{u.email}</TableCell>
                     <TableCell sx={{ color: 'text.secondary' }}>{u.phoneNumber || '-'}</TableCell>
                     <TableCell sx={{ color: 'text.secondary' }}>{u.department || '-'}</TableCell>
+                    <TableCell>
+                      <Box
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 2,
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          backgroundColor: u.isActive ? '#e8f5e8' : '#ffeaea',
+                          color: u.isActive ? '#2e7d32' : '#d32f2f',
+                        }}
+                      >
+                        {u.isActive ? '🟢 Active' : '🔴 Inactive'}
+                      </Box>
+                    </TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Button
@@ -347,7 +365,7 @@ const AdminUsers = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ color: 'text.secondary', py: 4 }}>
+                                  <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary', py: 4 }}>
                     No users found
                   </TableCell>
                 </TableRow>

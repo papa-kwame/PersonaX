@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateDisplay } from '../../utils/dateUtils';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import {
@@ -238,7 +239,7 @@ const MaintenanceSchedules = () => {
                   <TableCell>{schedule.vehicleMake} {schedule.vehicleModel}</TableCell>
                   <TableCell>{schedule.licensePlate}</TableCell>
                   <TableCell>
-                    {new Date(schedule.scheduledDate).toLocaleDateString()}
+                    {formatDateDisplay(schedule.scheduledDate)}
                   </TableCell>
                   <TableCell>{schedule.repairType}</TableCell>
                   <TableCell>
@@ -286,7 +287,7 @@ const MaintenanceSchedules = () => {
                 License Plate: {state.selectedSchedule.licensePlate}
               </Typography>
               <Typography variant="subtitle1" gutterBottom>
-                Scheduled Date: {new Date(state.selectedSchedule.scheduledDate).toLocaleDateString()}
+                Scheduled Date: {formatDateDisplay(state.selectedSchedule.scheduledDate)}
               </Typography>
               <Typography variant="subtitle1" gutterBottom>
                 Reason: {state.selectedSchedule.reason}

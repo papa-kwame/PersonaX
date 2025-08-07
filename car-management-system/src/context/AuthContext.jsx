@@ -1,12 +1,19 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { verifyToken } from '../services/auth';
 import { jwtDecode } from 'jwt-decode';
+import activityService from '../services/activityService';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('token')));
-  const [userRoles, setUserRoles] = useState(() => JSON.parse(localStorage.getItem('roles')) || []);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const authData = localStorage.getItem('authData');
+    return authData ? Boolean(JSON.parse(authData).token) : false;
+  });
+  const [userRoles, setUserRoles] = useState(() => {
+    const authData = localStorage.getItem('authData');
+    return authData ? JSON.parse(authData).roles || [] : [];
+  });
   const [userId, setUserId] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
   const [username, setUsername] = useState(null);
@@ -21,7 +28,9 @@ export function AuthProvider({ children }) {
 
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const authData = localStorage.getItem('authData');
+        if (authData) {
+          const { token } = JSON.parse(authData);
         if (token) {
           const isValid = await verifyToken(token);
           if (!active) return;
@@ -36,12 +45,15 @@ export function AuthProvider({ children }) {
             setUserId(userId);
             setUserEmail(email);
             setUsername(username);
+              
+              // Start activity tracking for existing authenticated session
+              activityService.startActivityTracking();
           } else {
-            localStorage.removeItem('token');
-            localStorage.removeItem('roles');
+              localStorage.removeItem('authData');
             setUserId(null);
             setUserEmail(null);
             setUsername(null);
+            }
           }
         }
       } catch (error) {
@@ -54,6 +66,15 @@ export function AuthProvider({ children }) {
     checkAuth();
     return () => { active = false; };
   }, []);
+
+  // Effect to handle activity tracking when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      activityService.startActivityTracking();
+    } else {
+      activityService.stopActivityTracking();
+    }
+  }, [isAuthenticated]);
 
   const login = (authData) => {
     localStorage.setItem('token', authData.token);
@@ -73,11 +94,16 @@ export function AuthProvider({ children }) {
 
     // Set the mustChangePassword flag
     setMustChangePassword(authData.mustChangePassword === true || authData.mustChangePassword === 'true');
+
+    // Start activity tracking after successful login
+    activityService.startActivityTracking();
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('roles');
+  const logout = async () => {
+    // Stop activity tracking and logout from backend
+    await activityService.logout();
+    
+    localStorage.removeItem('authData');
     setIsAuthenticated(false);
     setUserRoles([]);
     setUserId(null);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDate, formatDateDisplay, formatDateShort, formatMonthYear } from '../../utils/dateUtils';
 import {
   Container,
   Row,
@@ -352,7 +353,7 @@ const SchedulePage = () => {
                 className={`day-header ${isToday(date) ? 'today' : ''} ${isWeekend ? 'weekend' : ''}`}
               >
                 <div className="weekday-name">
-                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                  {formatDateShort(date).split('/')[0]}
                 </div>
                 <div className="date-number">
                   {date.getDate()}
@@ -462,12 +463,7 @@ const SchedulePage = () => {
 
     const dateString = selectedDay.toISOString().split('T')[0];
     const dayActivities = filteredActivities[dateString] || [];
-    const formattedDate = selectedDay.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    const formattedDate = formatDateDisplay(selectedDay);
 
     return (
       <Modal
@@ -513,7 +509,7 @@ const SchedulePage = () => {
                           {activity.priority}
                         </Badge>
                         <Badge pill bg={getStatusBadgeColor(activity.status)} className="ms-2">
-                          {activity.status}  {new Date(activity.completedDate).toLocaleString()}
+                          {activity.status}  {formatDateDisplay(activity.completedDate)}
                         </Badge>
               
                     
@@ -585,7 +581,7 @@ const SchedulePage = () => {
                           <div className="section-header"><i className="bi bi-flag"></i> Completion Info</div>
                           <div className="completion-info">
                       {activityProgress && (
-                              <span className="progress-box"><strong>Expected:</strong> {new Date(activityProgress.expectedCompletionDate).toLocaleString()}</span>
+                              <span className="progress-box"><strong>Expected:</strong> {formatDateDisplay(activityProgress.expectedCompletionDate)}</span>
                             )}
 
                           </div>
@@ -850,7 +846,7 @@ const SchedulePage = () => {
                     <Col md={2} className="text-end">
                       <small className="text-muted request-date">
                         <i className="bi bi-calendar me-1"></i>
-                        {new Date(request.requestDate).toLocaleDateString()}
+                        {formatDateDisplay(request.requestDate)}
                       </small>
                     </Col>
                   </Row>
@@ -938,8 +934,8 @@ const SchedulePage = () => {
             <Button variant="outline-secondary" onClick={goToToday}>
               <div>
                 {viewMode === 'week'
-                  ? ` ${currentDate.toLocaleDateString('en-US', { month: 'long',  year: 'numeric' })}`
-                  : currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                  ? ` ${formatMonthYear(currentDate)}`
+                : formatMonthYear(currentDate)}
               </div>
             </Button>
             <Button variant="outline-secondary" onClick={goToNext}>
@@ -971,9 +967,9 @@ const SchedulePage = () => {
       <div className="current-view-display mb-3">
         <h5 className="text-muted">
           {viewMode === 'week' ? (
-            `Week of ${currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+            `Week of ${formatDateDisplay(currentDate)}`
           ) : (
-            currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            formatMonthYear(currentDate)
           )}
         </h5>
       </div>
@@ -1046,7 +1042,7 @@ const SchedulePage = () => {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginTop: 6, fontSize: 15 }}>
                       <div style={{ color: '#374151' }}>
                         <i className="bi bi-calendar-event me-1" style={{ color: '#2563eb' }}></i>
-                        <span style={{ fontWeight: 500 }}>Expected:</span> {update.expectedCompletionDate ? new Date(update.expectedCompletionDate).toLocaleString() : '-'}
+                        <span style={{ fontWeight: 500 }}>Expected:</span> {update.expectedCompletionDate ? formatDateDisplay(update.expectedCompletionDate, true) : '-'}
                       </div>
                       <div style={{ color: '#374151' }}>
                         <i className="bi bi-chat-left-text me-1" style={{ color: '#2563eb' }}></i>
@@ -1054,7 +1050,7 @@ const SchedulePage = () => {
                       </div>
                       <div style={{ color: '#6c757d' }}>
                         <i className="bi bi-clock-history me-1" style={{ color: '#2563eb' }}></i>
-                        <span style={{ fontWeight: 500 }}>Updated:</span> {update.timestamp ? new Date(update.timestamp).toLocaleString() : '-'}
+                        <span style={{ fontWeight: 500 }}>Updated:</span> {update.timestamp ? formatDateDisplay(update.timestamp, true) : '-'}
                       </div>
                     </div>
                   </div>

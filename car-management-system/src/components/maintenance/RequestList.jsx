@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateDisplay } from '../../utils/dateUtils';
 import {
   Table,
   TableBody,
@@ -123,7 +124,7 @@ const RequestList = ({ onSelectRequest, showNotification, setLoading }) => {
                   <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {request.description}
                   </TableCell>
-                  <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
+                                              <TableCell>{formatDateDisplay(request.requestDate)}</TableCell>
                   <TableCell>
                     <Chip label={request.status} color={getStatusColor(request.status)} size="small" />
                   </TableCell>

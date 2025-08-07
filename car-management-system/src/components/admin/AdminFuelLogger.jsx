@@ -46,7 +46,6 @@ import {
   Description,
   AssignmentInd,
   DirectionsCar,
-  FilterAlt,
   Refresh,
   Search,
   BarChart,
@@ -108,7 +107,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   flexDirection: 'column',
 }));
 
-const StatCard = styled(Card)(({ theme }) => ({
+const StatCard = styled(Card)(({ theme, sidebarExpanded }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -118,6 +117,7 @@ const StatCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[1],
   height: '100%',
+  width: sidebarExpanded ? '350px' : '450px',
   transition: 'all 0.3s ease',
   '&:hover': {
     backgroundColor: theme.palette.action.hover,
@@ -144,7 +144,7 @@ const HoverTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-const AdminFuelLogger = () => {
+const AdminFuelLogger = ({ sidebarExpanded = true }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [fuelLogs, setFuelLogs] = useState([]);
@@ -723,7 +723,14 @@ const AdminFuelLogger = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: isMobile ? 2 : 3 }}>
+      <Container maxWidth={false} sx={{ 
+        mt: 4, 
+        mb: 4, 
+        px: { xs: 2, sm: 3, md: 4 },
+        maxWidth: '100% !important',
+        width: sidebarExpanded ? '100%' : 'calc(100% + 100px)',
+        transition: 'width 0.3s ease-in-out'
+      }}>
         {/* Header */}
         <Box
           sx={{
@@ -733,54 +740,123 @@ const AdminFuelLogger = () => {
             mb: 4,
             flexDirection: isMobile ? 'column' : 'row',
             gap: isMobile ? 2 : 0,
-            background: 'linear-gradient(120deg, rgba(255,255,255,0.85) 60%, rgba(180,210,255,0.45) 100%)',
-            borderRadius: 5,
-            boxShadow: '0 8px 32px rgba(60, 80, 180, 0.10)',
-            p: 3,
-            border: '1.5px solid rgba(120,140,200,0.10)',
-            backdropFilter: 'blur(8px)',
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            p: 4,
+            border: '1px solid #e2e8f0',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <LocalGasStation sx={{ fontSize: '2.4rem', mr: 2 }} />
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 400, letterSpacing: '0.7px', textShadow: '0 2px 12px rgba(60,80,180,0.08)' }}>
-              Fuel Logs Management
-            </Typography>
+            <Box sx={{
+              p: 2,
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              mr: 3,
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+            }}>
+              <LocalGasStation sx={{ fontSize: '2rem', color: '#ffffff' }} />
+            </Box>
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ 
+                fontWeight: 700, 
+                color: '#1e293b',
+                letterSpacing: '-0.025em',
+                mb: 0.5
+              }}>
+                Fuel Management
+              </Typography>
+              <Typography variant="body2" sx={{ 
+                color: '#64748b',
+                fontWeight: 500
+              }}>
+                Track and manage vehicle fuel consumption
+              </Typography>
+            </Box>
           </Box>
-          <Stack direction="row" spacing={1.5} sx={{ mt: isMobile ? 2 : 0, background: 'rgba(255,255,255,0.85)', borderRadius: 4, boxShadow: '0 2px 10px rgba(60,80,180,0.10)', p: 1.2, border: '1.5px solid rgba(120,140,200,0.10)', backdropFilter: 'blur(6px)' }}>
-            <Button variant="contained" color="primary" startIcon={<Add />} sx={{ borderRadius: 3, fontWeight: 700, px: 3, boxShadow: '0 2px 8px rgba(25, 118, 210, 0.13)' }} onClick={() => handleOpenDialog()}>
+          
+          <Stack direction="row" spacing={2} sx={{ 
+            mt: isMobile ? 2 : 0,
+            flexWrap: 'wrap',
+            justifyContent: 'center'
+          }}>
+            <Button 
+              variant="contained" 
+              startIcon={<Add />} 
+              sx={{ 
+                borderRadius: '8px', 
+                fontWeight: 600, 
+                px: 3, 
+                py: 1.5,
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+                  boxShadow: '0 6px 16px rgba(59, 130, 246, 0.35)'
+                }
+              }} 
+              onClick={() => handleOpenDialog()}
+            >
               Add Log
             </Button>
-            <Tooltip title="Export to Excel">
-              <Button variant="outlined" color="primary" startIcon={<FileDownload />} sx={{ borderRadius: 3, fontWeight: 700, px: 2.5, borderColor: 'primary.main', color: 'primary.main', background: 'rgba(245,250,255,0.85)' }} onClick={() => setOpenExportModal(true)}>
-                Export
-              </Button>
-            </Tooltip>
-            <Tooltip title="Refresh Data">
-              <IconButton
-                color="primary"
-                onClick={fetchData}
-                sx={{
-                  border: `1.5px solid #e3e8f0`,
-                  borderRadius: 3,
-                  background: '#f4f8fd',
-                  '&:hover': {
-                    backgroundColor: 'primary.light',
-                    color: '#fff',
-                  },
-                }}
-              >
-                <Refresh />
-              </IconButton>
-            </Tooltip>
+            
+            <Button 
+              variant="outlined" 
+              startIcon={<FileDownload />} 
+              sx={{ 
+                borderRadius: '8px', 
+                fontWeight: 600, 
+                px: 3, 
+                py: 1.5,
+                borderColor: '#3b82f6',
+                color: '#3b82f6',
+                '&:hover': {
+                  borderColor: '#2563eb',
+                  backgroundColor: 'rgba(59, 130, 246, 0.04)'
+                }
+              }} 
+              onClick={() => setOpenExportModal(true)}
+            >
+              Export
+            </Button>
+            
             <Button
               variant="outlined"
-              color="primary"
-              sx={{ borderRadius: 3, fontWeight: 700, px: 2.5, borderColor: 'primary.main', color: 'primary.main', background: 'rgba(245,250,255,0.85)' }}
+              startIcon={<BarChart />}
+              sx={{ 
+                borderRadius: '8px', 
+                fontWeight: 600, 
+                px: 3, 
+                py: 1.5,
+                borderColor: '#10b981',
+                color: '#10b981',
+                '&:hover': {
+                  borderColor: '#059669',
+                  backgroundColor: 'rgba(16, 185, 129, 0.04)'
+                }
+              }}
               onClick={handleOpenStatsModal}
             >
-              Custom Stats
+              Analytics
             </Button>
+            
+            <IconButton
+              onClick={fetchData}
+              sx={{
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                background: '#ffffff',
+                color: '#64748b',
+                p: 1.5,
+                '&:hover': {
+                  backgroundColor: '#f1f5f9',
+                  color: '#3b82f6',
+                  borderColor: '#3b82f6'
+                },
+              }}
+            >
+              <Refresh />
+            </IconButton>
           </Stack>
         </Box>
 
@@ -788,181 +864,273 @@ const AdminFuelLogger = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 2,
-            p: 2.5,
-          mb: 4,
-            borderRadius: 3,
-          background: '#fff',
-            boxShadow: '0 2px 8px rgba(60, 80, 180, 0.08)',
-            border: '1px solid #e3e8f0',
-
+            gap: 3,
+            p: 3,
+            mb: 4,
+            borderRadius: '12px',
+            background: '#ffffff',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+            border: '1px solid #e2e8f0',
             flexWrap: { xs: 'wrap', md: 'nowrap' },
             flexDirection: { xs: 'column', md: 'row' },
-            minHeight: 64,
           }}
         >
-              <TextField
-                variant="outlined"
-                placeholder="Search logs..."
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-              sx: { borderRadius: 2, background: '#f7fafd', border: '1px solid #e3e8f0', minWidth: 180 }
-                }}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                size="small"
-            sx={{ minWidth: 180 }}
-              />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel>Vehicle</InputLabel>
-                <Select
-                  value={filters.vehicleId}
-                  onChange={(e) => handleFilterChange('vehicleId', e.target.value)}
-                  label="Vehicle"
-              sx={{ borderRadius: 2, background: '#f7fafd', border: '1px solid #e3e8f0' }}
-                >
-                  <MenuItem value="">All Vehicles</MenuItem>
-                  {vehicles.map((vehicle) => (
-                    <MenuItem key={vehicle.id} value={vehicle.id}>
-                      {vehicle.make} {vehicle.model}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel>User</InputLabel>
-                <Select
-                  value={filters.userId}
-                  onChange={(e) => handleFilterChange('userId', e.target.value)}
-                  label="User"
-              sx={{ borderRadius: 2, background: '#f7fafd', border: '1px solid #e3e8f0' }}
-                >
-                  <MenuItem value="">All Users</MenuItem>
-                  {users.map((user) => (
-                    <MenuItem key={user.id} value={user.id}>
+          <TextField
+            variant="outlined"
+            placeholder="Search fuel logs..."
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search sx={{ color: '#64748b' }} />
+                </InputAdornment>
+              ),
+              sx: { 
+                borderRadius: '8px', 
+                background: '#f8fafc',
+                '& fieldset': { borderColor: '#e2e8f0' },
+                '&:hover fieldset': { borderColor: '#cbd5e1' },
+                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+              }
+            }}
+            sx={{ 
+              minWidth: 280,
+              flex: 1,
+              '& .MuiInputBase-root': {
+                height: '44px'
+              }
+            }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel sx={{ color: '#64748b' }}>Vehicle</InputLabel>
+            <Select
+              value={filters.vehicleId}
+              onChange={(e) => handleFilterChange('vehicleId', e.target.value)}
+              label="Vehicle"
+              sx={{ 
+                borderRadius: '8px',
+                background: '#f8fafc',
+                height: '44px',
+                '& fieldset': { borderColor: '#e2e8f0' },
+                '&:hover fieldset': { borderColor: '#cbd5e1' },
+                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+              }}
+            >
+              <MenuItem value="">All Vehicles</MenuItem>
+              {vehicles.map((vehicle) => (
+                <MenuItem key={vehicle.id} value={vehicle.id}>
+                  {vehicle.make} {vehicle.model} ({vehicle.licensePlate})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel sx={{ color: '#64748b' }}>User</InputLabel>
+            <Select
+              value={filters.userId}
+              onChange={(e) => handleFilterChange('userId', e.target.value)}
+              label="User"
+              sx={{ 
+                borderRadius: '8px',
+                background: '#f8fafc',
+                height: '44px',
+                '& fieldset': { borderColor: '#e2e8f0' },
+                '&:hover fieldset': { borderColor: '#cbd5e1' },
+                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+              }}
+            >
+              <MenuItem value="">All Users</MenuItem>
+              {users.map((user) => (
+                <MenuItem key={user.id} value={user.id}>
                   {user.userName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <DatePicker
-                label="Start Date"
-                value={filters.startDate}
-                onChange={(date) => handleFilterChange('startDate', date)}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    size: 'small',
-                sx: { borderRadius: 2, background: '#f7fafd', border: '1px solid #e3e8f0', minWidth: 140 }
-                  }
-                }}
-              />
-              <DatePicker
-                label="End Date"
-                value={filters.endDate}
-                onChange={(date) => handleFilterChange('endDate', date)}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    size: 'small',
-                sx: { borderRadius: 2, background: '#f7fafd', border: '1px solid #e3e8f0', minWidth: 140 }
-                  }
-                }}
-              />
-          <Box sx={{ flexGrow: 1 }} />
-              <Button
-                variant="outlined"
-                color="secondary"
-            onClick={() => setFilters({ vehicleId: '', userId: '', startDate: null, endDate: null })}
-                size="small"
-            sx={{ borderRadius: 2, fontWeight: 700, px: 2.5, borderColor: 'secondary.main', color: 'secondary.main', background: '#fff', minWidth: 90, textTransform: 'none' }}
-              >
-                Clear
-              </Button>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
           <Button
-            variant="contained"
-            color="primary"
-            startIcon={<FileDownload />}
-            sx={{ borderRadius: 2, fontWeight: 700, px: 2.5, minWidth: 110, textTransform: 'none', boxShadow: 'none' }}
-            onClick={() => setOpenExportModal(true)}
+            variant="outlined"
+            startIcon={<Search />}
+            onClick={applyFilters}
+            sx={{ 
+              borderRadius: '8px',
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              height: '44px',
+              borderColor: '#e2e8f0',
+              color: '#64748b',
+              '&:hover': {
+                borderColor: '#3b82f6',
+                color: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.04)'
+              }
+            }}
           >
-            Export
+            Apply Filters
           </Button>
         </Paper>
 
         {/* Tabs */}
         <Paper
           sx={{
-            mb: 3,
-            borderRadius: 5,
+            mb: 4,
+            borderRadius: '12px',
             overflow: 'hidden',
-            boxShadow: '0 4px 24px rgba(25, 118, 210, 0.08)',
-            border: '1.5px solid rgba(120,140,200,0.10)',
-            background: 'linear-gradient(120deg, #fafdff 80%, #e9f0fb 100%)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+            border: '1px solid #e2e8f0',
+            background: '#ffffff',
           }}
         >
           <Tabs
             value={activeTab}
             onChange={(e, newValue) => setActiveTab(newValue)}
             variant="fullWidth"
-            indicatorColor="black"
-            textColor="black"
             sx={{
               '& .MuiTabs-indicator': {
-                height: 4,
-                borderRadius: 2,
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
               },
               '& .MuiTab-root': {
-                fontWeight: 700,
-                fontSize: '1.08rem',
-                borderRadius: 3,
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                textTransform: 'none',
+                py: 2.5,
                 px: 3,
-                py: 1.5,
-                transition: 'background 0.2s, color 0.2s',
+                color: '#64748b',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  color: '#3b82f6',
+                  backgroundColor: 'rgba(59, 130, 246, 0.04)',
+                },
               },
               '& .Mui-selected': {
-                color: 'black',
-                background: 'rgba(57, 63, 68, 0.62)',
+                color: '#3b82f6',
+                fontWeight: 700,
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
               },
             }}
           >
-            <Tab label="Fuel Logs" icon={<Description />} />
-            <Tab label="Vehicles" icon={<DirectionsCar />} />
-            <Tab label="Statistics" icon={<BarChart />} />
+            <Tab 
+              label="Fuel Logs" 
+              icon={<Description sx={{ fontSize: '1.2rem' }} />} 
+              iconPosition="start"
+            />
+            <Tab 
+              label="Vehicles" 
+              icon={<DirectionsCar sx={{ fontSize: '1.2rem' }} />} 
+              iconPosition="start"
+            />
+            <Tab 
+              label="Statistics" 
+              icon={<BarChart sx={{ fontSize: '1.2rem' }} />} 
+              iconPosition="start"
+            />
           </Tabs>
         </Paper>
 
         {loading ? (
-          <LinearProgress color="primary" sx={{ height: 2 }} />
+          <Box sx={{ mb: 3 }}>
+            <LinearProgress 
+              sx={{ 
+                height: 3,
+                borderRadius: '3px',
+                backgroundColor: '#e5e7eb',
+                '& .MuiLinearProgress-bar': {
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  borderRadius: '3px',
+                }
+              }} 
+            />
+            <Typography sx={{ 
+              mt: 1, 
+              textAlign: 'center', 
+              color: '#6b7280',
+              fontSize: '0.875rem'
+            }}>
+              Loading fuel logs...
+            </Typography>
+          </Box>
         ) : (
           <>
             {activeTab === 0 && (
               <Paper
                 sx={{
-                  mb: 2,
+                  mb: 3,
                   overflow: 'hidden',
-                  boxShadow: 'none',
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 2,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  background: '#ffffff',
                 }}
               >
-             <TableContainer>
-  <Table stickyHeader>
-    <TableHead>
-      <TableRow>
-        <StyledTableCell>Date</StyledTableCell>
-        <StyledTableCell>Vehicle</StyledTableCell>
-        <StyledTableCell>User</StyledTableCell>
-        <StyledTableCell align="right">Fuel (L)</StyledTableCell>
-        <StyledTableCell align="right">Cost</StyledTableCell>
-        <StyledTableCell>Station</StyledTableCell>
-        <StyledTableCell>Actions</StyledTableCell>
-      </TableRow>
-    </TableHead>
+             <TableContainer sx={{ borderRadius: '12px', overflow: 'hidden' }}>
+               <Table stickyHeader>
+                 <TableHead>
+                   <TableRow sx={{ backgroundColor: '#f8fafc' }}>
+                     <StyledTableCell sx={{ 
+                       fontWeight: 600, 
+                       color: '#374151',
+                       fontSize: '0.875rem',
+                       borderBottom: '2px solid #e5e7eb'
+                     }}>
+                       Date
+                     </StyledTableCell>
+                     <StyledTableCell sx={{ 
+                       fontWeight: 600, 
+                       color: '#374151',
+                       fontSize: '0.875rem',
+                       borderBottom: '2px solid #e5e7eb'
+                     }}>
+                       Vehicle
+                     </StyledTableCell>
+                     <StyledTableCell sx={{ 
+                       fontWeight: 600, 
+                       color: '#374151',
+                       fontSize: '0.875rem',
+                       borderBottom: '2px solid #e5e7eb'
+                     }}>
+                       User
+                     </StyledTableCell>
+                     <StyledTableCell align="right" sx={{ 
+                       fontWeight: 600, 
+                       color: '#374151',
+                       fontSize: '0.875rem',
+                       borderBottom: '2px solid #e5e7eb'
+                     }}>
+                       Fuel (L)
+                     </StyledTableCell>
+                     <StyledTableCell align="right" sx={{ 
+                       fontWeight: 600, 
+                       color: '#374151',
+                       fontSize: '0.875rem',
+                       borderBottom: '2px solid #e5e7eb'
+                     }}>
+                       Cost
+                     </StyledTableCell>
+                     <StyledTableCell sx={{ 
+                       fontWeight: 600, 
+                       color: '#374151',
+                       fontSize: '0.875rem',
+                       borderBottom: '2px solid #e5e7eb'
+                     }}>
+                       Station
+                     </StyledTableCell>
+                     <StyledTableCell sx={{ 
+                       fontWeight: 600, 
+                       color: '#374151',
+                       fontSize: '0.875rem',
+                       borderBottom: '2px solid #e5e7eb'
+                     }}>
+                       Actions
+                     </StyledTableCell>
+                   </TableRow>
+                 </TableHead>
     <TableBody>
       {filteredLogs.length > 0 ? (
         filteredLogs
@@ -982,36 +1150,61 @@ const AdminFuelLogger = () => {
                   'left',
                   'textSecondary'
                 )}
-                <TableCell>
+                <TableCell sx={{ py: 2 }}>
                   {vehicle ? (
                     <Tooltip
                       title={`${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`}
                     >
                       <Chip
                         avatar={
-                          <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
-                            <DirectionsCar />
+                          <Avatar sx={{ 
+                            bgcolor: '#3b82f6',
+                            width: 24,
+                            height: 24,
+                            fontSize: '0.75rem'
+                          }}>
+                            <DirectionsCar sx={{ fontSize: '0.875rem' }} />
                           </Avatar>
                         }
                         label={`${vehicle.make} ${vehicle.model}`}
                         variant="outlined"
                         size="small"
                         sx={{
-                          borderColor: theme.palette.divider,
-                          backgroundColor: theme.palette.action.hover,
+                          borderColor: '#e2e8f0',
+                          backgroundColor: '#f8fafc',
+                          fontWeight: 500,
+                          fontSize: '0.75rem',
+                          '&:hover': {
+                            backgroundColor: '#f1f5f9',
+                            borderColor: '#3b82f6'
+                          }
                         }}
                       />
                     </Tooltip>
                   ) : (
-                    'N/A'
+                    <Typography sx={{ color: '#9ca3af', fontSize: '0.875rem' }}>
+                      N/A
+                    </Typography>
                   )}
                 </TableCell>
-                <TableCell>
-                  {user ? user.userName : 'N/A'}
+                <TableCell sx={{ py: 2 }}>
+                  {user ? (
+                    <Typography sx={{ 
+                      fontWeight: 500, 
+                      color: '#374151',
+                      fontSize: '0.875rem'
+                    }}>
+                      {user.userName}
+                    </Typography>
+                  ) : (
+                    <Typography sx={{ color: '#9ca3af', fontSize: '0.875rem' }}>
+                      N/A
+                    </Typography>
+                  )}
                 </TableCell>
                 {renderTableCell(log.fuelAmount, <LocalGasStation />, 'right', null)}
                 {renderTableCell(`₵${log.cost.toFixed(2)}`, null, 'right', null)}
-                <TableCell>
+                <TableCell sx={{ py: 2 }}>
                   <Chip
                     label={
                       Object.keys(fuelStationTypeMapping).find(
@@ -1019,27 +1212,54 @@ const AdminFuelLogger = () => {
                       ) || log.fuelStation
                     }
                     size="small"
-                    color="info"
+                    sx={{
+                      backgroundColor: '#dbeafe',
+                      color: '#1e40af',
+                      fontWeight: 500,
+                      fontSize: '0.75rem',
+                      border: '1px solid #bfdbfe',
+                      '&:hover': {
+                        backgroundColor: '#bfdbfe'
+                      }
+                    }}
                   />
                 </TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={1}>
+                <TableCell sx={{ py: 2 }}>
+                  <Stack direction="row" spacing={0.5}>
                     <Tooltip title="Edit">
                       <IconButton
                         onClick={() => handleOpenDialog(log)}
                         size="small"
-                        color="primary"
+                        sx={{
+                          color: '#3b82f6',
+                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          borderRadius: '6px',
+                          p: 0.5,
+                          '&:hover': {
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            color: '#1d4ed8'
+                          }
+                        }}
                       >
-                        <Edit fontSize="small" />
+                        <Edit sx={{ fontSize: '1rem' }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
                       <IconButton
                         onClick={() => handleDelete(log.id)}
                         size="small"
-                        color="error"
+                        sx={{
+                          color: '#ef4444',
+                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                          borderRadius: '6px',
+                          p: 0.5,
+                          '&:hover': {
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            color: '#dc2626'
+                          }
+                        }}
                       >
-                        <Delete fontSize="small" />
+                        <Delete sx={{ fontSize: '1rem' }} />
                       </IconButton>
                     </Tooltip>
                   </Stack>
@@ -1049,10 +1269,28 @@ const AdminFuelLogger = () => {
           })
       ) : (
         <TableRow>
-          <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-            <Typography color="text.secondary" variant="body1">
-              No fuel logs found matching your criteria
-            </Typography>
+          <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <LocalGasStation sx={{ 
+                fontSize: '3rem', 
+                color: '#9ca3af', 
+                mb: 2 
+              }} />
+              <Typography sx={{ 
+                color: '#6b7280', 
+                fontSize: '1rem',
+                fontWeight: 500,
+                mb: 1
+              }}>
+                No fuel logs found
+              </Typography>
+              <Typography sx={{ 
+                color: '#9ca3af', 
+                fontSize: '0.875rem' 
+              }}>
+                No fuel logs match your current search criteria
+              </Typography>
+            </Box>
           </TableCell>
         </TableRow>
       )}
@@ -1069,9 +1307,29 @@ const AdminFuelLogger = () => {
                   onPageChange={(e, newPage) => handleChangePage(e, newPage, 'fuelLogs')}
                   onRowsPerPageChange={(e) => handleChangeRowsPerPage(e, 'fuelLogs')}
                   sx={{
-                    borderTop: `1px solid ${theme.palette.divider}`,
+                    borderTop: '1px solid #e5e7eb',
+                    backgroundColor: '#f9fafb',
                     '& .MuiTablePagination-toolbar': {
-                      minHeight: '52px',
+                      minHeight: '60px',
+                      px: 3,
+                    },
+                    '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                      fontSize: '0.875rem',
+                      color: '#6b7280',
+                      fontWeight: 500,
+                    },
+                    '& .MuiTablePagination-select': {
+                      fontSize: '0.875rem',
+                    },
+                    '& .MuiIconButton-root': {
+                      color: '#6b7280',
+                      '&:hover': {
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        color: '#3b82f6',
+                      },
+                      '&.Mui-disabled': {
+                        color: '#d1d5db',
+                      },
                     },
                   }}
                 />
@@ -1118,7 +1376,7 @@ const AdminFuelLogger = () => {
 
                               <Grid container spacing={1} sx={{ mb: 2 }}>
                                 <Grid item xs={4}>
-                                  <StatCard>
+                                  <StatCard sidebarExpanded={sidebarExpanded}>
                                     <Typography variant="caption" color="text.secondary">
                                       Logs
                                     </Typography>
@@ -1126,7 +1384,7 @@ const AdminFuelLogger = () => {
                                   </StatCard>
                                 </Grid>
                                 <Grid item xs={4}>
-                                  <StatCard>
+                                  <StatCard sidebarExpanded={sidebarExpanded}>
                                     <Typography variant="caption" color="text.secondary">
                                       Fuel
                                     </Typography>
@@ -1134,7 +1392,7 @@ const AdminFuelLogger = () => {
                                   </StatCard>
                                 </Grid>
                                 <Grid item xs={4}>
-                                  <StatCard>
+                                  <StatCard sidebarExpanded={sidebarExpanded}>
                                     <Typography variant="caption" color="text.secondary">
                                       Cost
                                     </Typography>

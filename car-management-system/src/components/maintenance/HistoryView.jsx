@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateDisplay } from '../../utils/dateUtils';
 import {
   Box,
   Typography,
@@ -111,8 +112,8 @@ const HistoryView = ({ showNotification, setLoading }) => {
                     {item.vehicleMake} {item.vehicleModel} ({item.licensePlate})
                   </TableCell>
                   <TableCell>{item.requestType}</TableCell>
-                  <TableCell>{new Date(item.requestDate).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(item.completionDate).toLocaleDateString()}</TableCell>
+                                              <TableCell>{formatDateDisplay(item.requestDate)}</TableCell>
+                            <TableCell>{formatDateDisplay(item.completionDate)}</TableCell>
                   <TableCell>
                     <Chip label={item.status} color={getStatusColor(item.status)} size="small" />
                   </TableCell>

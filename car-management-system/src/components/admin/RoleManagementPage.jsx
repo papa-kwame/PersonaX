@@ -251,7 +251,11 @@ const RoleManagementPage = () => {
     : [];
 
   return (
-    <Container maxWidth="xl" sx={{ py: 2, px: { xs: 1, sm: 4 } }}>
+    <Container maxWidth={false} sx={{ 
+      py: 2, 
+      px: { xs: 1, sm: 2, md: 4 },
+      maxWidth: '100% !important'
+    }}>
       <ToastContainer
         position="top-right"
         autoClose={5000}

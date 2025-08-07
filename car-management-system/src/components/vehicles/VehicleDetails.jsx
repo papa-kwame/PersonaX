@@ -1,5 +1,6 @@
 // src/components/vehicles/VehicleDetails.jsx
 import { useState, useEffect } from 'react';
+import { formatDateDisplay } from '../../utils/dateUtils';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getVehicleById, deleteVehicle } from '../../services/vehicles';
 import DocumentStatusCard from './DocumentStatusCard';
@@ -39,8 +40,7 @@ export default function VehicleDetails() {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
+    return formatDateDisplay(dateString);
   };
 
   const isExpired = (dateString) => {
@@ -123,7 +123,7 @@ export default function VehicleDetails() {
         
         {/* Purchase Information */}
         <DetailItem label="Purchase Date" value={formatDate(vehicle.purchaseDate)} />
-        <DetailItem label="Purchase Price" value={vehicle.purchasePrice ? `$${vehicle.purchasePrice.toLocaleString()}` : 'N/A'} />
+        <DetailItem label="Purchase Price" value={vehicle.purchasePrice ? `GH₵${vehicle.purchasePrice.toLocaleString()}` : 'N/A'} />
         
         {/* Maintenance Information */}
         <DetailItem label="Last Service Date" value={formatDate(vehicle.lastServiceDate)} />

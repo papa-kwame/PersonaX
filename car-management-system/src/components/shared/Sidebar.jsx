@@ -1,290 +1,341 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import Drawer from '@mui/material/Drawer';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Collapse from '@mui/material/Collapse';
-import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import DashboardIcon from '@mui/icons-material/Speed';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import BuildIcon from '@mui/icons-material/Build';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import GroupIcon from '@mui/icons-material/Group';
-import SecurityIcon from '@mui/icons-material/Security';
-import RouteIcon from '@mui/icons-material/AltRoute';
-import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import StarBorderIcon from '@mui/icons-material/StarBorder';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Box,
+  Typography,
+  IconButton,
+  Tooltip,
+  Avatar,
+  Collapse
+} from '@mui/material';
+import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
+import {
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Dashboard as DashboardIcon,
+  DirectionsCar as CarIcon,
+  Build as BuildIcon,
+  Business as BusinessIcon,
+  AdminPanelSettings as AdminIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  Person as PersonIcon,
+  Speed as SpeedIcon,
+  Assignment as AssignmentIcon,
+  LocalGasStation as FuelIcon,
+  People as PeopleIcon,
+  Settings as SettingsIcon,
+  Route as RouteIcon,
+  Assessment as ReportsIcon,
+  Security as SecurityIcon,
+  Create as CreateIcon,
+  ListAlt as ListIcon,
+  History as HistoryIcon
+} from '@mui/icons-material';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
-export default function Sidebar({ className = "" }) {
+export default function Sidebar({ onSidebarToggle }) {
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
-  const { hasRole } = useAuth();
-  const [expandedMenus, setExpandedMenus] = useState({
-    admin: false,
-    maintenance: false
-  });
+
+  const toggleSidebar = () => {
+    const newState = !sidebarExpanded;
+    setSidebarExpanded(newState);
+    if (onSidebarToggle) {
+      onSidebarToggle(newState);
+    }
+  };
+
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
 
   const isActive = (path) => {
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+    return location.pathname === path;
   };
 
-  const toggleMenu = (menu) => {
-    setExpandedMenus(prev => ({
-      ...prev,
-      [menu]: !prev[menu]
-    }));
-  };
-
-  // Menu configuration
-  let menuItems = [
-    { path: '/vehicles', icon: <DirectionsCarIcon />, label: 'Vehicles', roles: ['Admin'] },
-  ];
-
-  if (hasRole('Admin')) {
-    menuItems.unshift({
+  const menuItems = [
+    {
+      text: 'Dashboard',
+      icon: <SpeedIcon />,
       path: '/dashboard',
-      icon: <DashboardIcon />,
-      label: 'Dashboard',
-      roles: ['Admin'],
-    });
-  } else if (hasRole('User')) {
-    menuItems.unshift({
-      path: '/userdashboard',
-      icon: <DashboardIcon />,
-      label: 'User Dashboard',
-      roles: ['User'],
-    });
-  }
-
-  const maintenanceMenuItems = [
-    { path: '/maintenance', icon: <BuildIcon />, label: 'Maintenance Requests' },
-    { path: '/requestsss', icon: <AssignmentIcon />, label: 'Vehicle Requests' },
+      primary: true
+    },
+    {
+      text: 'Vehicles',
+      icon: <CarIcon />,
+      path: '/vehicles',
+      primary: true
+    },
+    {
+      text: 'Requests',
+      icon: <AssignmentIcon />,
+      path: '/maintenance',
+      hasSubmenu: true,
+      subItems: [
+        { text: 'Maintenance Request', path: '/maintenance', icon: <CreateIcon /> },
+        { text: 'Vehicle Requests', path: '/requestsss', icon: <ListIcon /> }
+      ]
+    },
+    {
+      text: 'Admin',
+      icon: <AdminIcon />,
+      path: '/admin',
+      hasSubmenu: true,
+      subItems: [
+        { text: 'User Management', path: '/admin/users', icon: <PeopleIcon /> },
+        { text: 'Role Management', path: '/admin/roles', icon: <SecurityIcon /> },
+        { text: 'Route Management', path: '/admin/routes', icon: <RouteIcon /> },
+        { text: 'Reports', path: '/schedule', icon: <ReportsIcon /> },
+        { text: 'Audit Logs', path: '/admin/audit', icon: <HistoryIcon /> }
+      ]
+    }
   ];
 
-  const adminMenuItems = [
-    { path: '/admin/users', icon: <GroupIcon />, label: 'User Management' },
-    { path: '/admin/roles', icon: <SecurityIcon />, label: 'Role Management' },
-    { path: '/admin/routes', icon: <RouteIcon />, label: 'Routes' },
-    { path: '/admin/logger', icon: <LocalGasStationIcon />, label: 'Fuel Logger' },
-    { path: '/schedule', icon: <CalendarTodayIcon />, label: 'Schedule' },
-  ];
-
-  const authData = JSON.parse(localStorage.getItem('authData'));
-  const hasRouteRoles = Array.isArray(authData?.routeRoles) && authData.routeRoles.length > 0;
-  const shouldShowRequestsMenu = hasRole('Admin') || hasRouteRoles;
+  const drawerWidth = sidebarExpanded ? 280 : 70;
 
   return (
     <Drawer
       variant="permanent"
-      anchor="left"
-      PaperProps={{
-        sx: {
-          width: 280,
-          background: '#111',
-          color: '#fff',
-          borderRight: 'none',
-          boxShadow: 3,
-          position: 'sticky',
-          top: 0,
-          height: '100vh',
-          [`& .MuiDrawer-paper`]: {
-            width: 280,
-            boxSizing: 'border-box',
-            background: '#111',
-            color: '#fff',
-            borderRight: 'none',
-            boxShadow: 3,
-            position: 'sticky',
-            top: 0,
-            height: '100vh',
-          },
-        },
+      sx={{
+        width: drawerWidth,
+        flexShrink: 0,
+        height: 'calc(100vh - 64px)',
+        top: '64px',
+        '& .MuiDrawer-paper': {
+          width: drawerWidth,
+          height: 'calc(100vh - 64px)',
+          top: '64px',
+          backgroundColor: '#000000',
+          color: '#ffffff',
+          borderRight: '1px solid #333333',
+          transition: 'width 0.3s ease-in-out',
+          overflowX: 'hidden',
+          boxShadow: '2px 0 12px rgba(0, 0, 0, 0.4)',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'fixed'
+        }
       }}
-      className={className}
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%'  }}>
-
-        <List sx={{ pt: 1, pb: 1 ,mt: 7}}>
-          {menuItems.map((item) =>
-            item.roles.some(role => hasRole(role)) && (
-              <ListItem key={item.path} disablePadding sx={{ mb: 1 ,  width: '80%'}}>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  selected={isActive(item.path)}
+      {/* Header Section */}
+      <Box sx={{
+        height: 60,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        px: 2,
+        borderBottom: '1px solid #333333',
+        flexShrink: 0,
+        backgroundColor: '#111111'
+      }}>
+        <IconButton
+          onClick={toggleSidebar}
                   sx={{
-                    width: '100%',
-                    mx: 'auto',
-                    borderRadius: 999,
-                    px: 2.5,
-                    py: 1.2,
-                    color: isActive(item.path) ? '#fff' : '#eee',
-                    background: isActive(item.path) ? '#fff' : 'none',
-                    fontWeight: isActive(item.path) ? 700 : 500,
-                    boxShadow: isActive(item.path) ? 1 : 0,
+            color: '#ffffff',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px',
+            width: 36,
+            height: 36,
                     '&:hover': {
-                      background: isActive(item.path) ? '#222' : 'rgba(255,255,255,0.08)',
-                      color: '#fff',
-                    },
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <ListItemIcon sx={{ color: isActive(item.path) ? '#fff' : '#eee', minWidth: 36 }}>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItemButton>
-              </ListItem>
-            )
-          )}
-
-          {shouldShowRequestsMenu && (
-            <>
-              <ListItem disablePadding sx={{ mb: 1 }}>
-                <ListItemButton
-                  onClick={() => toggleMenu('maintenance')}
-                  sx={{
-                    width: '80%',
-                    mx: 'auto',
-                    borderRadius: 999,
-                    px: 2.5,
-                    py: 1.2,
-                    color: expandedMenus.maintenance ? '#fff' : '#eee',
-                    background: expandedMenus.maintenance ? '#222' : 'none',
-                    fontWeight: expandedMenus.maintenance ? 700 : 500,
-                    boxShadow: expandedMenus.maintenance ? 1 : 0,
-                    '&:hover': {
-                      background: expandedMenus.maintenance ? '#222' : 'rgba(255,255,255,0.08)',
-                      color: '#fff',
-                    },
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <ListItemIcon sx={{ color: expandedMenus.maintenance ? '#fff' : '#fff', minWidth: 36 }}>
-                    <BuildIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Requests" />
-                  {expandedMenus.maintenance ? <ExpandLess sx={{ color: '#fff' }} /> : <ExpandMore />}
-                </ListItemButton>
-              </ListItem>
-              <Collapse in={expandedMenus.maintenance} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding sx={{ pl: 0, ml: 0 }}>
-                  {maintenanceMenuItems.map((item, idx) => (
-                    <Box key={item.path} sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                      <Box sx={{ width: 18, minWidth: 18, height: 70, borderLeft: idx === 0 ? '2px solid #222' : '2px solid #222', ml: 3, mr: 1, opacity: 0.7 }} />
-                      <ListItem disablePadding sx={{ mb: 1, width: 'calc(80% - 18px)' }}>
-                        <ListItemButton
-                          component={Link}
-                          to={item.path}
-                          selected={isActive(item.path)}
-                          sx={{
-                            width: '100%',
-                            borderRadius: 999,
-                            px: 2,
-                            py: 1,
-                            color: isActive(item.path) ? '#fff' : '#fff',
-                            background: isActive(item.path) ? '#fff' : 'none',
-                            fontWeight: isActive(item.path) ? 700 : 500,
-                            fontSize: '0.97rem',
-                            '&:hover': {
-                              background: isActive(item.path) ? '#fff' : 'rgba(255,255,255,0.08)',
-                              color: '#fff',
-                            },
-                            transition: 'all 0.2s',
-                          }}
-                        >
-                          <ListItemIcon sx={{ color: isActive(item.path) ? '#111' : '#bbb', minWidth: 36 }}>{item.icon}</ListItemIcon>
-                          <ListItemText primary={item.label} />
-                        </ListItemButton>
-                      </ListItem>
-                    </Box>
-                  ))}
-                </List>
-              </Collapse>
-            </>
-          )}
-
-          {hasRole('Admin') && (
-            <>
-              <ListItem disablePadding sx={{ mb: 1 }}>
-                <ListItemButton
-                  onClick={() => toggleMenu('admin')}
-                  sx={{
-                    width: '80%',
-                    mx: 'auto',
-                    borderRadius: 999,
-                    px: 2.5,
-                    py: 1.2,
-                    color: expandedMenus.admin ? '#fff' : '#eee',
-                    background: expandedMenus.admin ? '#222' : 'none',
-                    fontWeight: expandedMenus.admin ? 700 : 500,
-                    boxShadow: expandedMenus.admin ? 1 : 0,
-                    '&:hover': {
-                      background: expandedMenus.admin ? '#222' : 'rgba(255,255,255,0.08)',
-                      color: '#fff',
-                    },
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <ListItemIcon sx={{ color: expandedMenus.admin ? '#fff' : '#eee', minWidth: 36 }}>
-                    <SecurityIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Admin" />
-                  {expandedMenus.admin ? <ExpandLess sx={{ color: '#fff' }} /> : <ExpandMore />}
-                </ListItemButton>
-              </ListItem>
-              <Collapse in={expandedMenus.admin} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding sx={{ pl: 0, ml: 0 }}>
-                  {adminMenuItems.map((item, idx) => (
-                    <Box key={item.path} sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                      <Box sx={{ width: 18, minWidth: 18, height: 60, borderLeft: idx === 0 ? '2px solid #222' : '2px solid #222', ml: 3, mr: 1, opacity: 0.7 }} />
-                      <ListItem disablePadding sx={{ mb: 1, width: 'calc(80% - 18px)' }}>
-                        <ListItemButton
-                          component={Link}
-                          to={item.path}
-                          selected={isActive(item.path)}
-                          sx={{
-                            width: '100%',
-                            borderRadius: 999,
-                            px: 2,
-                            py: 1,
-                            color: isActive(item.path) ? '#fff' : '#fff',
-                            background: isActive(item.path) ? '#fff' : 'none',
-                            fontWeight: isActive(item.path) ? 700 : 500,
-                            fontSize: '0.97rem',
-                            '&:hover': {
-                              background: isActive(item.path) ? '#fff' : 'rgba(255,255,255,0.08)',
-                              color: '#fff',
-                            },
-                            transition: 'all 0.2s',
-                          }}
-                        >
-                          <ListItemIcon sx={{ color: isActive(item.path) ? '#111' : '#bbb', minWidth: 36 }}>{item.icon}</ListItemIcon>
-                          <ListItemText primary={item.label} />
-                        </ListItemButton>
-                      </ListItem>
-                    </Box>
-                  ))}
-                </List>
-              </Collapse>
-            </>
-          )}
-        </List>
-        <Box sx={{ flexGrow: 1 }} />
-        <Divider sx={{ my: 2 }} />
-        <Box sx={{ px: 3, py: 2, color: 'text.secondary', fontSize: '0.85rem' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <i className="bi bi-info-circle" style={{ marginRight: 8 }}></i>
-            <span>v1.0.0</span>
-          </Box>
-        </Box>
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              transform: 'scale(1.05)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <i className={sidebarExpanded ? "bi bi-layout-sidebar-inset-reverse" : "bi bi-layout-sidebar-inset"} style={{ fontSize: '1.1rem' }}></i>
+        </IconButton>
       </Box>
+
+      {/* Navigation Items */}
+      <List sx={{ px: 1.5, py: 2, flexGrow: 1, overflowY: 'auto' }}>
+        {menuItems.map((item, index) => (
+          <Box key={item.text}>
+            {item.hasSubmenu ? (
+              <>
+                <ListItem disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                    onClick={() => {
+                      if (item.text === 'Requests') {
+                        setMaintenanceOpen(!maintenanceOpen);
+                      } else if (item.text === 'Admin') {
+                        setAdminOpen(!adminOpen);
+                      }
+                    }}
+                  sx={{
+                      height: 52,
+                      borderRadius: '12px',
+                      mx: 0.5,
+                      backgroundColor: isActive(item.path) ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                      border: isActive(item.path) ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
+                    '&:hover': {
+                        backgroundColor: isActive(item.path) ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                        borderColor: isActive(item.path) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'
+                      },
+                      transition: 'all 0.2s ease',
+                      // Ensure consistent positioning when collapsed
+                      ...(sidebarExpanded ? {} : {
+                        justifyContent: 'center',
+                        minWidth: 'auto',
+                        width: '100%'
+                      })
+                    }}
+                  >
+                    <ListItemIcon sx={{
+                      minWidth: sidebarExpanded ? 44 : 40,
+                      color: isActive(item.path) ? '#ffffff' : '#cccccc',
+                      // Center icon when collapsed
+                      ...(sidebarExpanded ? {} : {
+                        margin: 0,
+                        display: 'flex',
+                        justifyContent: 'center'
+                      })
+                    }}>
+                      {item.icon}
+                  </ListItemIcon>
+                    {sidebarExpanded && (
+                      <>
+                        <ListItemText
+                          primary={item.text}
+                          sx={{
+                            '& .MuiListItemText-primary': {
+                              fontSize: '0.9rem',
+                              fontWeight: isActive(item.path) ? 600 : 500,
+                              color: isActive(item.path) ? '#ffffff' : '#cccccc',
+                              letterSpacing: '0.3px'
+                            }
+                          }}
+                        />
+                        {(item.text === 'Requests' ? maintenanceOpen : adminOpen) ? (
+                          <ExpandLessIcon sx={{ color: '#999999', fontSize: 20 }} />
+                        ) : (
+                          <ExpandMoreIcon sx={{ color: '#999999', fontSize: 20 }} />
+                        )}
+                      </>
+                    )}
+                  </ListItemButton>
+                </ListItem>
+                {sidebarExpanded && (
+                  <Collapse in={item.text === 'Requests' ? maintenanceOpen : adminOpen}>
+                    <List sx={{ pl: 2, pt: 0.5 }}>
+                      {item.subItems.map((subItem) => (
+                        <ListItem key={subItem.text} disablePadding sx={{ mb: 0.25 }}>
+                          <ListItemButton
+                            onClick={() => handleNavigation(subItem.path)}
+                            sx={{
+                              height: 44,
+                              borderRadius: '10px',
+                              mx: 0.5,
+                              backgroundColor: isActive(subItem.path) ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                              border: isActive(subItem.path) ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid transparent',
+                              '&:hover': {
+                                backgroundColor: isActive(subItem.path) ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                                borderColor: isActive(subItem.path) ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.08)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <ListItemIcon sx={{
+                              minWidth: sidebarExpanded ? 44 : 40,
+                              color: isActive(subItem.path) ? '#ffffff' : '#cccccc',
+                              // Center icon when collapsed
+                              ...(sidebarExpanded ? {} : {
+                                margin: 0,
+                                display: 'flex',
+                                justifyContent: 'center'
+                              })
+                            }}>
+                              {subItem.icon}
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={subItem.text}
+                              sx={{
+                                '& .MuiListItemText-primary': {
+                                  fontSize: '0.85rem',
+                                  fontWeight: isActive(subItem.path) ? 500 : 400,
+                                  color: isActive(subItem.path) ? '#ffffff' : '#aaaaaa',
+                                  letterSpacing: '0.2px'
+                                }
+                              }}
+                            />
+                        </ListItemButton>
+                      </ListItem>
+                  ))}
+                </List>
+              </Collapse>
+                )}
+              </>
+            ) : (
+              <ListItem disablePadding sx={{ mb: 0.5 }}>
+                <Tooltip
+                  title={!sidebarExpanded ? item.text : ''}
+                  placement="right"
+                  arrow
+                >
+                <ListItemButton
+                    onClick={() => handleNavigation(item.path)}
+                  sx={{
+                      height: 52,
+                      borderRadius: '12px',
+                      mx: 0.5,
+                      backgroundColor: isActive(item.path) ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                      border: isActive(item.path) ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
+                    '&:hover': {
+                        backgroundColor: isActive(item.path) ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                        borderColor: isActive(item.path) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'
+                      },
+                      transition: 'all 0.2s ease',
+                      // Ensure consistent positioning when collapsed
+                      ...(sidebarExpanded ? {} : {
+                        justifyContent: 'center',
+                        minWidth: 'auto',
+                        width: '100%'
+                      })
+                    }}
+                  >
+                    <ListItemIcon sx={{
+                      minWidth: sidebarExpanded ? 44 : 40,
+                      color: isActive(item.path) ? '#ffffff' : '#cccccc',
+                      // Center icon when collapsed
+                      ...(sidebarExpanded ? {} : {
+                        margin: 0,
+                        display: 'flex',
+                        justifyContent: 'center'
+                      })
+                    }}>
+                      {item.icon}
+                  </ListItemIcon>
+                    {sidebarExpanded && (
+                      <ListItemText
+                        primary={item.text}
+                        sx={{
+                          '& .MuiListItemText-primary': {
+                            fontSize: '0.9rem',
+                            fontWeight: isActive(item.path) ? 600 : 500,
+                            color: isActive(item.path) ? '#ffffff' : '#cccccc',
+                            letterSpacing: '0.3px'
+                          }
+                        }}
+                      />
+                    )}
+                </ListItemButton>
+                </Tooltip>
+              </ListItem>
+            )}
+                    </Box>
+                  ))}
+                </List>
+
     </Drawer>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDateDisplay } from '../../utils/dateUtils';
 
 const MechanicQuoteForm = ({ request, onSubmit, onCancel }) => {
   const [quoteData, setQuoteData] = useState({
@@ -76,7 +77,7 @@ const MechanicQuoteForm = ({ request, onSubmit, onCancel }) => {
             <div className="issue-meta">
               <span><i className="bi bi-building"></i> {request.department}</span>
               <span><i className="bi bi-person"></i> {request.submittedBy}</span>
-              <span><i className="bi bi-calendar"></i> {new Date(request.createdAt).toLocaleDateString()}</span>
+              <span><i className="bi bi-calendar"></i> {formatDateDisplay(request.createdAt)}</span>
             </div>
           </div>
         </div>

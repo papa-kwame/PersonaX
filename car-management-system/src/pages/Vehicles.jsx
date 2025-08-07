@@ -1,11 +1,11 @@
 
 import VehicleList from '../components/vehicles/VehicleList';
 
-export default function Vehicles() {
+export default function Vehicles({ sidebarExpanded = true }) {
   return (
     <div className="vehicles-page">
     
- <VehicleList/>   
+ <VehicleList sidebarExpanded={sidebarExpanded}/>   
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDateDisplay } from '../../utils/dateUtils';
 import { FiTool, FiClock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 
 export default function MaintenanceHistory({ vehicleId }) {
@@ -33,7 +34,7 @@ export default function MaintenanceHistory({ vehicleId }) {
               </div>
               <div className="record-date">
                 <FiClock />
-                <span>{new Date(record.date).toLocaleDateString()}</span>
+                <span>{formatDateDisplay(record.date)}</span>
               </div>
               <div className="record-mileage">
                 {record.mileage.toLocaleString()} miles

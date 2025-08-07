@@ -3,14 +3,28 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import './UserMaintenanceRequests.css'; // We'll create this CSS file
 import BuildCircleIcon from '@mui/icons-material/BuildCircle';
-import { Chip, Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Paper, Avatar, CircularProgress, Divider, useTheme } from '@mui/material';
+import { Chip, Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Paper, Avatar, CircularProgress, Divider, useTheme, List, ListItem, ListItemAvatar, ListItemText, IconButton, Tooltip, alpha, styled } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CommentIcon from '@mui/icons-material/Comment';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
+import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded';
+import EventRoundedIcon from '@mui/icons-material/EventRounded';
+import { formatDate, formatDateDisplay } from '../../utils/dateUtils';
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  borderRadius: '12px',
+  boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.08)',
+  transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
+  '&:hover': {
+    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)'
+  }
+}));
 
 const UserMaintenanceRequests = () => {
+  const theme = useTheme();
   const { isAuthenticated, userId } = useAuth();
   const [requests, setRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +32,7 @@ const UserMaintenanceRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [workflowStatus, setWorkflowStatus] = useState(null);
   const [comments, setComments] = useState(null);
+  const [requestDocuments, setRequestDocuments] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
 
   const priorityColors = {
@@ -56,12 +71,14 @@ const UserMaintenanceRequests = () => {
   const fetchRequestDetails = async (requestId) => {
     try {
       setDetailLoading(true);
-      const [statusResponse, commentsResponse] = await Promise.all([
+      const [statusResponse, commentsResponse, documentsResponse] = await Promise.all([
         api.get(`/api/MaintenanceRequest/${requestId}/workflow-status`),
-        api.get(`/api/MaintenanceRequest/${requestId}/comments`)
+        api.get(`/api/MaintenanceRequest/${requestId}/comments`),
+        api.get(`/api/MaintenanceRequest/${requestId}/documents`)
       ]);
       setWorkflowStatus(statusResponse.data);
       setComments(commentsResponse.data);
+      setRequestDocuments(documentsResponse.data.documents || []);
     } catch (err) {
       console.error('Error fetching request details:', err);
       setError('Failed to load request details');
@@ -79,6 +96,24 @@ const UserMaintenanceRequests = () => {
     setSelectedRequest(null);
     setWorkflowStatus(null);
     setComments(null);
+    setRequestDocuments([]);
+  };
+
+  const handleDocumentDownload = async (documentId, fileName) => {
+    try {
+      const response = await api.get(`/api/MaintenanceRequest/documents/${documentId}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading document:', error);
+    }
   };
 
 const getStatusBadge = (status) => {
@@ -107,14 +142,7 @@ const getStatusBadge = (status) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDateDisplay(dateString, true);
   };
 
   const getStageSteps = () => {
@@ -228,7 +256,7 @@ const getStatusBadge = (status) => {
                       }}
                     />
                     <Typography variant="body2" color="text.secondary">
-                      {new Date(request.requestDate).toLocaleDateString()}
+                      {formatDateDisplay(request.requestDate)}
                     </Typography>
                   </Box>
                 </Box>
@@ -330,7 +358,7 @@ const getStatusBadge = (status) => {
                     <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
                       <Box>
                         <Typography variant="caption" color="text.secondary">Request Date</Typography>
-                        <Typography fontWeight={600}>{formatDate(selectedRequest?.requestDate)}</Typography>
+                        <Typography fontWeight={600}>{formatDateDisplay(selectedRequest?.requestDate)}</Typography>
                       </Box>
                       <Box>
                         <Typography variant="caption" color="text.secondary">Request Type</Typography>
@@ -395,7 +423,7 @@ const getStatusBadge = (status) => {
                               <Typography fontWeight={700}>{comment.userName}</Typography>
                               <Typography variant="caption" color="text.secondary">{comment.role || 'System User'}</Typography>
                             </Box>
-                            <Typography variant="caption" color="text.secondary" ml="auto">{formatDate(comment.timestamp)}</Typography>
+                            <Typography variant="caption" color="text.secondary" ml="auto">{formatDateDisplay(comment.timestamp, true)}</Typography>
                           </Box>
                           <Typography color="text.secondary" mb={0.5}>{comment.comment}</Typography>
                           <Box display="flex" gap={1}>
@@ -414,6 +442,114 @@ const getStatusBadge = (status) => {
                     </Box>
                   )}
                 </Paper>
+                
+                {/* Attached Documents Section */}
+                <StyledPaper elevation={0} sx={{
+                  mb: 4,
+                  p: 3,
+                  borderRadius: 3,
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}>
+                  <Typography variant="overline" sx={{
+                    display: 'block',
+                    color: 'text.secondary',
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                    fontSize: '0.7rem',
+                    mb: 2
+                  }}>
+                    Attached Documents ({requestDocuments.length})
+                  </Typography>
+                  {requestDocuments.length > 0 ? (
+                    <List disablePadding>
+                      {requestDocuments.map((document, index) => (
+                        <ListItem
+                          key={index}
+                          sx={{
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                            py: 1.5,
+                            px: 0,
+                            '&:last-child': {
+                              borderBottom: 'none'
+                            }
+                          }}
+                          secondaryAction={
+                            <Tooltip title="Download">
+                              <IconButton
+                                edge="end"
+                                aria-label="download"
+                                onClick={() => handleDocumentDownload(document.documentId, document.fileName)}
+                                sx={{
+                                  '&:hover': {
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                                  }
+                                }}
+                              >
+                                <DownloadRoundedIcon color="primary" />
+                              </IconButton>
+                            </Tooltip>
+                          }
+                        >
+                          <ListItemAvatar>
+                            <Avatar sx={{
+                              bgcolor: alpha(theme.palette.primary.main, 0.1),
+                              color: 'primary.main'
+                            }}>
+                              <InsertDriveFileRoundedIcon />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography variant="body2" sx={{
+                                fontWeight: 500,
+                                color: 'text.primary'
+                              }}>
+                                {document.fileName}
+                              </Typography>
+                            }
+                            secondary={
+                              <Typography variant="caption" sx={{
+                                color: 'text.secondary',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5
+                              }}>
+                                <EventRoundedIcon sx={{ fontSize: '0.9rem' }} />
+                                {formatDateDisplay(document.uploadDate, true)}
+                              </Typography>
+                            }
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  ) : (
+                    <Box sx={{
+                      textAlign: 'center',
+                      py: 4,
+                      px: 2
+                    }}>
+                      <InsertDriveFileRoundedIcon sx={{
+                        fontSize: 48,
+                        color: alpha(theme.palette.text.secondary, 0.4),
+                        mb: 2
+                      }} />
+                      <Typography variant="body2" sx={{
+                        color: 'text.secondary',
+                        fontWeight: 500,
+                        mb: 1
+                      }}>
+                        No Documents Attached
+                      </Typography>
+                      <Typography variant="caption" sx={{
+                        color: alpha(theme.palette.text.secondary, 0.7)
+                      }}>
+                        No documents have been uploaded for this request yet.
+                      </Typography>
+                    </Box>
+                  )}
+                </StyledPaper>
                 </>
               )}
           </DialogContent>

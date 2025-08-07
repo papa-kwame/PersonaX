@@ -38,7 +38,8 @@ import {
   Avatar,
   FormGroup,
   FormControlLabel,
-  Tooltip
+  Tooltip,
+  ListItemAvatar
 } from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
@@ -59,8 +60,10 @@ import {
   Lock as LockIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 
 const RouteManagementPage = () => {
+  const { userId } = useAuth();
   const [showRouteModal, setShowRouteModal] = useState(false);
   const [showUserPanel, setShowUserPanel] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -84,7 +87,8 @@ const RouteManagementPage = () => {
   const [users, setUsers] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
-  const requiredRolesInOrder = ['Comment', 'Review', 'Commit', 'Approve'];
+  // Correct order as per backend
+  const requiredRolesInOrder = ['Comment', 'Review', 'Approve', 'Commit'];
 
   // API configuration
   const API_BASE = 'https://localhost:7092/api';
@@ -94,6 +98,13 @@ const RouteManagementPage = () => {
     DEPARTMENTS: `${API_BASE}/Routes/departments`,
     ROLES: `${API_BASE}/Routes/roles`
   };
+
+  // Get token from localStorage
+  const getToken = () => {
+    return localStorage.getItem('token');
+  };
+
+  const token = getToken();
 
   // Add a new toast
   const addToast = (message, variant = 'success') => {
@@ -114,7 +125,11 @@ const RouteManagementPage = () => {
   // Safe API fetch function
   const fetchData = async (endpoint, defaultValue = []) => {
     try {
-      const response = await axios.get(endpoint);
+      const response = await axios.get(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       return Array.isArray(response?.data) ? response.data : defaultValue;
     } catch (err) {
       console.error(`Error fetching ${endpoint}:`, err);
@@ -126,6 +141,11 @@ const RouteManagementPage = () => {
   // Load all initial data
   useEffect(() => {
     const loadInitialData = async () => {
+      if (!userId || !token) {
+        addToast('Authentication required. Please log in.', 'error');
+        return;
+      }
+
       setLoading(true);
 
       try {
@@ -146,7 +166,7 @@ const RouteManagementPage = () => {
     };
 
     loadInitialData();
-  }, []);
+  }, [userId, token]);
 
   // Safe user filtering
   const filteredUsers = React.useMemo(() => {
@@ -176,13 +196,25 @@ const RouteManagementPage = () => {
 
       switch (operation) {
         case 'create':
-          response = await axios.post(endpoint, routeData);
+          response = await axios.post(endpoint, routeData, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
           break;
         case 'update':
-          response = await axios.put(endpoint, routeData);
+          response = await axios.put(endpoint, routeData, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
           break;
         case 'delete':
-          response = await axios.delete(endpoint);
+          response = await axios.delete(endpoint, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
           break;
         default:
           throw new Error('Invalid operation');
@@ -272,7 +304,7 @@ const RouteManagementPage = () => {
       const nextRole = requiredRolesInOrder[i + 1];
 
       if (rolePositions[currentRole] > rolePositions[nextRole]) {
-        addToast('Roles must be in order: Comment → Review → Commit → Approve', 'error');
+        addToast('Roles must be in order: Comment → Review → Approve → Commit', 'error');
         return false;
       }
     }
@@ -281,6 +313,11 @@ const RouteManagementPage = () => {
   };
 
   const saveRoute = async () => {
+    if (!userId || !token) {
+      addToast('Authentication required. Please log in.', 'error');
+      return;
+    }
+
     if (!currentRoute.name?.trim() || (!currentRoute.department && !currentRoute.isDefault)) {
       addToast('Route name and department are required', 'error');
       return;
@@ -306,12 +343,17 @@ const RouteManagementPage = () => {
       setLoading(true);
 
       const endpoint = isEditing
-        ? `${API_ENDPOINTS.ROUTES}/${currentRoute.id}`
-        : API_ENDPOINTS.ROUTES;
+        ? `${API_ENDPOINTS.ROUTES}/${currentRoute.id}?userId=${userId}`
+        : `${API_ENDPOINTS.ROUTES}?userId=${userId}`;
 
       const method = isEditing ? 'put' : 'post';
 
-      await axios[method](endpoint, routeData);
+      await axios[method](endpoint, routeData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
       const updatedRoutes = await fetchData(API_ENDPOINTS.ROUTES);
       setRoutes(updatedRoutes);
@@ -319,6 +361,7 @@ const RouteManagementPage = () => {
       addToast(`Route ${isEditing ? 'updated' : 'created'} successfully`);
       setShowRouteModal(false);
     } catch (err) {
+      console.error('Save route error:', err.response?.data);
       addToast(
         err.response?.data?.message ||
         err.response?.data?.title ||
@@ -335,10 +378,19 @@ const RouteManagementPage = () => {
     if (!routeId) return;
 
     try {
-      await handleRouteOperation('delete', null, routeId);
+      const endpoint = `${API_ENDPOINTS.ROUTES}/${routeId}?userId=${userId}`;
+      await axios.delete(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      const updatedRoutes = await fetchData(API_ENDPOINTS.ROUTES);
+      setRoutes(updatedRoutes);
       addToast('Route deleted successfully');
     } catch (err) {
-      // Error is already handled in handleRouteOperation
+      console.error('Delete route error:', err.response?.data);
+      addToast('Failed to delete route', 'error');
     }
   };
 
@@ -444,14 +496,20 @@ const RouteManagementPage = () => {
     switch (role) {
       case 'Comment': return '#36b9cc';
       case 'Review': return '#1cc88a';
-      case 'Commit': return '#f6c23e';
       case 'Approve': return '#4e73df';
+      case 'Commit': return '#f6c23e';
       default: return '#858796';
     }
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4, px: 4, backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+    <Container maxWidth={false} sx={{ 
+      py: 4, 
+      px: { xs: 2, sm: 3, md: 4 }, 
+      backgroundColor: '#f8f9fa', 
+      minHeight: '100vh',
+      maxWidth: '100% !important'
+    }}>
       {/* Toast Notifications */}
       {toasts.map(toast => (
         <Snackbar
@@ -624,23 +682,113 @@ const RouteManagementPage = () => {
           setShowRouteModal(false);
           setShowUserPanel(false);
         }}
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)'
+        }}
       >
-        <Box sx={{ width: '80%', maxWidth: 1000, bgcolor: 'background.paper', boxShadow: 24, p: 4, borderRadius: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
-              {isEditing ? 'Edit Approval Route' : 'Create New Route'}
-            </Typography>
-            <IconButton onClick={() => {
-              setShowRouteModal(false);
-              setShowUserPanel(false);
-            }}>
+        <Box sx={{ 
+          width: '90%', 
+          maxWidth: 1000, 
+          maxHeight: '85vh',
+          bgcolor: '#ffffff', 
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          {/* Header */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            p: 4,
+            borderBottom: '1px solid #e3e8f0',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white'
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Avatar sx={{ 
+                mr: 3, 
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                width: 48,
+                height: 48
+              }}>
+                <BusinessIcon sx={{ fontSize: 24 }} />
+              </Avatar>
+              <Box>
+              <Typography variant="h5" sx={{ 
+                fontWeight: 700, 
+                  fontSize: '1.5rem',
+                  mb: 0.5
+              }}>
+                {isEditing ? 'Edit Approval Route' : 'Create New Route'}
+              </Typography>
+                <Typography variant="body2" sx={{ 
+                  opacity: 0.9,
+                  fontSize: '0.9rem'
+                }}>
+                  Configure approval workflow for {currentRoute.department || 'department'}
+              </Typography>
+              </Box>
+            </Box>
+            <IconButton 
+              onClick={() => {
+                setShowRouteModal(false);
+                setShowUserPanel(false);
+              }}
+              sx={{
+                color: 'white',
+                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  transform: 'scale(1.1)'
+                },
+                transition: 'all 0.2s ease'
+              }}
+            >
               <CloseIcon />
             </IconButton>
           </Box>
-          <Divider sx={{ mb: 3 }} />
-          <Box sx={{ display: 'flex', minHeight: '400px' }}>
-            <Box sx={{ flexGrow: 1, pr: 3, width: showUserPanel ? '60%' : '100%' }}>
+          
+          {/* Content */}
+          <Box sx={{ 
+            display: 'flex', 
+            flex: 1,
+            overflow: 'hidden'
+          }}>
+            {/* Main Content */}
+            <Box sx={{ 
+              flexGrow: 1, 
+              pr: showUserPanel ? 3 : 0, 
+              width: showUserPanel ? '70%' : '100%',
+              p: 4,
+              overflow: 'auto'
+            }}>
+              {/* Route Details Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600, 
+                  color: '#1e293b',
+                  mb: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <Box sx={{ 
+                    width: 4, 
+                    height: 20, 
+                    bgcolor: '#3f51b5', 
+                    borderRadius: 1 
+                  }} />
+                  Route Information
+                </Typography>
+                
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <TextField
@@ -649,14 +797,29 @@ const RouteManagementPage = () => {
                     variant="outlined"
                     value={currentRoute.name}
                     onChange={(e) => setCurrentRoute({ ...currentRoute, name: e.target.value })}
-                    placeholder="e.g. Vehicle Approval"
+                      placeholder="e.g. Vehicle Approval Workflow"
                     error={!currentRoute.name?.trim()}
                     helperText={!currentRoute.name?.trim() ? "Route name is required" : ""}
-                    sx={{ mb: 3 }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': {
+                          borderRadius: '12px',
+                        '& fieldset': {
+                            borderColor: '#e2e8f0',
+                            borderWidth: '2px'
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#3f51b5'
+                        },
+                        '&.Mui-focused fieldset': {
+                            borderColor: '#3f51b5',
+                            borderWidth: '2px'
+                        }
+                      }
+                    }}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth sx={{ mb: 3 }}>
+                    <FormControl fullWidth>
                     <InputLabel>Department</InputLabel>
                     <Select
                       value={currentRoute.department}
@@ -668,6 +831,20 @@ const RouteManagementPage = () => {
                       disabled={currentRoute.isDefault}
                       error={!currentRoute.department && !currentRoute.isDefault}
                       label="Department"
+                      sx={{
+                          borderRadius: '12px',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#e2e8f0',
+                            borderWidth: '2px'
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#3f51b5'
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#3f51b5',
+                            borderWidth: '2px'
+                        }
+                      }}
                     >
                       <MenuItem value="">
                         <em>Select department</em>
@@ -679,7 +856,11 @@ const RouteManagementPage = () => {
                         <MenuItem value="Default">Default</MenuItem>
                       )}
                     </Select>
-                    {!currentRoute.department && !currentRoute.isDefault && <Typography variant="caption" color="error">Department is required</Typography>}
+                      {!currentRoute.department && !currentRoute.isDefault && 
+                        <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                          Department is required
+                        </Typography>
+                      }
                   </FormControl>
                 </Grid>
               </Grid>
@@ -689,14 +870,30 @@ const RouteManagementPage = () => {
                 label="Description"
                 variant="outlined"
                 multiline
-                rows={4}
+                  rows={3}
                 value={currentRoute.description}
                 onChange={(e) => setCurrentRoute({ ...currentRoute, description: e.target.value })}
-                placeholder="Describe what this Route is for"
-                sx={{ mb: 3 }}
+                  placeholder="Describe the purpose and scope of this approval workflow..."
+                sx={{ 
+                    mt: 3,
+                  '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                    '& fieldset': {
+                        borderColor: '#e2e8f0',
+                        borderWidth: '2px'
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#3f51b5'
+                    },
+                    '&.Mui-focused fieldset': {
+                        borderColor: '#3f51b5',
+                        borderWidth: '2px'
+                    }
+                  }
+                }}
               />
 
-              <FormGroup sx={{ mb: 3 }}>
+                <FormGroup sx={{ mt: 3 }}>
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -709,110 +906,358 @@ const RouteManagementPage = () => {
                           department: isDefault ? 'Default' : ''
                         });
                       }}
+                        sx={{
+                          '&.Mui-checked': {
+                            color: '#3f51b5'
+                          }
+                      }}
                     />
                   }
-                  label="Set this as the default fallback route"
+                    label={
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          Set as default fallback route
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          This route will be used when no specific department route is found
+                        </Typography>
+                      </Box>
+                    }
                 />
               </FormGroup>
+              </Box>
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ChatBubbleOutlineIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                  Approval Flow ({currentRoute.users.length}/4)
+              {/* Approval Flow Section */}
+              <Box sx={{ mb: 4 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                mb: 3,
+                  p: 3,
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                  borderRadius: '16px',
+                border: '1px solid #e2e8f0'
+              }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  fontWeight: 600,
+                      color: '#1e293b',
+                      mb: 0.5
+                }}>
+                      <ChatBubbleOutlineIcon sx={{ mr: 1.5, fontSize: '1.3rem', color: '#3f51b5' }} />
+                      Approval Workflow
                 </Typography>
+                    <Typography variant="body2" sx={{ color: '#64748b' }}>
+                      {currentRoute.users.length}/4 roles assigned • {4 - currentRoute.users.length} remaining
+                    </Typography>
+                  </Box>
                 <Button
                   variant={showUserPanel ? 'contained' : 'outlined'}
-                  size="small"
+                    size="medium"
                   onClick={() => setShowUserPanel(!showUserPanel)}
                   disabled={currentRoute.users.length >= 4}
                   startIcon={<PersonAddIcon />}
                   sx={{
-                    backgroundColor: showUserPanel ? '#4e73df' : 'transparent',
-                    color: showUserPanel ? 'white' : '#4e73df',
-                    borderColor: '#4e73df',
+                    backgroundColor: showUserPanel ? '#3f51b5' : 'transparent',
+                    color: showUserPanel ? 'white' : '#3f51b5',
+                    borderColor: '#3f51b5',
+                      borderRadius: '12px',
+                    textTransform: 'none',
+                      fontWeight: 600,
+                      px: 3,
+                      py: 1.5,
                     '&:hover': {
-                      backgroundColor: showUserPanel ? '#3a5ba0' : 'rgba(78, 115, 223, 0.04)',
-                      borderColor: '#4e73df'
-                    }
+                      backgroundColor: showUserPanel ? '#303f9f' : 'rgba(63, 81, 181, 0.04)',
+                        borderColor: '#3f51b5',
+                        transform: 'translateY(-1px)'
+                    },
+                    '&:disabled': {
+                      backgroundColor: '#f1f5f9',
+                      color: '#94a3b8',
+                      borderColor: '#e2e8f0'
+                      },
+                      transition: 'all 0.2s ease'
                   }}
                 >
-                  {showUserPanel ? 'Hide Users' : 'Add Users'}
+                    {showUserPanel ? 'Hide User Panel' : 'Add Users'}
                 </Button>
               </Box>
 
               {currentRoute.users.length > 0 ? (
-                <TableContainer component={Paper} sx={{ mb: 3, boxShadow: 'none' }}>
+                  <Box sx={{ 
+                    background: 'white',
+                    borderRadius: '16px',
+                    border: '1px solid #e2e8f0',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}>
+                    <Box sx={{ 
+                      p: 3, 
+                      borderBottom: '1px solid #e2e8f0',
+                      background: '#f8fafc'
+                }}>
+                      <Typography variant="subtitle2" sx={{ 
+                        fontWeight: 600, 
+                        color: '#374151',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        Role Assignments
+                      </Typography>
+                    </Box>
+                    <TableContainer>
                   <Table>
                     <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>Role</TableCell>
-                        <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>User</TableCell>
-                        <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>Action</TableCell>
+                          <TableRow sx={{ background: '#f8fafc' }}>
+                        <TableCell sx={{ 
+                          fontWeight: 600,
+                              color: '#374151',
+                              borderBottom: '2px solid #e2e8f0',
+                              py: 2
+                        }}>Role</TableCell>
+                        <TableCell sx={{ 
+                          fontWeight: 600,
+                              color: '#374151',
+                              borderBottom: '2px solid #e2e8f0',
+                              py: 2
+                            }}>Assigned User</TableCell>
+                        <TableCell sx={{ 
+                          fontWeight: 600,
+                              color: '#374151',
+                              borderBottom: '2px solid #e2e8f0',
+                              py: 2
+                            }}>Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {currentRoute.users
-                        .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
-                        .map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell>{renderRoleDropdown(user)}</TableCell>
-                            <TableCell>{renderUserCell(user)}</TableCell>
-                            <TableCell align="center">
+                          {requiredRolesInOrder.map((role, index) => {
+                            const user = currentRoute.users.find(u => u.role === role);
+                            return (
+                              <TableRow 
+                                key={role} 
+                                sx={{ 
+                                  '&:hover': { backgroundColor: '#f8fafc' },
+                                  '&:nth-of-type(even)': { backgroundColor: '#fafbfc' }
+                                }}
+                              >
+                                <TableCell sx={{ py: 2.5 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{ 
+                                      width: 8, 
+                                      height: 8, 
+                                      borderRadius: '50%', 
+                                      bgcolor: getRoleColor(role) 
+                                    }} />
+                                    <Chip
+                                      label={role}
+                                      size="medium"
+                                      sx={{
+                                        backgroundColor: getRoleColor(role),
+                                        color: 'white',
+                                        textTransform: 'capitalize',
+                                        fontWeight: 600,
+                                        fontSize: '0.8rem',
+                                        height: 28
+                                      }}
+                                    />
+                                  </Box>
+                                </TableCell>
+                                <TableCell sx={{ py: 2.5 }}>
+                                  {user ? (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                      <Avatar sx={{ 
+                                        width: 32, 
+                                        height: 32, 
+                                        bgcolor: getAvatarColor(user.email),
+                                        fontSize: '0.8rem'
+                                      }}>
+                                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                      </Avatar>
+                                      <Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                          {user.name}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                          {user.email}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                  ) : (
+                                    <Box sx={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      gap: 1,
+                                      color: '#9ca3af'
+                                    }}>
+                                      <PersonIcon sx={{ fontSize: 20 }} />
+                                      <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                                        Not assigned
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                </TableCell>
+                                <TableCell sx={{ py: 2.5 }}>
+                                  {user ? (
                               <IconButton
                                 color="error"
+                                      size="small"
                                 onClick={() => removeUserFromRoute(user.id)}
+                                sx={{
+                                        bgcolor: '#fef2f2',
+                                  '&:hover': {
+                                          bgcolor: '#fee2e2',
+                                          transform: 'scale(1.1)'
+                                        },
+                                        transition: 'all 0.2s ease'
+                                }}
                               >
                                 <CloseIcon fontSize="small" />
                               </IconButton>
+                                  ) : (
+                                    <Typography variant="caption" color="text.secondary">
+                                      -
+                                    </Typography>
+                                  )}
                             </TableCell>
                           </TableRow>
-                        ))}
+                            );
+                          })}
                     </TableBody>
                   </Table>
                 </TableContainer>
+                  </Box>
               ) : (
-                <Box sx={{ border: 1, borderColor: 'grey.300', borderRadius: 1, p: 3, textAlign: 'center', bgcolor: 'background.paper', boxShadow: 1 }}>
-                  <PersonIcon sx={{ color: 'text.secondary', mb: 1 }} />
-                  <Typography variant="body2" color="text.secondary">No users assigned to this Route</Typography>
+                <Box sx={{ 
+                    border: '2px dashed #d1d5db', 
+                    borderRadius: '16px', 
+                    p: 6, 
+                  textAlign: 'center', 
+                    background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)'
+                  }}>
+                    <Avatar sx={{ 
+                      width: 64, 
+                      height: 64, 
+                      bgcolor: '#e5e7eb',
+                      color: '#6b7280',
+                      mb: 2,
+                      mx: 'auto'
+                }}>
+                      <PersonIcon sx={{ fontSize: 32 }} />
+                    </Avatar>
+                    <Typography variant="h6" sx={{ 
+                      color: '#374151', 
+                      fontWeight: 600, 
+                      mb: 1 
+                    }}>
+                      No Users Assigned
+                  </Typography>
+                    <Typography variant="body2" sx={{ 
+                      color: '#6b7280',
+                      maxWidth: 300,
+                      mx: 'auto'
+                    }}>
+                      Add users to create the approval workflow. Each role must have exactly one user assigned.
+                  </Typography>
                 </Box>
               )}
 
               {currentRoute.users.length < 4 && (
-                <Alert severity="warning" sx={{ mt: 3, boxShadow: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <RepeatIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                  <Alert severity="info" sx={{ 
+                  mt: 3, 
+                    borderRadius: '12px',
+                    border: '1px solid #dbeafe',
+                    backgroundColor: '#eff6ff'
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                      <RepeatIcon sx={{ mr: 1.5, fontSize: '1.2rem', color: '#3b82f6', mt: 0.2 }} />
                     <Box>
-                      <Typography variant="body2"><strong>Note:</strong> All 4 roles must be assigned in order:</Typography>
-                      <ol sx={{ mt: 1, mb: 0, pl: 3 }}>
-                        <li><Typography variant="body2">Comment</Typography></li>
-                        <li><Typography variant="body2">Review</Typography></li>
-                        <li><Typography variant="body2">Commit</Typography></li>
-                        <li><Typography variant="body2">Approve</Typography></li>
-                      </ol>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e40af', mb: 1 }}>
+                          Complete the approval workflow
+                      </Typography>
+                        <Typography variant="body2" sx={{ color: '#1e40af', mb: 1 }}>
+                          All 4 roles must be assigned in the correct order:
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                          {requiredRolesInOrder.map((role, index) => (
+                            <Chip
+                              key={role}
+                              label={`${index + 1}. ${role}`}
+                              size="small"
+                              sx={{
+                                bgcolor: currentRoute.users.some(u => u.role === role) ? '#10b981' : '#f3f4f6',
+                                color: currentRoute.users.some(u => u.role === role) ? 'white' : '#6b7280',
+                                fontWeight: 600,
+                                fontSize: '0.7rem'
+                              }}
+                            />
+                          ))}
+                      </Box>
                     </Box>
                   </Box>
                 </Alert>
               )}
+              </Box>
             </Box>
 
             {showUserPanel && (
-              <Box sx={{ borderLeft: 1, borderColor: 'grey.300', pl: 3, width: '40%' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center' }}>
-                    <PersonAddIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                    Select Employee
+              <Box sx={{ 
+                borderLeft: '1px solid #e2e8f0', 
+                pl: 3, 
+                width: '30%',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                p: 3
+              }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  mb: 3 
+                }}>
+                  <Typography variant="h6" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    fontWeight: 600,
+                    color: '#1e293b'
+                  }}>
+                    <PersonAddIcon sx={{ mr: 1.5, fontSize: '1.2rem', color: '#3f51b5' }} />
+                    Add User
                   </Typography>
-                  <IconButton onClick={() => setShowUserPanel(false)}>
+                  <IconButton 
+                    onClick={() => setShowUserPanel(false)}
+                    sx={{
+                      color: '#64748b',
+                      bgcolor: 'rgba(100, 116, 139, 0.1)',
+                      '&:hover': {
+                        bgcolor: 'rgba(100, 116, 139, 0.2)',
+                        color: '#1e293b'
+                      }
+                    }}
+                  >
                     <CloseIcon />
                   </IconButton>
                 </Box>
 
                 <Box sx={{ mb: 3 }}>
-                  <Typography variant="body2" color="text.secondary">Assign as:</Typography>
-                  <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+                  <Typography variant="body2" sx={{ 
+                    fontWeight: 600, 
+                    color: '#374151',
+                    mb: 1
+                  }}>
+                    Assign to role:
+                  </Typography>
+                  <FormControl fullWidth size="small">
                     <Select
                       value={selectedUserRole}
                       onChange={(e) => setSelectedUserRole(e.target.value)}
+                      sx={{
+                        borderRadius: '8px',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#d1d5db'
+                        }
+                      }}
                     >
                       {requiredRolesInOrder.map(role => (
                         <MenuItem
@@ -820,12 +1265,22 @@ const RouteManagementPage = () => {
                           value={role}
                           disabled={currentRoute.users.some(u => u.role === role)}
                         >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ 
+                              width: 6, 
+                              height: 6, 
+                              borderRadius: '50%', 
+                              bgcolor: getRoleColor(role) 
+                            }} />
                           {role}
+                          </Box>
                         </MenuItem>
                       ))}
                     </Select>
                     {currentRoute.users.some(u => u.role === selectedUserRole) && (
-                      <Typography variant="caption" color="error">This role is already assigned</Typography>
+                      <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                        This role is already assigned
+                      </Typography>
                     )}
                   </FormControl>
                 </Box>
@@ -833,22 +1288,38 @@ const RouteManagementPage = () => {
                 <TextField
                   fullWidth
                   variant="outlined"
-                  placeholder="Search users..."
+                  placeholder="Search users by name or email..."
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
+                  size="small"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <SearchIcon />
+                        <SearchIcon sx={{ color: '#9ca3af' }} />
                       </InputAdornment>
                     ),
                   }}
-                  sx={{ mb: 2 }}
+                  sx={{ 
+                    mb: 3,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      '& fieldset': {
+                        borderColor: '#d1d5db'
+                      }
+                    }
+                  }}
                 />
 
-                <Box sx={{ height: '300px', overflowY: 'auto', border: 1, borderColor: 'grey.300', borderRadius: 1, p: 1 }}>
+                <Box sx={{ 
+                  height: '400px', 
+                  overflowY: 'auto', 
+                  border: '1px solid #e2e8f0', 
+                  borderRadius: '12px', 
+                  p: 1,
+                  background: 'white'
+                }}>
                   {filteredUsers.length > 0 ? (
-                    <List>
+                    <List dense>
                       {filteredUsers.map(user => (
                         <ListItem
                           key={user.id}
@@ -857,24 +1328,78 @@ const RouteManagementPage = () => {
                           disabled={currentRoute.users.some(u => u.id === user.id)}
                           sx={{
                             cursor: currentRoute.users.some(u => u.id === user.id) ? 'not-allowed' : 'pointer',
-                            opacity: currentRoute.users.some(u => u.id === user.id) ? 0.6 : 1
+                            opacity: currentRoute.users.some(u => u.id === user.id) ? 0.6 : 1,
+                            py: 1,
+                            borderRadius: '8px',
+                            mb: 0.5,
+                            '&:hover': {
+                              bgcolor: currentRoute.users.some(u => u.id === user.id) ? 'transparent' : '#f3f4f6'
+                            }
                           }}
                         >
-                          <ListItemText primary={renderUserCell(user)} />
+                          <ListItemAvatar>
+                            <Avatar sx={{ 
+                              width: 32, 
+                              height: 32, 
+                              bgcolor: getAvatarColor(user.email),
+                              fontSize: '0.8rem'
+                            }}>
+                              {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText 
+                            primary={
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                {user.name || user.email?.split('@')[0] || 'Unknown User'}
+                              </Typography>
+                            }
+                            secondary={
+                              <Typography variant="caption" color="text.secondary">
+                                {user.email}
+                              </Typography>
+                            }
+                          />
                         </ListItem>
                       ))}
                     </List>
                   ) : (
-                    <Box sx={{ textAlign: 'center', py: 4, bgcolor: 'background.paper' }}>
-                      <SearchIcon sx={{ color: 'text.secondary', mb: 1 }} />
-                      <Typography variant="body2" color="text.secondary">No users found</Typography>
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      py: 6, 
+                      color: '#9ca3af'
+                    }}>
+                      <SearchIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        No users found
+                      </Typography>
+                      <Typography variant="caption">
+                        Try adjusting your search terms
+                      </Typography>
                     </Box>
                   )}
                 </Box>
               </Box>
             )}
           </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+          
+          {/* Footer */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            p: 4,
+            borderTop: '1px solid #e3e8f0',
+            background: '#f8fafc'
+          }}>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                {currentRoute.users.length === 4 ? 
+                  '✅ All roles assigned - Ready to save' : 
+                  `⚠️ ${4 - currentRoute.users.length} role${4 - currentRoute.users.length !== 1 ? 's' : ''} remaining`
+                }
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               variant="outlined"
               onClick={() => {
@@ -882,22 +1407,52 @@ const RouteManagementPage = () => {
                 setShowUserPanel(false);
               }}
               disabled={loading}
-              sx={{ mr: 2 }}
+              sx={{ 
+                  borderColor: '#d1d5db',
+                  color: '#6b7280',
+                textTransform: 'none',
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  px: 3,
+                  py: 1.5,
+                '&:hover': {
+                    borderColor: '#9ca3af',
+                    backgroundColor: '#f9fafb'
+                }
+              }}
             >
               Cancel
             </Button>
             <Button
               variant="contained"
               onClick={saveRoute}
-              disabled={loading || !currentRoute.name || (!currentRoute.department && !currentRoute.isDefault)}
+                disabled={loading || !currentRoute.name || (!currentRoute.department && !currentRoute.isDefault) || currentRoute.users.length !== 4}
               sx={{
-                backgroundColor: '#4e73df',
-                '&:hover': { backgroundColor: '#3a5ba0' }
+                  background: 'linear-gradient(135deg, #3f51b5 0%, #303f9f 100%)',
+                textTransform: 'none',
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  px: 4,
+                  py: 1.5,
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                '&:hover': { 
+                    background: 'linear-gradient(135deg, #303f9f 0%, #283593 100%)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 6px 8px -1px rgba(0, 0, 0, 0.15)'
+                },
+                '&:disabled': {
+                    background: '#e5e7eb',
+                    color: '#9ca3af',
+                    transform: 'none',
+                    boxShadow: 'none'
+                  },
+                  transition: 'all 0.2s ease'
               }}
               startIcon={loading ? <CircularProgress size={20} /> : null}
             >
               {isEditing ? 'Update Route' : 'Create Route'}
             </Button>
+            </Box>
           </Box>
         </Box>
       </Modal>

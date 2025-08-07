@@ -4,14 +4,16 @@ import { FiAlertCircle, FiRefreshCw } from "react-icons/fi";
 import { useAuth } from '../context/AuthContext';
 import VehicleAssignedCard from "../components/users/VehicleAssignedCard";
 import FuelExpensesDashboard from "../components/fuel/AdminDashFuel";
-import CommentsAndFeedback from "../components/new components/CommentsVehicle";
+
 import StatsCard from "../components/dashboard/StatsCard";
 import { FiTruck, FiCheckCircle, FiFileText, FiTool } from "react-icons/fi";
 import '../components/dashboard/dashboard.css'; // Import your CSS file
-import VehicleAssignment from "../components/new components/VehicleAssignment";
+
 import CompleteInvoiceForm from "../components/new components/InvoiceForm";
 import LoadingSpinner from '../components/LoadingSpinner';
 import UpcomingMaintenanceWidget from "../components/dashboard/UpcomingMaintenanceWidget";
+import UserActivityWidget from "../components/dashboard/UserActivityWidget";
+import DocumentExpiryWidget from "../components/dashboard/DocumentExpiryWidget";
 
 
 const api = axios.create({
@@ -23,7 +25,7 @@ const api = axios.create({
   withCredentials: true
 });
 
-export default function Dashboard() {
+export default function Dashboard({ sidebarExpanded = true }) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     vehicleRequests: 0,
@@ -104,10 +106,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container" style={{
+      width: sidebarExpanded ? '100%' : 'calc(100% + 100px)',
+      transition: 'width 0.3s ease-in-out'
+    }}>
       <div className="top-section">
-         <VehicleAssignedCard />
-         <UpcomingMaintenanceWidget/>   
+         <VehicleAssignedCard sidebarExpanded={sidebarExpanded} />
+         <UpcomingMaintenanceWidget sidebarExpanded={sidebarExpanded}/>   
       </div>
         <div className="stats-cards">
           <StatsCard
@@ -145,8 +150,8 @@ export default function Dashboard() {
         </div>
       <div className="bottom-section">
         
-        <CommentsAndFeedback />
-        <VehicleAssignment/>
+        <DocumentExpiryWidget sidebarExpanded={sidebarExpanded} />
+        <UserActivityWidget sidebarExpanded={sidebarExpanded} />
       
       </div>
     </div>
