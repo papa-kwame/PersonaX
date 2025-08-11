@@ -184,6 +184,7 @@ const DocumentExpiryWidget = ({ sidebarExpanded = true }) => {
       height: '426px',
       display: 'flex',
       marginBottom:'30px',
+      borderRadius:'20px',
       flexDirection: 'column',
       transition: 'width 0.3s ease-in-out'
     }}>
@@ -258,10 +259,10 @@ const DocumentExpiryWidget = ({ sidebarExpanded = true }) => {
                 <React.Fragment key={vehicle.vehicleId}>
                   <ListItem 
                     sx={{ 
-                      px: 0.9, 
+                      px: 1.9, 
                       py: 1,
                       backgroundColor: hasCritical ? 'rgba(244, 67, 54, 0.05)' : 'transparent',
-                      borderRadius: 1,
+                      borderRadius: 3,
                       mb: 1
                     }}
                   >
@@ -274,8 +275,8 @@ const DocumentExpiryWidget = ({ sidebarExpanded = true }) => {
                         <Avatar 
                           sx={{ 
                             bgcolor: hasCritical ? 'error.main' : 'warning.main',
-                            width: 40,
-                            height: 40
+                            width: 35,
+                            height: 35
                           }}
                         >
                           <CarIcon />

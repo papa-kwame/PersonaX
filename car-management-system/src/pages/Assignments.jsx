@@ -575,31 +575,8 @@ const Assignment = ({ sidebarExpanded = true }) => {
   };
 
   const renderHeader = () => (
-    <Box sx={{ mb: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Avatar sx={{
-          bgcolor: 'black',
-          mr: 2,
-          width: 52,
-          height: 52,
-          boxShadow: '0 2px 8px rgba(25, 118, 210, 0.10)',
-          border: '2px solid #e3e8f0',
-          '& svg': {
-            color: '#fff',
-            fontSize: '2.2rem'
-          }
-        }}>
-          <CarIcon />
-        </Avatar>
-        <Box>
-          <Typography variant="h4" component="h1" fontWeight={400} sx={{
-            color: 'black',
-            letterSpacing: '0.5px',
-          }}>
-            Vehicle Management
-          </Typography>
-        </Box>
-      </Box>
+    <Box sx={{ mb: 0 }}>
+    
 
     </Box>
   );
@@ -645,38 +622,40 @@ const Assignment = ({ sidebarExpanded = true }) => {
               width: sidebarExpanded ? '474px' : '554px',
               transition: 'width 0.3s ease-in-out'
             }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Box sx={{
-                  p: 1.2,
-                  borderRadius: '50%',
-                  backgroundColor: stat.color,
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 44,
-                  height: 44,
-                  mr: 2
-                }}>
-                  {stat.icon}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{
+                    p: 1.2,
+                    borderRadius: '20%',
+                    backgroundColor: stat.color,
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 44,
+                    height: 44,
+                    mr: 2
+                  }}>
+                    {stat.icon}
+                    
+                  </Box>
+                  <Typography variant="subtitle2" sx={{
+                    fontWeight: 700,
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                    color: 'text.secondary',
+                    fontSize: '0.9rem'
+                  }}>
+                    {stat.title}
+                  </Typography>
                 </Box>
-                <Typography variant="subtitle2" sx={{
-                  fontWeight: 700,
-                  letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                  color: 'text.secondary',
-                  fontSize: '0.9rem'
+                <Typography variant="h3" fontWeight={700} sx={{
+                  fontSize: '2.3rem',
+                  lineHeight: 1.1
                 }}>
-                  {stat.title}
+                  {stat.value}
                 </Typography>
               </Box>
-              <Typography variant="h3" fontWeight={700} sx={{
-                fontSize: '2.3rem',
-                lineHeight: 1.1,
-                mb: 1
-              }}>
-                {stat.value}
-              </Typography>
               <Box sx={{ height: '4px', borderRadius: '2px', background: stat.color, opacity: 0.18, width: '100%' }} />
             </CardContent>
           </Card>
@@ -696,7 +675,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
               size="small"
               placeholder="Search assignments..."
               InputProps={{
-                startAdornment: (
+               startAdornment: (
                   <InputAdornment position="start">
                     <SearchIcon fontSize="small" />
                   </InputAdornment>
@@ -707,7 +686,13 @@ const Assignment = ({ sidebarExpanded = true }) => {
 
           </Box>
         </Box>
-        <TableContainer component={Paper} sx={{ boxShadow: 'none', background: '#f9fafb', borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={{ 
+          boxShadow: 'none', 
+          background: '#f9fafb', 
+          borderRadius: 2,
+          height: '400px',
+          overflow: 'auto'
+        }}>
           <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: 'rgba(25, 118, 210, 0.04)' }}>
@@ -876,7 +861,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
             Add Vehicle
           </Button>
         </Box>
-        <TableContainer component={Paper} sx={{ boxShadow: 'none', background: '#f9fafb', borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={{ boxShadow: 'none', background: '#f9fafb', borderRadius: 2 ,height: '400px', overflow: 'auto'}}>
           <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: alpha(COLORS.PRIMARY, 0.03) }}>
@@ -2522,7 +2507,10 @@ const Assignment = ({ sidebarExpanded = true }) => {
               </FormControl>
             </Box>
           )}
-          <TableContainer>
+          <TableContainer sx={{ 
+            height: '400px',
+            overflow: 'auto'
+          }}>
             <Table>
               <TableHead>
                 <TableRow sx={{

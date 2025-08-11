@@ -38,8 +38,8 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
         background: COLORS.CARD_BG,
         overflow: 'visible',
         position: 'relative',
-        marginTop: 1.3,
         minWidth: 280,
+        marginBottom:'11px',
         height: 200,
         '&:hover': {
           transform: 'translateY(-2px)',
@@ -53,11 +53,12 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Avatar
             sx={{
-              width: 48,
-              height: 48,
+              width: 35,
+              height: 35,
               backgroundColor: alpha(color, 0.1),
               color: color,
               mr: 2,
+              borderRadius: '20%',
               border: `1px solid ${alpha(color, 0.2)}`
             }}
           >
@@ -67,7 +68,7 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
             <Typography
               variant="h6"
               sx={{
-                fontWeight: 600,
+                fontWeight: 300,
                 color: COLORS.TEXT_PRIMARY,
                 fontSize: '1rem',
                 lineHeight: 1.2
@@ -84,7 +85,8 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          position: 'relative'
+          position: 'relative',
+          pb:2
         }}>
           {Object.entries(stats).map(([key, value]) => (
             <Box key={key} sx={{ textAlign: 'center' }}>
@@ -96,8 +98,6 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
                   lineHeight: 1,
                   letterSpacing: '-0.02em',
                   color: color,
-                  textShadow: `0 2px 4px ${alpha(color, 0.2)}`,
-                  mb: 0.5
                 }}
               >
                 {value}
@@ -110,7 +110,7 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
         {link && linkText && (
           <Box sx={{ 
             mt: 'auto',
-            pt: 2,
+            pt: 1,
             borderTop: `1px solid ${alpha(COLORS.DIVIDER, 0.3)}`
           }}>
             <Link 
@@ -121,7 +121,7 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 color: color,
-                fontWeight: 600,
+                fontWeight: 300,
                 fontSize: '0.875rem',
                 transition: 'all 0.2s ease'
               }}
@@ -129,8 +129,13 @@ export default function StatsCard({ title, stats, link, linkText, icon, color })
               <span>{linkText}</span>
               <ArrowForwardIcon 
                 sx={{ 
-                  fontSize: 20,
-                  transition: 'transform 0.2s ease'
+                  fontSize: 24,
+                  transition: 'transform 0.2s ease',
+                  borderRadius:'20px',
+                  backgroundColor:'rgba(34, 34, 37, 0.57)',
+                  color:'white',
+                  padding:'5px',
+
                 }}
               />
             </Link>

@@ -52,7 +52,7 @@ const Breadcrumbs = () => {
       >
         <Link
           component={RouterLink}
-          to="/"
+          to="/dashboard"
           color="inherit"
           sx={{
             display: 'flex',

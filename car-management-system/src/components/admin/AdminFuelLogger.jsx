@@ -740,35 +740,34 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
             mb: 4,
             flexDirection: isMobile ? 'column' : 'row',
             gap: isMobile ? 2 : 0,
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            borderRadius: '16px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-            p: 4,
-            border: '1px solid #e2e8f0',
+            backgroundColor: '#ffffff',
+            borderRadius: '8px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            p: 3,
+            border: '1px solid #e5e7eb',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Box sx={{
-              p: 2,
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              mr: 3,
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+              p: 1.5,
+              borderRadius: '6px',
+              backgroundColor: '#f3f4f6',
+              mr: 2,
+              border: '1px solid #e5e7eb'
             }}>
-              <LocalGasStation sx={{ fontSize: '2rem', color: '#ffffff' }} />
+              <LocalGasStation sx={{ fontSize: '1.5rem', color: '#374151' }} />
             </Box>
             <Box>
-              <Typography variant="h4" component="h1" sx={{ 
-                fontWeight: 700, 
-                color: '#1e293b',
-                letterSpacing: '-0.025em',
+              <Typography variant="h5" component="h1" sx={{ 
+                fontWeight: 600, 
+                color: '#111827',
                 mb: 0.5
               }}>
                 Fuel Management
               </Typography>
               <Typography variant="body2" sx={{ 
-                color: '#64748b',
-                fontWeight: 500
+                color: '#6b7280',
+                fontWeight: 400
               }}>
                 Track and manage vehicle fuel consumption
               </Typography>
@@ -784,15 +783,13 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
               variant="contained" 
               startIcon={<Add />} 
               sx={{ 
-                borderRadius: '8px', 
-                fontWeight: 600, 
+                borderRadius: '6px', 
+                fontWeight: 500, 
                 px: 3, 
                 py: 1.5,
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)',
+                backgroundColor: '#374151',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
-                  boxShadow: '0 6px 16px rgba(59, 130, 246, 0.35)'
+                  backgroundColor: '#1f2937'
                 }
               }} 
               onClick={() => handleOpenDialog()}
@@ -804,15 +801,15 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
               variant="outlined" 
               startIcon={<FileDownload />} 
               sx={{ 
-                borderRadius: '8px', 
-                fontWeight: 600, 
+                borderRadius: '6px', 
+                fontWeight: 500, 
                 px: 3, 
                 py: 1.5,
-                borderColor: '#3b82f6',
-                color: '#3b82f6',
+                borderColor: '#d1d5db',
+                color: '#374151',
                 '&:hover': {
-                  borderColor: '#2563eb',
-                  backgroundColor: 'rgba(59, 130, 246, 0.04)'
+                  borderColor: '#9ca3af',
+                  backgroundColor: '#f9fafb'
                 }
               }} 
               onClick={() => setOpenExportModal(true)}
@@ -824,15 +821,15 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
               variant="outlined"
               startIcon={<BarChart />}
               sx={{ 
-                borderRadius: '8px', 
-                fontWeight: 600, 
+                borderRadius: '6px', 
+                fontWeight: 500, 
                 px: 3, 
                 py: 1.5,
-                borderColor: '#10b981',
-                color: '#10b981',
+                borderColor: '#d1d5db',
+                color: '#374151',
                 '&:hover': {
-                  borderColor: '#059669',
-                  backgroundColor: 'rgba(16, 185, 129, 0.04)'
+                  borderColor: '#9ca3af',
+                  backgroundColor: '#f9fafb'
                 }
               }}
               onClick={handleOpenStatsModal}
@@ -843,15 +840,15 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
             <IconButton
               onClick={fetchData}
               sx={{
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
                 background: '#ffffff',
-                color: '#64748b',
+                color: '#6b7280',
                 p: 1.5,
                 '&:hover': {
-                  backgroundColor: '#f1f5f9',
-                  color: '#3b82f6',
-                  borderColor: '#3b82f6'
+                  backgroundColor: '#f9fafb',
+                  color: '#374151',
+                  borderColor: '#9ca3af'
                 },
               }}
             >
@@ -867,10 +864,10 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
             gap: 3,
             p: 3,
             mb: 4,
-            borderRadius: '12px',
+            borderRadius: '8px',
             background: '#ffffff',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #e5e7eb',
             flexWrap: { xs: 'wrap', md: 'nowrap' },
             flexDirection: { xs: 'column', md: 'row' },
           }}
@@ -882,22 +879,22 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search sx={{ color: '#64748b' }} />
+                  <Search sx={{ color: '#6b7280' }} />
                 </InputAdornment>
               ),
               sx: { 
-                borderRadius: '8px', 
-                background: '#f8fafc',
-                '& fieldset': { borderColor: '#e2e8f0' },
-                '&:hover fieldset': { borderColor: '#cbd5e1' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                borderRadius: '6px', 
+                background: '#ffffff',
+                '& fieldset': { borderColor: '#d1d5db' },
+                '&:hover fieldset': { borderColor: '#9ca3af' },
+                '&.Mui-focused fieldset': { borderColor: '#374151' }
               }
             }}
             sx={{ 
               minWidth: 280,
               flex: 1,
               '& .MuiInputBase-root': {
-                height: '44px'
+                height: '40px'
               }
             }}
             value={searchTerm}
@@ -905,18 +902,18 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
           />
           
           <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel sx={{ color: '#64748b' }}>Vehicle</InputLabel>
+            <InputLabel sx={{ color: '#6b7280' }}>Vehicle</InputLabel>
             <Select
               value={filters.vehicleId}
               onChange={(e) => handleFilterChange('vehicleId', e.target.value)}
               label="Vehicle"
               sx={{ 
-                borderRadius: '8px',
-                background: '#f8fafc',
-                height: '44px',
-                '& fieldset': { borderColor: '#e2e8f0' },
-                '&:hover fieldset': { borderColor: '#cbd5e1' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                borderRadius: '6px',
+                background: '#ffffff',
+                height: '40px',
+                '& fieldset': { borderColor: '#d1d5db' },
+                '&:hover fieldset': { borderColor: '#9ca3af' },
+                '&.Mui-focused fieldset': { borderColor: '#374151' }
               }}
             >
               <MenuItem value="">All Vehicles</MenuItem>
@@ -929,18 +926,18 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
           </FormControl>
           
           <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel sx={{ color: '#64748b' }}>User</InputLabel>
+            <InputLabel sx={{ color: '#6b7280' }}>User</InputLabel>
             <Select
               value={filters.userId}
               onChange={(e) => handleFilterChange('userId', e.target.value)}
               label="User"
               sx={{ 
-                borderRadius: '8px',
-                background: '#f8fafc',
-                height: '44px',
-                '& fieldset': { borderColor: '#e2e8f0' },
-                '&:hover fieldset': { borderColor: '#cbd5e1' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                borderRadius: '6px',
+                background: '#ffffff',
+                height: '40px',
+                '& fieldset': { borderColor: '#d1d5db' },
+                '&:hover fieldset': { borderColor: '#9ca3af' },
+                '&.Mui-focused fieldset': { borderColor: '#374151' }
               }}
             >
               <MenuItem value="">All Users</MenuItem>
@@ -957,17 +954,17 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
             startIcon={<Search />}
             onClick={applyFilters}
             sx={{ 
-              borderRadius: '8px',
-              fontWeight: 600,
+              borderRadius: '6px',
+              fontWeight: 500,
               px: 3,
               py: 1.5,
-              height: '44px',
-              borderColor: '#e2e8f0',
-              color: '#64748b',
+              height: '40px',
+              borderColor: '#d1d5db',
+              color: '#374151',
               '&:hover': {
-                borderColor: '#3b82f6',
-                color: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.04)'
+                borderColor: '#9ca3af',
+                color: '#374151',
+                backgroundColor: '#f9fafb'
               }
             }}
           >
@@ -979,10 +976,10 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
         <Paper
           sx={{
             mb: 4,
-            borderRadius: '12px',
+            borderRadius: '8px',
             overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #e5e7eb',
             background: '#ffffff',
           }}
         >
@@ -992,43 +989,41 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
             variant="fullWidth"
             sx={{
               '& .MuiTabs-indicator': {
-                height: 3,
-                borderRadius: '3px 3px 0 0',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                height: 2,
+                backgroundColor: '#374151',
               },
               '& .MuiTab-root': {
-                fontWeight: 600,
-                fontSize: '0.95rem',
+                fontWeight: 500,
+                fontSize: '0.875rem',
                 textTransform: 'none',
-                py: 2.5,
+                py: 2,
                 px: 3,
-                color: '#64748b',
+                color: '#6b7280',
                 transition: 'all 0.2s ease',
                 '&:hover': {
-                  color: '#3b82f6',
-                  backgroundColor: 'rgba(59, 130, 246, 0.04)',
+                  color: '#374151',
+                  backgroundColor: '#f9fafb',
                 },
               },
               '& .Mui-selected': {
-                color: '#3b82f6',
-                fontWeight: 700,
-                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                color: '#374151',
+                fontWeight: 600,
               },
             }}
           >
             <Tab 
               label="Fuel Logs" 
-              icon={<Description sx={{ fontSize: '1.2rem' }} />} 
+              icon={<Description sx={{ fontSize: '1.1rem' }} />} 
               iconPosition="start"
             />
             <Tab 
               label="Vehicles" 
-              icon={<DirectionsCar sx={{ fontSize: '1.2rem' }} />} 
+              icon={<DirectionsCar sx={{ fontSize: '1.1rem' }} />} 
               iconPosition="start"
             />
             <Tab 
               label="Statistics" 
-              icon={<BarChart sx={{ fontSize: '1.2rem' }} />} 
+              icon={<BarChart sx={{ fontSize: '1.1rem' }} />} 
               iconPosition="start"
             />
           </Tabs>
@@ -1038,12 +1033,10 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
           <Box sx={{ mb: 3 }}>
             <LinearProgress 
               sx={{ 
-                height: 3,
-                borderRadius: '3px',
-                backgroundColor: '#e5e7eb',
+                height: 2,
+                backgroundColor: '#f3f4f6',
                 '& .MuiLinearProgress-bar': {
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                  borderRadius: '3px',
+                  backgroundColor: '#374151',
                 }
               }} 
             />
@@ -1063,74 +1056,74 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                 sx={{
                   mb: 3,
                   overflow: 'hidden',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '12px',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
                   background: '#ffffff',
                 }}
               >
-             <TableContainer sx={{ borderRadius: '12px', overflow: 'hidden' }}>
-               <Table stickyHeader>
-                 <TableHead>
-                   <TableRow sx={{ backgroundColor: '#f8fafc' }}>
-                     <StyledTableCell sx={{ 
-                       fontWeight: 600, 
-                       color: '#374151',
-                       fontSize: '0.875rem',
-                       borderBottom: '2px solid #e5e7eb'
-                     }}>
-                       Date
-                     </StyledTableCell>
-                     <StyledTableCell sx={{ 
-                       fontWeight: 600, 
-                       color: '#374151',
-                       fontSize: '0.875rem',
-                       borderBottom: '2px solid #e5e7eb'
-                     }}>
-                       Vehicle
-                     </StyledTableCell>
-                     <StyledTableCell sx={{ 
-                       fontWeight: 600, 
-                       color: '#374151',
-                       fontSize: '0.875rem',
-                       borderBottom: '2px solid #e5e7eb'
-                     }}>
-                       User
-                     </StyledTableCell>
-                     <StyledTableCell align="right" sx={{ 
-                       fontWeight: 600, 
-                       color: '#374151',
-                       fontSize: '0.875rem',
-                       borderBottom: '2px solid #e5e7eb'
-                     }}>
-                       Fuel (L)
-                     </StyledTableCell>
-                     <StyledTableCell align="right" sx={{ 
-                       fontWeight: 600, 
-                       color: '#374151',
-                       fontSize: '0.875rem',
-                       borderBottom: '2px solid #e5e7eb'
-                     }}>
-                       Cost
-                     </StyledTableCell>
-                     <StyledTableCell sx={{ 
-                       fontWeight: 600, 
-                       color: '#374151',
-                       fontSize: '0.875rem',
-                       borderBottom: '2px solid #e5e7eb'
-                     }}>
-                       Station
-                     </StyledTableCell>
-                     <StyledTableCell sx={{ 
-                       fontWeight: 600, 
-                       color: '#374151',
-                       fontSize: '0.875rem',
-                       borderBottom: '2px solid #e5e7eb'
-                     }}>
-                       Actions
-                     </StyledTableCell>
-                   </TableRow>
-                 </TableHead>
+               <TableContainer sx={{ borderRadius: '8px', overflow: 'hidden' }}>
+                 <Table stickyHeader>
+                   <TableHead>
+                     <TableRow sx={{ backgroundColor: '#f9fafb' }}>
+                       <StyledTableCell sx={{ 
+                         fontWeight: 600, 
+                         color: '#374151',
+                         fontSize: '0.875rem',
+                         borderBottom: '1px solid #e5e7eb'
+                       }}>
+                         Date
+                       </StyledTableCell>
+                       <StyledTableCell sx={{ 
+                         fontWeight: 600, 
+                         color: '#374151',
+                         fontSize: '0.875rem',
+                         borderBottom: '1px solid #e5e7eb'
+                       }}>
+                         Vehicle
+                       </StyledTableCell>
+                       <StyledTableCell sx={{ 
+                         fontWeight: 600, 
+                         color: '#374151',
+                         fontSize: '0.875rem',
+                         borderBottom: '1px solid #e5e7eb'
+                       }}>
+                         User
+                       </StyledTableCell>
+                       <StyledTableCell align="right" sx={{ 
+                         fontWeight: 600, 
+                         color: '#374151',
+                         fontSize: '0.875rem',
+                         borderBottom: '1px solid #e5e7eb'
+                       }}>
+                         Fuel (L)
+                       </StyledTableCell>
+                       <StyledTableCell align="right" sx={{ 
+                         fontWeight: 600, 
+                         color: '#374151',
+                         fontSize: '0.875rem',
+                         borderBottom: '1px solid #e5e7eb'
+                       }}>
+                         Cost
+                       </StyledTableCell>
+                       <StyledTableCell sx={{ 
+                         fontWeight: 600, 
+                         color: '#374151',
+                         fontSize: '0.875rem',
+                         borderBottom: '1px solid #e5e7eb'
+                       }}>
+                         Station
+                       </StyledTableCell>
+                       <StyledTableCell sx={{ 
+                         fontWeight: 600, 
+                         color: '#374151',
+                         fontSize: '0.875rem',
+                         borderBottom: '1px solid #e5e7eb'
+                       }}>
+                         Actions
+                       </StyledTableCell>
+                     </TableRow>
+                   </TableHead>
     <TableBody>
       {filteredLogs.length > 0 ? (
         filteredLogs
@@ -1158,25 +1151,26 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                       <Chip
                         avatar={
                           <Avatar sx={{ 
-                            bgcolor: '#3b82f6',
-                            width: 24,
-                            height: 24,
-                            fontSize: '0.75rem'
+                            bgcolor: '#f3f4f6',
+                            width: 20,
+                            height: 20,
+                            fontSize: '0.75rem',
+                            border: '1px solid #e5e7eb'
                           }}>
-                            <DirectionsCar sx={{ fontSize: '0.875rem' }} />
+                            <DirectionsCar sx={{ fontSize: '0.75rem', color: '#6b7280' }} />
                           </Avatar>
                         }
                         label={`${vehicle.make} ${vehicle.model}`}
                         variant="outlined"
                         size="small"
                         sx={{
-                          borderColor: '#e2e8f0',
-                          backgroundColor: '#f8fafc',
+                          borderColor: '#d1d5db',
+                          backgroundColor: '#ffffff',
                           fontWeight: 500,
                           fontSize: '0.75rem',
                           '&:hover': {
-                            backgroundColor: '#f1f5f9',
-                            borderColor: '#3b82f6'
+                            backgroundColor: '#f9fafb',
+                            borderColor: '#9ca3af'
                           }
                         }}
                       />
@@ -1213,13 +1207,13 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                     }
                     size="small"
                     sx={{
-                      backgroundColor: '#dbeafe',
-                      color: '#1e40af',
+                      backgroundColor: '#f3f4f6',
+                      color: '#374151',
                       fontWeight: 500,
                       fontSize: '0.75rem',
-                      border: '1px solid #bfdbfe',
+                      border: '1px solid #e5e7eb',
                       '&:hover': {
-                        backgroundColor: '#bfdbfe'
+                        backgroundColor: '#e5e7eb'
                       }
                     }}
                   />
@@ -1231,17 +1225,19 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                         onClick={() => handleOpenDialog(log)}
                         size="small"
                         sx={{
-                          color: '#3b82f6',
-                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                          borderRadius: '6px',
+                          color: '#6b7280',
+                          backgroundColor: '#f9fafb',
+                          borderRadius: '4px',
                           p: 0.5,
+                          border: '1px solid #e5e7eb',
                           '&:hover': {
-                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                            color: '#1d4ed8'
+                            backgroundColor: '#f3f4f6',
+                            color: '#374151',
+                            borderColor: '#d1d5db'
                           }
                         }}
                       >
-                        <Edit sx={{ fontSize: '1rem' }} />
+                        <Edit sx={{ fontSize: '0.875rem' }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
@@ -1250,16 +1246,18 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                         size="small"
                         sx={{
                           color: '#ef4444',
-                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                          borderRadius: '6px',
+                          backgroundColor: '#fef2f2',
+                          borderRadius: '4px',
                           p: 0.5,
+                          border: '1px solid #fecaca',
                           '&:hover': {
-                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                            color: '#dc2626'
+                            backgroundColor: '#fee2e2',
+                            color: '#dc2626',
+                            borderColor: '#fca5a5'
                           }
                         }}
                       >
-                        <Delete sx={{ fontSize: '1rem' }} />
+                        <Delete sx={{ fontSize: '0.875rem' }} />
                       </IconButton>
                     </Tooltip>
                   </Stack>
@@ -1269,11 +1267,11 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
           })
       ) : (
         <TableRow>
-          <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+          <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
             <Box sx={{ textAlign: 'center' }}>
               <LocalGasStation sx={{ 
-                fontSize: '3rem', 
-                color: '#9ca3af', 
+                fontSize: '2.5rem', 
+                color: '#d1d5db', 
                 mb: 2 
               }} />
               <Typography sx={{ 
@@ -1310,7 +1308,7 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                     borderTop: '1px solid #e5e7eb',
                     backgroundColor: '#f9fafb',
                     '& .MuiTablePagination-toolbar': {
-                      minHeight: '60px',
+                      minHeight: '56px',
                       px: 3,
                     },
                     '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
@@ -1324,8 +1322,8 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                     '& .MuiIconButton-root': {
                       color: '#6b7280',
                       '&:hover': {
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        color: '#3b82f6',
+                        backgroundColor: '#f3f4f6',
+                        color: '#374151',
                       },
                       '&.Mui-disabled': {
                         color: '#d1d5db',

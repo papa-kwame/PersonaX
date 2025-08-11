@@ -289,7 +289,6 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
             <Grid container spacing={3}>
               {[
                 { title: 'Roadworthy Certificate', date: vehicle.roadworthyExpiry, type: 'document' },
-                { title: 'Registration', date: vehicle.registrationExpiry, type: 'document' },
                 { title: 'Insurance', date: vehicle.insuranceExpiry, type: 'document' },
                 { title: 'Next Service Due', date: vehicle.nextServiceDue, type: 'service' }
               ].map((doc, index) => {
@@ -311,7 +310,7 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                         boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
                         transition: 'all 0.3s ease'
                       },
-                      width: '260px'
+                      width: '357px'
                     }}>
                       <CardContent sx={{ p: 3, position: 'relative' }}>
                         {/* Status Indicator */}
@@ -470,14 +469,20 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
               Vehicle Details
             </Typography>
             
-            <Grid container spacing={2}>
-              {/* Technical Specs */}
+            <Grid container spacing={3}>
+              {/* Basic Information */}
               <Grid item xs={12} md={6}>
                 <Card sx={{
                   borderRadius: 3,
                   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
                   border: `1px solid ${COLORS.CARD_BORDER}`,
-                  background: COLORS.CARD_BG
+                 
+                  background: COLORS.CARD_BG,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)'
+                  }
                 }}>
                   <CardContent sx={{ p: 3 }}>
                     <Typography variant="h6" sx={{ 
@@ -488,77 +493,33 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                       alignItems: 'center',
                       gap: 1
                     }}>
-                      <EngineeringIcon sx={{ fontSize: 20 }} />
-                      Technical Specifications
+                      <InfoIcon sx={{ fontSize: 20 }} />
+                      Basic Information
                     </Typography>
                     
                     <Grid container spacing={2}>
+    
                       <Grid item xs={6}>
-                        <Box sx={{ mb: 2 }}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                           width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
                           <Typography variant="caption" sx={{ 
                             color: COLORS.TEXT_SECONDARY,
                             fontWeight: 500,
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px'
                           }}>
-                            Fuel Type
-                          </Typography>
-                          <Typography variant="body1" sx={{ 
-                            fontWeight: 600,
-                            color: COLORS.TEXT_PRIMARY,
-                            mt: 0.5
-                          }}>
-                            {vehicle.fuelType}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="caption" sx={{ 
-                            color: COLORS.TEXT_SECONDARY,
-                            fontWeight: 500,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px'
-                          }}>
-                            Transmission
-                          </Typography>
-                          <Typography variant="body1" sx={{ 
-                            fontWeight: 600,
-                            color: COLORS.TEXT_PRIMARY,
-                            mt: 0.5
-                          }}>
-                            {vehicle.transmission}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="caption" sx={{ 
-                            color: COLORS.TEXT_SECONDARY,
-                            fontWeight: 500,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px'
-                          }}>
-                            Mileage
-                          </Typography>
-                          <Typography variant="body1" sx={{ 
-                            fontWeight: 600,
-                            color: COLORS.TEXT_PRIMARY,
-                            mt: 0.5
-                          }}>
-                            {vehicle.currentMileage?.toLocaleString() || 'N/A'} miles
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="caption" sx={{ 
-                            color: COLORS.TEXT_SECONDARY,
-                            fontWeight: 500,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px'
-                          }}>
-                            Type
+                            Vehicle Type
                           </Typography>
                           <Typography variant="body1" sx={{ 
                             fontWeight: 600,
@@ -570,7 +531,19 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                         </Box>
                       </Grid>
                       <Grid item xs={6}>
-                        <Box sx={{ mb: 2 }}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
                           <Typography variant="caption" sx={{ 
                             color: COLORS.TEXT_SECONDARY,
                             fontWeight: 500,
@@ -595,15 +568,121 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Box>
                         </Box>
                       </Grid>
+
                       <Grid item xs={6}>
-                        <Box sx={{ mb: 2 }}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
                           <Typography variant="caption" sx={{ 
                             color: COLORS.TEXT_SECONDARY,
                             fontWeight: 500,
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px'
                           }}>
-                            Seating
+                            Fuel Type
+                          </Typography>
+                          <Typography variant="body1" sx={{ 
+                            fontWeight: 600,
+                            color: COLORS.TEXT_PRIMARY,
+                            mt: 0.5
+                          }}>
+                            {vehicle.fuelType}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
+                          <Typography variant="caption" sx={{ 
+                            color: COLORS.TEXT_SECONDARY,
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            Transmission
+                          </Typography>
+                          <Typography variant="body1" sx={{ 
+                            fontWeight: 600,
+                            color: COLORS.TEXT_PRIMARY,
+                            mt: 0.5
+                          }}>
+                            {vehicle.transmission}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
+                          <Typography variant="caption" sx={{ 
+                            color: COLORS.TEXT_SECONDARY,
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            Engine Size
+                          </Typography>
+                          <Typography variant="body1" sx={{ 
+                            fontWeight: 600,
+                            color: COLORS.TEXT_PRIMARY,
+                            mt: 0.5
+                          }}>
+                            {vehicle.engineSize}L
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
+                          <Typography variant="caption" sx={{ 
+                            color: COLORS.TEXT_SECONDARY,
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            Seating Capacity
                           </Typography>
                           <Typography variant="body1" sx={{ 
                             fontWeight: 600,
@@ -614,11 +693,169 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
+                      <Grid item xs={6}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
+                          <Typography variant="caption" sx={{ 
+                            color: COLORS.TEXT_SECONDARY,
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            Current Mileage
+                          </Typography>
+                          <Typography variant="body1" sx={{ 
+                            fontWeight: 600,
+                            color: COLORS.TEXT_PRIMARY,
+                            mt: 0.5
+                          }}>
+                            {vehicle.currentMileage?.toLocaleString() || 'N/A'} km
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
+                          <Typography variant="caption" sx={{ 
+                            color: COLORS.TEXT_SECONDARY,
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            Service Interval
+                          </Typography>
+                          <Typography variant="body1" sx={{ 
+                            fontWeight: 600,
+                            color: COLORS.TEXT_PRIMARY,
+                            mt: 0.5
+                          }}>
+                            {vehicle.serviceInterval?.toLocaleString() || 'N/A'} km
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
+                          <Typography variant="caption" sx={{ 
+                            color: COLORS.TEXT_SECONDARY,
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            Purchase Date
+                          </Typography>
+                          <Typography variant="body1" sx={{ 
+                            fontWeight: 600,
+                            color: COLORS.TEXT_PRIMARY,
+                            mt: 0.5
+                          }}>
+                            {formatDate(vehicle.purchaseDate)}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          width: '120px',
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
+                          <Typography variant="caption" sx={{ 
+                            color: COLORS.TEXT_SECONDARY,
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            Purchase Price
+                          </Typography>
+                          <Typography variant="body1" sx={{ 
+                            fontWeight: 600,
+                            color: COLORS.TEXT_PRIMARY,
+                            mt: 0.5
+                          }}>
+                            ₵{vehicle.purchasePrice?.toLocaleString() || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+
+                      <Grid item xs={6}>
+                        <Box sx={{ 
+                          mb: 2,
+                          p: 2,
+                          borderRadius: 2,
+                          backgroundColor: alpha(COLORS.PRIMARY, 0.02),
+                          border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: alpha(COLORS.PRIMARY, 0.04),
+                            border: `1px solid ${alpha(COLORS.PRIMARY, 0.12)}`
+                          }
+                        }}>
+                          <Typography variant="caption" sx={{ 
+                            color: COLORS.TEXT_SECONDARY,
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            Next Service Due
+                          </Typography>
+                          <Typography variant="body1" sx={{ 
+                            fontWeight: 600,
+                            color: COLORS.TEXT_PRIMARY,
+                            mt: 0.5
+                          }}>
+                            {formatDate(vehicle.nextServiceDue)}
+                          </Typography>
+                        </Box>
+                      </Grid>
+
                     </Grid>
                   </CardContent>
                 </Card>
               </Grid>
 
+
+      
 
 
             </Grid>

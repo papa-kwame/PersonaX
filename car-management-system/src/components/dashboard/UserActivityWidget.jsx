@@ -33,8 +33,7 @@ const UserActivityWidget = ({ sidebarExpanded = true }) => {
 
   useEffect(() => {
     fetchActivityData();
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(fetchActivityData, 300000);
+    const interval = setInterval(fetchActivityData, 150000);
     return () => clearInterval(interval);
   }, []);
 
@@ -149,7 +148,8 @@ const UserActivityWidget = ({ sidebarExpanded = true }) => {
       flexDirection: 'column', 
       position: 'relative', 
       overflow: 'hidden',
-      transition: 'width 0.3s ease-in-out'
+      transition: 'width 0.3s ease-in-out',
+      borderRadius:'20px',
     }}>
       <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
         {/* Simple Header */}
@@ -173,7 +173,12 @@ const UserActivityWidget = ({ sidebarExpanded = true }) => {
                       '&:hover': {
                         bgcolor: 'action.hover',
                         transition: 'background-color 0.2s ease'
-                      }
+                      },
+                      borderRadius:'10px',
+                      backgroundColor:'rgba(208, 208, 219, 0.21)',
+                      color:'white',
+                      padding:'5px',
+
                     }}
                   >
                     <ListItemAvatar>

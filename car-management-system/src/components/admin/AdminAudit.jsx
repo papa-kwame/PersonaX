@@ -13,7 +13,8 @@ import {
   Refresh as RefreshIcon, Visibility as ViewIcon, Search as SearchIcon,
   DirectionsCar as CarIcon, Build as BuildIcon, LocalGasStation as FuelIcon,
   Route as RouteIcon, Login as LoginIcon, Logout as LogoutIcon,
-  Home as HomeIcon, Analytics as AnalyticsIcon, Settings as SettingsIcon
+  Home as HomeIcon, Analytics as AnalyticsIcon, Settings as SettingsIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -858,104 +859,175 @@ export default function AdminAudit({ sidebarExpanded = true }) {
 
               {/* User Analytics Tab */}
               {activeTab === 1 && (
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="h6" gutterBottom>
-                      Most Active Users
-                    </Typography>
-                    <List>
-                      {mostActiveUsers.map((user, index) => (
-                        <ListItem key={user.userId}>
-                          <ListItemAvatar>
-                            <Avatar>{user.userName?.charAt(0) || 'U'}</Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={user.userName || `User ${user.userId.substring(0, 8)}...`}
-                            secondary={`${user.activityCount} activities • ${user.userEmail || user.userId.substring(0, 8)}...`}
-                          />
-                          <Chip label={new Date(user.lastActivity).toLocaleDateString()} size="small" />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="h6" gutterBottom>
-                      Popular Pages
-                    </Typography>
-                    <List>
-                      {popularPages.map((page, index) => (
-                        <ListItem key={page.pageUrl}>
-                          <ListItemAvatar>
-                            <Avatar>{index + 1}</Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={page.pageUrl}
-                            secondary={`${page.visitCount} visits`}
-                          />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Grid>
-                </Grid>
-              )}
-
-              {/* Module Analytics Tab */}
-              {activeTab === 2 && (
                 <Box sx={{ p: 3 }}>
+
+
+                  {/* Enhanced User Analytics Content */}
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                      <Card sx={{ height: '100%' }}>
+                    {/* Most Active Users */}
+                    <Grid item xs={12} lg={8}>
+                      <Card sx={{ 
+                        height: '100%',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(226, 232, 240, 0.8)',
+                        boxShadow: '0 8px 32px rgba(71, 85, 105, 0.08)'
+                      }}>
                         <CardHeader
-                          title="Activity by Module"
+                          title="Most Active Users"
                           titleTypographyProps={{ 
                             variant: 'h6', 
-                            fontWeight: 600,
-                            color: 'grey.800'
+                            fontWeight: 700,
+                            color: '#1e293b'
                           }}
-                          avatar={<AssessmentIcon color="primary" />}
+                          avatar={
+                            <Box sx={{
+                              p: 1.5,
+                              borderRadius: '12px',
+                              background: 'linear-gradient(135deg, #475569 0%, #64748b 100%)',
+                              color: 'white'
+                            }}>
+                              <PersonIcon sx={{ fontSize: 24 }} />
+                            </Box>
+                          }
+                          sx={{
+                            borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
+                            background: 'rgba(248, 250, 252, 0.5)'
+                          }}
                         />
-                        <CardContent>
-                          {stats.moduleStats && stats.moduleStats.length > 0 ? (
+                        <CardContent sx={{ p: 3 }}>
+                          {mostActiveUsers && mostActiveUsers.length > 0 ? (
                             <Box>
-                              {stats.moduleStats.map((module, index) => (
-                                <Box key={module.module} sx={{ mb: 3 }}>
-                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                      <Box sx={{ mr: 1, color: 'grey.600' }}>
-                                        {getActivityIcon(module.module)}
+                              {mostActiveUsers.map((user, index) => (
+                                <Box key={user.userId} sx={{ mb: 3 }}>
+                                  <Box sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    p: 2.5,
+                                    borderRadius: '12px',
+                                    background: index < 3 
+                                      ? 'linear-gradient(135deg, rgba(71, 85, 105, 0.05) 0%, rgba(100, 116, 139, 0.05) 100%)'
+                                      : 'rgba(255, 255, 255, 0.8)',
+                                    border: index < 3 
+                                      ? '2px solid #475569'
+                                      : '1px solid rgba(226, 232, 240, 0.6)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': {
+                                      boxShadow: '0 8px 32px rgba(71, 85, 105, 0.15)',
+                                      transform: 'translateY(-2px) scale(1.01)',
+                                      background: index < 3 
+                                        ? 'linear-gradient(135deg, rgba(71, 85, 105, 0.1) 0%, rgba(100, 116, 139, 0.1) 100%)'
+                                        : 'rgba(255, 255, 255, 1)'
+                                    },
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                  }}>
+                                    {index < 3 && (
+                                      <Box sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        right: 0,
+                                        background: '#475569',
+                                        color: 'white',
+                                        px: 1.5,
+                                        py: 0.5,
+                                        fontSize: '12px',
+                                        fontWeight: 700,
+                                        borderRadius: '0 0 0 8px'
+                                      }}>
+                                        #{index + 1}
                                       </Box>
-                                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'grey.800' }}>
-                                        {module.module}
+                                    )}
+                                    
+                                    <Avatar sx={{ 
+                                      width: 56, 
+                                      height: 56, 
+                                      mr: 3,
+                                      bgcolor: index < 3 ? '#475569' : 'rgba(71, 85, 105, 0.1)',
+                                      color: index < 3 ? 'white' : '#475569',
+                                      fontSize: '1.25rem',
+                                      fontWeight: 600,
+                                      border: index < 3 ? '2px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(71, 85, 105, 0.2)'
+                                    }}>
+                                      {user.userName?.charAt(0) || 'U'}
+                                    </Avatar>
+                                    
+                                    <Box sx={{ flex: 1, mr: 2 }}>
+                                      <Typography variant="h6" sx={{ fontWeight: 600, color: '#1e293b', mb: 0.5 }}>
+                                        {user.userName || `User ${user.userId.substring(0, 8)}...`}
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                                        {user.userEmail || user.userId.substring(0, 8)}...
+                                      </Typography>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Chip 
+                                          label={`${user.activityCount} activities`}
+                                          size="small"
+                                          sx={{ 
+                                            bgcolor: 'rgba(71, 85, 105, 0.1)',
+                                            color: '#475569',
+                                            fontWeight: 600,
+                                            borderRadius: '8px'
+                                          }}
+                                        />
+                                        <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                                          Last active: {new Date(user.lastActivity).toLocaleDateString()}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                    
+                                    <Box sx={{ textAlign: 'right' }}>
+                                      <Typography variant="h4" sx={{ fontWeight: 700, color: '#475569', mb: 0.5 }}>
+                                        {user.activityCount}
+                                      </Typography>
+                                      <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                                        activities
                                       </Typography>
                                     </Box>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                                      {module.count}
-                                    </Typography>
                                   </Box>
-                                  <LinearProgress
-                                    variant="determinate"
-                                    value={(module.count / (stats.totalActivities || 1)) * 100}
-                                    sx={{ 
-                                      height: 8, 
-                                      borderRadius: 4,
-                                      backgroundColor: 'grey.200',
-                                      '& .MuiLinearProgress-bar': {
-                                        borderRadius: 4,
-                                        background: `linear-gradient(90deg, ${getModuleColor(module.module)} 0%, ${getModuleColor(module.module)}dd 100%)`
-                                      }
-                                    }}
-                                  />
+                                  
+                                  {/* Activity Progress Bar */}
+                                  <Box sx={{ 
+                                    position: 'relative',
+                                    height: '6px',
+                                    background: 'rgba(226, 232, 240, 0.6)',
+                                    borderRadius: '3px',
+                                    overflow: 'hidden',
+                                    mt: 1
+                                  }}>
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        height: '100%',
+                                        width: `${(user.activityCount / (mostActiveUsers[0]?.activityCount || 1)) * 100}%`,
+                                        background: index < 3 
+                                          ? 'linear-gradient(90deg, #475569 0%, #64748b 100%)'
+                                          : 'linear-gradient(90deg, #94a3b8 0%, #cbd5e1 100%)',
+                                        borderRadius: '3px',
+                                        transition: 'width 0.8s ease-in-out'
+                                      }}
+                                    />
+                                  </Box>
                                 </Box>
                               ))}
                             </Box>
                           ) : (
-                            <Box sx={{ textAlign: 'center', py: 4, color: 'grey.500' }}>
-                              <AssessmentIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
-                              <Typography variant="h6" gutterBottom>
-                                No module data available
+                            <Box sx={{ 
+                              textAlign: 'center', 
+                              py: 6, 
+                              color: '#64748b',
+                              background: 'rgba(248, 250, 252, 0.5)',
+                              borderRadius: '12px',
+                              border: '2px dashed rgba(226, 232, 240, 0.8)'
+                            }}>
+                              <PersonIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5, color: '#94a3b8' }} />
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#475569' }}>
+                                No user data available
                               </Typography>
-                              <Typography variant="body2">
-                                Module statistics will appear here once activities are logged
+                              <Typography variant="body2" sx={{ color: '#64748b', maxWidth: 300, mx: 'auto' }}>
+                                User activity statistics will appear here once users start interacting with the system
                               </Typography>
                             </Box>
                           )}
@@ -963,58 +1035,576 @@ export default function AdminAudit({ sidebarExpanded = true }) {
                       </Card>
                     </Grid>
                     
-                    <Grid item xs={12} md={6}>
-                      <Card sx={{ height: '100%' }}>
+                    {/* Popular Pages and User Engagement */}
+                    <Grid item xs={12} lg={4}>
+                      <Stack spacing={3}>
+                        {/* Popular Pages Card */}
+                        <Card sx={{ 
+                          background: 'rgba(255, 255, 255, 0.9)',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(226, 232, 240, 0.8)',
+                          boxShadow: '0 8px 32px rgba(71, 85, 105, 0.08)'
+                        }}>
+                          <CardHeader
+                            title="Popular Pages"
+                            titleTypographyProps={{ 
+                              variant: 'h6', 
+                              fontWeight: 700,
+                              color: '#1e293b'
+                            }}
+                            avatar={
+                              <Box sx={{
+                                p: 1.5,
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                                color: 'white'
+                              }}>
+                                <RouteIcon sx={{ fontSize: 24 }} />
+                              </Box>
+                            }
+                            sx={{
+                              borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
+                              background: 'rgba(248, 250, 252, 0.5)'
+                            }}
+                          />
+                          <CardContent sx={{ p: 3 }}>
+                            {popularPages && popularPages.length > 0 ? (
+                              <List sx={{ p: 0 }}>
+                                {popularPages.slice(0, 8).map((page, index) => (
+                                  <ListItem key={page.pageUrl} sx={{ 
+                                    px: 0, 
+                                    py: 1.5,
+                                    borderRadius: '8px',
+                                    mb: 1,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                      background: 'rgba(71, 85, 105, 0.05)'
+                                    }
+                                  }}>
+                                    <ListItemAvatar>
+                                      <Avatar sx={{ 
+                                        bgcolor: index < 3 ? '#059669' : '#94a3b8', 
+                                        width: 36, 
+                                        height: 36, 
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600
+                                      }}>
+                                        {index + 1}
+                                      </Avatar>
+                                    </ListItemAvatar>
+                                    <ListItemText
+                                      primary={
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                                          {page.pageUrl}
+                                        </Typography>
+                                      }
+                                      secondary={
+                                        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                                          {page.visitCount} visits
+                                        </Typography>
+                                      }
+                                    />
+                                    <Chip 
+                                      label={`#${index + 1}`} 
+                                      size="small" 
+                                      sx={{ 
+                                        bgcolor: index < 3 ? '#059669' : '#e2e8f0',
+                                        color: index < 3 ? 'white' : '#64748b',
+                                        fontWeight: 600,
+                                        borderRadius: '6px'
+                                      }}
+                                    />
+                                  </ListItem>
+                                ))}
+                              </List>
+                            ) : (
+                              <Box sx={{ 
+                                textAlign: 'center', 
+                                py: 4, 
+                                color: '#64748b',
+                                background: 'rgba(248, 250, 252, 0.5)',
+                                borderRadius: '12px',
+                                border: '2px dashed rgba(226, 232, 240, 0.8)'
+                              }}>
+                                <RouteIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5, color: '#94a3b8' }} />
+                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#475569' }}>
+                                  No page data available
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                  Popular pages will appear here once page views are tracked
+                                </Typography>
+                              </Box>
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        {/* User Engagement Metrics */}
+                        <Card sx={{ 
+                          background: 'rgba(255, 255, 255, 0.9)',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(226, 232, 240, 0.8)',
+                          boxShadow: '0 8px 32px rgba(71, 85, 105, 0.08)'
+                        }}>
+                          <CardHeader
+                            title="Engagement Metrics"
+                            titleTypographyProps={{ 
+                              variant: 'h6', 
+                              fontWeight: 700,
+                              color: '#1e293b'
+                            }}
+                            avatar={
+                              <Box sx={{
+                                p: 1.5,
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+                                color: 'white'
+                              }}>
+                                <AnalyticsIcon sx={{ fontSize: 24 }} />
+                              </Box>
+                            }
+                            sx={{
+                              borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
+                              background: 'rgba(248, 250, 252, 0.5)'
+                            }}
+                          />
+                          <CardContent sx={{ p: 3 }}>
+                            <Box sx={{ mb: 3 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569', mb: 1 }}>
+                                Average Activities per User
+                              </Typography>
+                              <Typography variant="h4" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+                                {mostActiveUsers.length > 0 
+                                  ? Math.round(mostActiveUsers.reduce((sum, user) => sum + user.activityCount, 0) / mostActiveUsers.length)
+                                  : 0}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                Based on active users
+                              </Typography>
+                            </Box>
+                            
+                            <Box sx={{ mb: 3 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569', mb: 1 }}>
+                                Most Active User
+                              </Typography>
+                              <Typography variant="h4" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+                                {mostActiveUsers.length > 0 ? mostActiveUsers[0].activityCount : 0}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                Activities by top user
+                              </Typography>
+                            </Box>
+                            
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569', mb: 1 }}>
+                                User Distribution
+                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box sx={{ 
+                                  flex: 1, 
+                                  height: '8px', 
+                                  background: 'rgba(226, 232, 240, 0.6)',
+                                  borderRadius: '4px',
+                                  overflow: 'hidden'
+                                }}>
+                                  <Box sx={{
+                                    height: '100%',
+                                    width: '60%',
+                                    background: 'linear-gradient(90deg, #475569 0%, #64748b 100%)',
+                                    borderRadius: '4px'
+                                  }} />
+                                </Box>
+                                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
+                                  60% active
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Stack>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
+
+              {/* Module Analytics Tab */}
+              {activeTab === 2 && (
+                <Box sx={{ p: 3 }}>
+                  {/* Enhanced Header Stats */}
+                  <Grid container spacing={3} sx={{ mb: 4 }}>
+                    <Grid item xs={12} md={3}>
+                      <Card sx={{ 
+                        background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+                        color: 'white',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: '100px',
+                          height: '100px',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: '50%',
+                          transform: 'translate(30px, -30px)'
+                        }
+                      }}>
+                        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <AssessmentIcon sx={{ fontSize: 32, mr: 2, opacity: 0.9 }} />
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              Total Activities
+                            </Typography>
+                          </Box>
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
+                            {stats.totalActivities || 0}
+                          </Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                            Across all modules
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={3}>
+                      <Card sx={{ 
+                        background: 'linear-gradient(135deg, #475569 0%, #64748b 100%)',
+                        color: 'white',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: '80px',
+                          height: '80px',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: '50%',
+                          transform: 'translate(25px, -25px)'
+                        }
+                      }}>
+                        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <PersonIcon sx={{ fontSize: 32, mr: 2, opacity: 0.9 }} />
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              Active Users
+                            </Typography>
+                          </Box>
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
+                            {stats.uniqueUsers || 0}
+                          </Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                            In the last 30 days
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={3}>
+                      <Card sx={{ 
+                        background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                        color: 'white',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: '90px',
+                          height: '90px',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: '50%',
+                          transform: 'translate(30px, -30px)'
+                        }
+                      }}>
+                        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <TrendingUpIcon sx={{ fontSize: 32, mr: 2, opacity: 0.9 }} />
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              Avg Daily
+                            </Typography>
+                          </Box>
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
+                            {Math.round((stats.totalActivities || 0) / 30) || 0}
+                          </Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                            Activities per day
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={3}>
+                      <Card sx={{ 
+                        background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+                        color: 'white',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: '70px',
+                          height: '70px',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: '50%',
+                          transform: 'translate(20px, -20px)'
+                        }
+                      }}>
+                        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <SettingsIcon sx={{ fontSize: 32, mr: 2, opacity: 0.9 }} />
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              Active Modules
+                            </Typography>
+                          </Box>
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
+                            {stats.moduleStats?.length || 0}
+                          </Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                            With recent activity
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </Grid>
+
+                  {/* Enhanced Module Analytics */}
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} lg={8}>
+                      <Card sx={{ 
+                        height: '100%',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(226, 232, 240, 0.8)',
+                        boxShadow: '0 8px 32px rgba(71, 85, 105, 0.08)'
+                      }}>
                         <CardHeader
-                          title="Activity Types Distribution"
+                          title="Module Activity Distribution"
                           titleTypographyProps={{ 
                             variant: 'h6', 
-                            fontWeight: 600,
-                            color: 'grey.800'
+                            fontWeight: 700,
+                            color: '#1e293b'
                           }}
-                          avatar={<TimelineIcon color="primary" />}
+                          avatar={
+                            <Box sx={{
+                              p: 1.5,
+                              borderRadius: '12px',
+                              background: 'linear-gradient(135deg, #475569 0%, #64748b 100%)',
+                              color: 'white'
+                            }}>
+                              <AssessmentIcon sx={{ fontSize: 24 }} />
+                            </Box>
+                          }
+                          sx={{
+                            borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
+                            background: 'rgba(248, 250, 252, 0.5)'
+                          }}
                         />
-                        <CardContent>
-                          {stats.activityTypeStats && stats.activityTypeStats.length > 0 ? (
+                        <CardContent sx={{ p: 3 }}>
+                          {stats.moduleStats && stats.moduleStats.length > 0 ? (
                             <Box>
-                              {stats.activityTypeStats.map((type, index) => (
-                                <Box key={type.activityType} sx={{ mb: 3 }}>
-                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                      <Chip
-                                        label={type.activityType}
-                                        color={getActivityColor(type.activityType)}
-                                        size="small"
-                                        sx={{ mr: 1, fontWeight: 600 }}
-                                      />
+                              {stats.moduleStats.map((module, index) => (
+                                <Box key={module.module} sx={{ mb: 3 }}>
+                                  <Box sx={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center', 
+                                    mb: 2,
+                                    p: 2,
+                                    borderRadius: '12px',
+                                    background: 'rgba(255, 255, 255, 0.8)',
+                                    border: '1px solid rgba(226, 232, 240, 0.6)',
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                      background: 'rgba(255, 255, 255, 1)',
+                                      boxShadow: '0 4px 12px rgba(71, 85, 105, 0.1)',
+                                      transform: 'translateY(-1px)'
+                                    }
+                                  }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                                      <Box sx={{ 
+                                        mr: 2, 
+                                        p: 1,
+                                        borderRadius: '8px',
+                                        background: `${getModuleColor(module.module)}20`,
+                                        color: getModuleColor(module.module)
+                                      }}>
+                                        {getActivityIcon(module.module)}
+                                      </Box>
+                                      <Box sx={{ flex: 1 }}>
+                                        <Typography variant="body1" sx={{ fontWeight: 600, color: '#1e293b', mb: 0.5 }}>
+                                          {module.module}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                          {Math.round((module.count / (stats.totalActivities || 1)) * 100)}% of total activity
+                                        </Typography>
+                                      </Box>
                                     </Box>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                                      {type.count}
-                                    </Typography>
+                                    <Box sx={{ textAlign: 'right' }}>
+                                      <Typography variant="h5" sx={{ fontWeight: 700, color: '#475569' }}>
+                                        {module.count}
+                                      </Typography>
+                                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                        activities
+                                      </Typography>
+                                    </Box>
                                   </Box>
-                                  <LinearProgress
-                                    variant="determinate"
-                                    value={(type.count / (stats.totalActivities || 1)) * 100}
-                                    sx={{ 
-                                      height: 8, 
-                                      borderRadius: 4,
-                                      backgroundColor: 'grey.200',
-                                      '& .MuiLinearProgress-bar': {
-                                        borderRadius: 4,
-                                        backgroundColor: `${getActivityColor(type.activityType)}.main`
-                                      }
-                                    }}
-                                  />
+                                  <Box sx={{ 
+                                    position: 'relative',
+                                    height: '8px',
+                                    background: 'rgba(226, 232, 240, 0.6)',
+                                    borderRadius: '4px',
+                                    overflow: 'hidden'
+                                  }}>
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        height: '100%',
+                                        width: `${(module.count / (stats.totalActivities || 1)) * 100}%`,
+                                        background: `linear-gradient(90deg, ${getModuleColor(module.module)} 0%, ${getModuleColor(module.module)}dd 100%)`,
+                                        borderRadius: '4px',
+                                        transition: 'width 0.8s ease-in-out'
+                                      }}
+                                    />
+                                  </Box>
                                 </Box>
                               ))}
                             </Box>
                           ) : (
-                            <Box sx={{ textAlign: 'center', py: 4, color: 'grey.500' }}>
-                              <TimelineIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
-                              <Typography variant="h6" gutterBottom>
-                                No activity type data available
+                            <Box sx={{ 
+                              textAlign: 'center', 
+                              py: 6, 
+                              color: '#64748b',
+                              background: 'rgba(248, 250, 252, 0.5)',
+                              borderRadius: '12px',
+                              border: '2px dashed rgba(226, 232, 240, 0.8)'
+                            }}>
+                              <AssessmentIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5, color: '#94a3b8' }} />
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#475569' }}>
+                                No module data available
                               </Typography>
-                              <Typography variant="body2">
+                              <Typography variant="body2" sx={{ color: '#64748b', maxWidth: 300, mx: 'auto' }}>
+                                Module statistics will appear here once activities are logged and tracked across the system
+                              </Typography>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    
+                    <Grid item xs={12} lg={4}>
+                      <Card sx={{ 
+                        height: '100%',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(226, 232, 240, 0.8)',
+                        boxShadow: '0 8px 32px rgba(71, 85, 105, 0.08)'
+                      }}>
+                        <CardHeader
+                          title="Activity Types"
+                          titleTypographyProps={{ 
+                            variant: 'h6', 
+                            fontWeight: 700,
+                            color: '#1e293b'
+                          }}
+                          avatar={
+                            <Box sx={{
+                              p: 1.5,
+                              borderRadius: '12px',
+                              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                              color: 'white'
+                            }}>
+                              <TimelineIcon sx={{ fontSize: 24 }} />
+                            </Box>
+                          }
+                          sx={{
+                            borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
+                            background: 'rgba(248, 250, 252, 0.5)'
+                          }}
+                        />
+                        <CardContent sx={{ p: 3 }}>
+                          {stats.activityTypeStats && stats.activityTypeStats.length > 0 ? (
+                            <Box>
+                              {stats.activityTypeStats.map((type, index) => (
+                                <Box key={type.activityType} sx={{ mb: 3 }}>
+                                  <Box sx={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center', 
+                                    mb: 2,
+                                    p: 2,
+                                    borderRadius: '12px',
+                                    background: 'rgba(255, 255, 255, 0.8)',
+                                    border: '1px solid rgba(226, 232, 240, 0.6)',
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                      background: 'rgba(255, 255, 255, 1)',
+                                      boxShadow: '0 4px 12px rgba(71, 85, 105, 0.1)',
+                                      transform: 'translateY(-1px)'
+                                    }
+                                  }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                                      <Chip
+                                        label={type.activityType}
+                                        color={getActivityColor(type.activityType)}
+                                        size="small"
+                                        sx={{ 
+                                          mr: 2, 
+                                          fontWeight: 600,
+                                          borderRadius: '8px'
+                                        }}
+                                      />
+                                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                        {Math.round((type.count / (stats.totalActivities || 1)) * 100)}%
+                                      </Typography>
+                                    </Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#475569' }}>
+                                      {type.count}
+                                    </Typography>
+                                  </Box>
+                                  <Box sx={{ 
+                                    position: 'relative',
+                                    height: '6px',
+                                    background: 'rgba(226, 232, 240, 0.6)',
+                                    borderRadius: '3px',
+                                    overflow: 'hidden'
+                                  }}>
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        height: '100%',
+                                        width: `${(type.count / (stats.totalActivities || 1)) * 100}%`,
+                                        backgroundColor: `${getActivityColor(type.activityType)}.main`,
+                                        borderRadius: '3px',
+                                        transition: 'width 0.8s ease-in-out'
+                                      }}
+                                    />
+                                  </Box>
+                                </Box>
+                              ))}
+                            </Box>
+                          ) : (
+                            <Box sx={{ 
+                              textAlign: 'center', 
+                              py: 4, 
+                              color: '#64748b',
+                              background: 'rgba(248, 250, 252, 0.5)',
+                              borderRadius: '12px',
+                              border: '2px dashed rgba(226, 232, 240, 0.8)'
+                            }}>
+                              <TimelineIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5, color: '#94a3b8' }} />
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#475569' }}>
+                                No activity type data
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#64748b' }}>
                                 Activity type statistics will appear here once activities are logged
                               </Typography>
                             </Box>
@@ -1029,177 +1619,499 @@ export default function AdminAudit({ sidebarExpanded = true }) {
               {/* Trends Tab */}
               {activeTab === 3 && (
                 <Box sx={{ p: 3 }}>
+                  {/* Enhanced Header Stats for Trends */}
+                  <Grid container spacing={3} sx={{ mb: 4 }}>
+                    <Grid item xs={12} md={4}>
+                      <Card sx={{ 
+                        background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+                        color: 'white',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: '120px',
+                          height: '120px',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: '50%',
+                          transform: 'translate(40px, -40px)'
+                        }
+                      }}>
+                        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <TrendingUpIcon sx={{ fontSize: 32, mr: 2, opacity: 0.9 }} />
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              Peak Day
+                            </Typography>
+                          </Box>
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
+                            {activityTrends && activityTrends.length > 0 
+                              ? Math.max(...activityTrends.map(t => t.count))
+                              : 0}
+                          </Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                            Highest activity in 30 days
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={4}>
+                      <Card sx={{ 
+                        background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                        color: 'white',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: '100px',
+                          height: '100px',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: '50%',
+                          transform: 'translate(30px, -30px)'
+                        }
+                      }}>
+                        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <AnalyticsIcon sx={{ fontSize: 32, mr: 2, opacity: 0.9 }} />
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              Avg Daily
+                            </Typography>
+                          </Box>
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
+                            {activityTrends && activityTrends.length > 0 
+                              ? Math.round(activityTrends.reduce((sum, t) => sum + t.count, 0) / activityTrends.length)
+                              : 0}
+                          </Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                            Average activities per day
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={4}>
+                      <Card sx={{ 
+                        background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+                        color: 'white',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: '90px',
+                          height: '90px',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: '50%',
+                          transform: 'translate(25px, -25px)'
+                        }
+                      }}>
+                        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <TimelineIcon sx={{ fontSize: 32, mr: 2, opacity: 0.9 }} />
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              Total Days
+                            </Typography>
+                          </Box>
+                          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
+                            {activityTrends?.length || 0}
+                          </Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                            Days with activity data
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </Grid>
+
+                  {/* Enhanced Trends Content */}
                   <Grid container spacing={3}>
-                    <Grid item xs={12}>
-                      <Card>
+                    <Grid item xs={12} lg={8}>
+                      <Card sx={{ 
+                        height: '100%',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(226, 232, 240, 0.8)',
+                        boxShadow: '0 8px 32px rgba(71, 85, 105, 0.08)'
+                      }}>
                         <CardHeader
                           title="Activity Trends (Last 30 Days)"
                           titleTypographyProps={{ 
                             variant: 'h6', 
-                            fontWeight: 600,
-                            color: 'grey.800'
+                            fontWeight: 700,
+                            color: '#1e293b'
                           }}
-                          avatar={<TrendingUpIcon color="primary" />}
+                          avatar={
+                            <Box sx={{
+                              p: 1.5,
+                              borderRadius: '12px',
+                              background: 'linear-gradient(135deg, #475569 0%, #64748b 100%)',
+                              color: 'white'
+                            }}>
+                              <TrendingUpIcon sx={{ fontSize: 24 }} />
+                            </Box>
+                          }
+                          sx={{
+                            borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
+                            background: 'rgba(248, 250, 252, 0.5)'
+                          }}
                         />
-                        <CardContent>
+                        <CardContent sx={{ p: 3 }}>
                           {activityTrends && activityTrends.length > 0 ? (
                             <Grid container spacing={2}>
-                              {activityTrends.slice(0, 12).map((trend, index) => (
-                                <Grid item xs={12} sm={6} md={4} lg={3} key={trend.date}>
-                                  <Card 
-                                    variant="outlined" 
-                                    sx={{ 
-                                      height: '100%',
-                                      transition: 'all 0.2s ease-in-out',
-                                      '&:hover': {
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                        transform: 'translateY(-2px)'
-                                      }
-                                    }}
-                                  >
-                                    <CardContent sx={{ textAlign: 'center', p: 2 }}>
-                                      <Typography variant="h6" sx={{ fontWeight: 600, color: 'grey.800', mb: 1 }}>
-                                        {trend.date}
-                                      </Typography>
-                                      <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>
-                                        {trend.count}
-                                      </Typography>
-                                      <Typography variant="body2" color="textSecondary">
-                                        activities
-                                      </Typography>
-                                    </CardContent>
-                                  </Card>
-                                </Grid>
-                              ))}
-                            </Grid>
-                          ) : (
-                            <Box sx={{ textAlign: 'center', py: 6, color: 'grey.500' }}>
-                              <TrendingUpIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
-                              <Typography variant="h6" gutterBottom>
-                                No trend data available
-                              </Typography>
-                              <Typography variant="body2">
-                                Activity trends will appear here once sufficient data is collected
-                              </Typography>
-                            </Box>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                    
-                    <Grid item xs={12} md={6}>
-                      <Card>
-                        <CardHeader
-                          title="Popular Pages"
-                          titleTypographyProps={{ 
-                            variant: 'h6', 
-                            fontWeight: 600,
-                            color: 'grey.800'
-                          }}
-                          avatar={<RouteIcon color="primary" />}
-                        />
-                        <CardContent>
-                          {popularPages && popularPages.length > 0 ? (
-                            <List sx={{ p: 0 }}>
-                              {popularPages.map((page, index) => (
-                                <ListItem key={page.pageUrl} sx={{ px: 0, py: 1 }}>
-                                  <ListItemAvatar>
-                                    <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32, fontSize: '0.75rem' }}>
-                                      {index + 1}
-                                    </Avatar>
-                                  </ListItemAvatar>
-                                  <ListItemText
-                                    primary={
-                                      <Typography variant="body2" sx={{ fontWeight: 500, color: 'grey.800' }}>
-                                        {page.pageUrl}
-                                      </Typography>
-                                    }
-                                    secondary={
-                                      <Typography variant="caption" color="textSecondary">
-                                        {page.visitCount} visits
-                                      </Typography>
-                                    }
-                                  />
-                                  <Chip 
-                                    label={`#${index + 1}`} 
-                                    size="small" 
-                                    color="primary" 
-                                    variant="outlined"
-                                  />
-                                </ListItem>
-                              ))}
-                            </List>
-                          ) : (
-                            <Box sx={{ textAlign: 'center', py: 4, color: 'grey.500' }}>
-                              <RouteIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
-                              <Typography variant="h6" gutterBottom>
-                                No page data available
-                              </Typography>
-                              <Typography variant="body2">
-                                Popular pages will appear here once page views are tracked
-                              </Typography>
-                            </Box>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                    
-                    <Grid item xs={12} md={6}>
-                      <Card>
-                        <CardHeader
-                          title="Recent Activity Summary"
-                          titleTypographyProps={{ 
-                            variant: 'h6', 
-                            fontWeight: 600,
-                            color: 'grey.800'
-                          }}
-                          avatar={<TimelineIcon color="primary" />}
-                        />
-                        <CardContent>
-                          {stats.recentActivity && stats.recentActivity.length > 0 ? (
-                            <List sx={{ p: 0 }}>
-                              {stats.recentActivity.slice(0, 8).map((activity, index) => (
-                                <ListItem key={index} sx={{ px: 0, py: 1 }}>
-                                  <ListItemAvatar>
-                                    <Avatar 
+                              {activityTrends.slice(0, 15).map((trend, index) => {
+                                const maxCount = Math.max(...activityTrends.map(t => t.count));
+                                const percentage = maxCount > 0 ? (trend.count / maxCount) * 100 : 0;
+                                const isPeak = trend.count === maxCount;
+                                
+                                return (
+                                  <Grid item xs={12} sm={6} md={4} lg={3} key={trend.date}>
+                                    <Card 
+                                      variant="outlined" 
                                       sx={{ 
-                                        width: 32, 
-                                        height: 32,
-                                        bgcolor: `${getActivityColor(activity.activityType)}.main`,
-                                        fontSize: '0.75rem'
+                                        height: '100%',
+                                        background: isPeak 
+                                          ? 'linear-gradient(135deg, rgba(71, 85, 105, 0.05) 0%, rgba(100, 116, 139, 0.05) 100%)'
+                                          : 'rgba(255, 255, 255, 0.8)',
+                                        border: isPeak 
+                                          ? '2px solid #475569'
+                                          : '1px solid rgba(226, 232, 240, 0.6)',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        '&:hover': {
+                                          boxShadow: '0 8px 32px rgba(71, 85, 105, 0.15)',
+                                          transform: 'translateY(-4px) scale(1.02)',
+                                          background: isPeak 
+                                            ? 'linear-gradient(135deg, rgba(71, 85, 105, 0.1) 0%, rgba(100, 116, 139, 0.1) 100%)'
+                                            : 'rgba(255, 255, 255, 1)'
+                                        },
+                                        position: 'relative',
+                                        overflow: 'hidden'
                                       }}
                                     >
-                                      {getActivityIcon(activity.module)}
-                                    </Avatar>
-                                  </ListItemAvatar>
-                                  <ListItemText
-                                    primary={
-                                      <Typography variant="body2" sx={{ fontWeight: 500, color: 'grey.800' }}>
-                                        {activity.userName || 'Unknown User'}
-                                      </Typography>
-                                    }
-                                    secondary={
-                                      <Typography variant="caption" color="textSecondary">
-                                        {activity.activityType} • {activity.module} • {formatTimestamp(activity.timestamp).relative}
-                                      </Typography>
-                                    }
-                                  />
-                                </ListItem>
-                              ))}
-                            </List>
+                                      {isPeak && (
+                                        <Box sx={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          right: 0,
+                                          background: '#475569',
+                                          color: 'white',
+                                          px: 1,
+                                          py: 0.5,
+                                          fontSize: '10px',
+                                          fontWeight: 600,
+                                          borderRadius: '0 0 0 8px'
+                                        }}>
+                                          PEAK
+                                        </Box>
+                                      )}
+                                      <CardContent sx={{ 
+                                        textAlign: 'center', 
+                                        p: 2,
+                                        position: 'relative'
+                                      }}>
+                                        <Typography 
+                                          variant="body2" 
+                                          sx={{ 
+                                            fontWeight: 600, 
+                                            color: '#475569', 
+                                            mb: 1,
+                                            fontSize: '0.875rem'
+                                          }}
+                                        >
+                                          {new Date(trend.date).toLocaleDateString('en-US', { 
+                                            month: 'short', 
+                                            day: 'numeric' 
+                                          })}
+                                        </Typography>
+                                        <Typography 
+                                          variant="h4" 
+                                          sx={{ 
+                                            fontWeight: 700, 
+                                            color: isPeak ? '#475569' : '#64748b', 
+                                            mb: 1,
+                                            fontSize: '1.75rem'
+                                          }}
+                                        >
+                                          {trend.count}
+                                        </Typography>
+                                        <Typography 
+                                          variant="caption" 
+                                          sx={{ 
+                                            color: '#94a3b8',
+                                            fontWeight: 500
+                                          }}
+                                        >
+                                          activities
+                                        </Typography>
+                                        
+                                        {/* Activity Bar */}
+                                        <Box sx={{ 
+                                          mt: 2,
+                                          position: 'relative',
+                                          height: '4px',
+                                          background: 'rgba(226, 232, 240, 0.6)',
+                                          borderRadius: '2px',
+                                          overflow: 'hidden'
+                                        }}>
+                                          <Box
+                                            sx={{
+                                              position: 'absolute',
+                                              top: 0,
+                                              left: 0,
+                                              height: '100%',
+                                              width: `${percentage}%`,
+                                              background: isPeak 
+                                                ? 'linear-gradient(90deg, #475569 0%, #64748b 100%)'
+                                                : 'linear-gradient(90deg, #94a3b8 0%, #cbd5e1 100%)',
+                                              borderRadius: '2px',
+                                              transition: 'width 0.8s ease-in-out'
+                                            }}
+                                          />
+                                        </Box>
+                                      </CardContent>
+                                    </Card>
+                                  </Grid>
+                                );
+                              })}
+                            </Grid>
                           ) : (
-                            <Box sx={{ textAlign: 'center', py: 4, color: 'grey.500' }}>
-                              <TimelineIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
-                              <Typography variant="h6" gutterBottom>
-                                No recent activity
+                            <Box sx={{ 
+                              textAlign: 'center', 
+                              py: 8, 
+                              color: '#64748b',
+                              background: 'rgba(248, 250, 252, 0.5)',
+                              borderRadius: '12px',
+                              border: '2px dashed rgba(226, 232, 240, 0.8)'
+                            }}>
+                              <TrendingUpIcon sx={{ fontSize: 80, mb: 3, opacity: 0.5, color: '#94a3b8' }} />
+                              <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: '#475569', mb: 2 }}>
+                                No trend data available
                               </Typography>
-                              <Typography variant="body2">
-                                Recent activity summary will appear here
+                              <Typography variant="body1" sx={{ color: '#64748b', maxWidth: 400, mx: 'auto', mb: 3 }}>
+                                Activity trends will appear here once sufficient data is collected over time. 
+                                The system tracks daily activity patterns to show usage trends.
                               </Typography>
+                              <Box sx={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: 1,
+                                p: 2,
+                                borderRadius: '8px',
+                                background: 'rgba(71, 85, 105, 0.05)',
+                                border: '1px solid rgba(71, 85, 105, 0.1)'
+                              }}>
+                                <InfoIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                                  Data is collected automatically as users interact with the system
+                                </Typography>
+                              </Box>
                             </Box>
                           )}
                         </CardContent>
                       </Card>
+                    </Grid>
+                    
+                    <Grid item xs={12} lg={4}>
+                      <Stack spacing={3}>
+                        {/* Popular Pages Card */}
+                        <Card sx={{ 
+                          background: 'rgba(255, 255, 255, 0.9)',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(226, 232, 240, 0.8)',
+                          boxShadow: '0 8px 32px rgba(71, 85, 105, 0.08)'
+                        }}>
+                          <CardHeader
+                            title="Popular Pages"
+                            titleTypographyProps={{ 
+                              variant: 'h6', 
+                              fontWeight: 700,
+                              color: '#1e293b'
+                            }}
+                            avatar={
+                              <Box sx={{
+                                p: 1.5,
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                                color: 'white'
+                              }}>
+                                <RouteIcon sx={{ fontSize: 24 }} />
+                              </Box>
+                            }
+                            sx={{
+                              borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
+                              background: 'rgba(248, 250, 252, 0.5)'
+                            }}
+                          />
+                          <CardContent sx={{ p: 3 }}>
+                            {popularPages && popularPages.length > 0 ? (
+                              <List sx={{ p: 0 }}>
+                                {popularPages.map((page, index) => (
+                                  <ListItem key={page.pageUrl} sx={{ 
+                                    px: 0, 
+                                    py: 1.5,
+                                    borderRadius: '8px',
+                                    mb: 1,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                      background: 'rgba(71, 85, 105, 0.05)'
+                                    }
+                                  }}>
+                                    <ListItemAvatar>
+                                      <Avatar sx={{ 
+                                        bgcolor: index < 3 ? '#475569' : '#94a3b8', 
+                                        width: 36, 
+                                        height: 36, 
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600
+                                      }}>
+                                        {index + 1}
+                                      </Avatar>
+                                    </ListItemAvatar>
+                                    <ListItemText
+                                      primary={
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                                          {page.pageUrl}
+                                        </Typography>
+                                      }
+                                      secondary={
+                                        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                                          {page.visitCount} visits
+                                        </Typography>
+                                      }
+                                    />
+                                    <Chip 
+                                      label={`#${index + 1}`} 
+                                      size="small" 
+                                      sx={{ 
+                                        bgcolor: index < 3 ? '#475569' : '#e2e8f0',
+                                        color: index < 3 ? 'white' : '#64748b',
+                                        fontWeight: 600,
+                                        borderRadius: '6px'
+                                      }}
+                                    />
+                                  </ListItem>
+                                ))}
+                              </List>
+                            ) : (
+                              <Box sx={{ 
+                                textAlign: 'center', 
+                                py: 4, 
+                                color: '#64748b',
+                                background: 'rgba(248, 250, 252, 0.5)',
+                                borderRadius: '12px',
+                                border: '2px dashed rgba(226, 232, 240, 0.8)'
+                              }}>
+                                <RouteIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5, color: '#94a3b8' }} />
+                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#475569' }}>
+                                  No page data available
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                  Popular pages will appear here once page views are tracked
+                                </Typography>
+                              </Box>
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        {/* Recent Activity Summary Card */}
+                        <Card sx={{ 
+                          background: 'rgba(255, 255, 255, 0.9)',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(226, 232, 240, 0.8)',
+                          boxShadow: '0 8px 32px rgba(71, 85, 105, 0.08)'
+                        }}>
+                          <CardHeader
+                            title="Recent Activity Summary"
+                            titleTypographyProps={{ 
+                              variant: 'h6', 
+                              fontWeight: 700,
+                              color: '#1e293b'
+                            }}
+                            avatar={
+                              <Box sx={{
+                                p: 1.5,
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+                                color: 'white'
+                              }}>
+                                <TimelineIcon sx={{ fontSize: 24 }} />
+                              </Box>
+                            }
+                            sx={{
+                              borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
+                              background: 'rgba(248, 250, 252, 0.5)'
+                            }}
+                          />
+                          <CardContent sx={{ p: 3 }}>
+                            {stats.recentActivity && stats.recentActivity.length > 0 ? (
+                              <List sx={{ p: 0 }}>
+                                {stats.recentActivity.slice(0, 6).map((activity, index) => (
+                                  <ListItem key={index} sx={{ 
+                                    px: 0, 
+                                    py: 1.5,
+                                    borderRadius: '8px',
+                                    mb: 1,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                      background: 'rgba(71, 85, 105, 0.05)'
+                                    }
+                                  }}>
+                                    <ListItemAvatar>
+                                      <Avatar 
+                                        sx={{ 
+                                          width: 36, 
+                                          height: 36,
+                                          bgcolor: `${getActivityColor(activity.activityType)}.main`,
+                                          fontSize: '0.875rem',
+                                          fontWeight: 600
+                                        }}
+                                      >
+                                        {getActivityIcon(activity.module)}
+                                      </Avatar>
+                                    </ListItemAvatar>
+                                    <ListItemText
+                                      primary={
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                                          {activity.userName || 'Unknown User'}
+                                        </Typography>
+                                      }
+                                      secondary={
+                                        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                                          {activity.activityType} • {activity.module} • {formatTimestamp(activity.timestamp).relative}
+                                        </Typography>
+                                      }
+                                    />
+                                  </ListItem>
+                                ))}
+                              </List>
+                            ) : (
+                              <Box sx={{ 
+                                textAlign: 'center', 
+                                py: 4, 
+                                color: '#64748b',
+                                background: 'rgba(248, 250, 252, 0.5)',
+                                borderRadius: '12px',
+                                border: '2px dashed rgba(226, 232, 240, 0.8)'
+                              }}>
+                                <TimelineIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5, color: '#94a3b8' }} />
+                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#475569' }}>
+                                  No recent activity
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                  Recent activity summary will appear here
+                                </Typography>
+                              </Box>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Stack>
                     </Grid>
                   </Grid>
                 </Box>

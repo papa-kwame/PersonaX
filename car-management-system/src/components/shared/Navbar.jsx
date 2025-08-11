@@ -583,59 +583,118 @@ export default function Navbar() {
         onClose={handleNotificationTrayClose}
         PaperProps={{
           sx: {
-            width: 550,
+            width: 580,
             maxWidth: '90vw',
-            boxShadow: theme.shadows[10],
-            borderRadius:"18px",
-            border: `1px solid ${theme.palette.divider}`,
-            pr: 4,
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.15)',
+            borderRadius: '20px 0 0 20px',
+            border: '1px solid rgba(226, 232, 240, 0.8)',
+            pr: 0,
             p: 0,
-            mt:9,
+            mt: 9,
             position: 'fixed',
-            right: 20,
+            right: 0,
             top: 0,
             height: '90vh',
+            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+            overflow: 'hidden'
           }
         }}
       >
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Enhanced Header */}
           <Box sx={{
             p: 3,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            background: `black`,
+            borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
+            background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
             color: 'white',
             display: 'flex',
             alignItems: 'center',
-            gap: 1,
+            gap: 2,
             position: 'relative',
-            maxHeight: 54
+            minHeight: 70,
+            boxShadow: '0 4px 20px rgba(30, 41, 59, 0.2)'
           }}>
-            <Notifications fontSize="medium" sx={{ mr: 1 }} />
-            <Typography id="notification-tray-title" variant="h6" sx={{ fontWeight: 300, flexGrow: 1, letterSpacing: 1 }}>
-              Your notifications
+            <Box sx={{
+              p: 1.5,
+              borderRadius: '12px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <Notifications sx={{ fontSize: 24, color: 'white' }} />
+            </Box>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 600, 
+                flexGrow: 1, 
+                letterSpacing: 0.5,
+                fontSize: '1.25rem'
+              }}
+            >
+              Notifications
             </Typography>
-            <IconButton onClick={handleNotificationTrayClose} sx={{ color: 'white', ml: 1 }}>
-              <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 0 0 5.7 7.11L10.59 12l-4.89 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4z"/></svg>
+            <IconButton 
+              onClick={handleNotificationTrayClose} 
+              sx={{ 
+                color: 'white',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                p: 1,
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  transform: 'scale(1.05)'
+                },
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 0 0 5.7 7.11L10.59 12l-4.89 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4z"/>
+              </svg>
             </IconButton>
           </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#f7fafd', py: 2, borderBottom: '1px solid #e0e7ef' }}>
-            <ButtonGroup variant="text" sx={{ boxShadow: 'none', bgcolor: '#f1f5f9', borderRadius: 2, p: 0.5 }}>
+
+          {/* Enhanced Tab Navigation */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            background: 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(10px)',
+            py: 3, 
+            borderBottom: '1px solid rgba(226, 232, 240, 0.8)',
+            boxShadow: '0 2px 8px rgba(71, 85, 105, 0.08)'
+          }}>
+            <ButtonGroup 
+              variant="text" 
+              sx={{ 
+                boxShadow: '0 4px 12px rgba(71, 85, 105, 0.1)',
+                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                borderRadius: '12px', 
+                p: 0.5,
+                border: '1px solid rgba(226, 232, 240, 0.8)'
+              }}
+            >
               <Button
                 onClick={() => setNotifTab('unread')}
                 sx={{
-                  bgcolor: notifTab === 'unread' ? '#fff' : 'transparent',
-                  color: notifTab === 'unread' ? '#2563eb' : '#64748b',
+                  bgcolor: notifTab === 'unread' ? 'rgba(71, 85, 105, 0.1)' : 'transparent',
+                  color: notifTab === 'unread' ? '#1e293b' : '#64748b',
                   fontWeight: notifTab === 'unread' ? 700 : 500,
-                  borderRadius: 2,
-                  px: 2.5,
-                  py: 1.2,
-                  boxShadow: notifTab === 'unread' ? '0 2px 8px rgba(56,112,255,0.08)' : 'none',
-                  border: notifTab === 'unread' ? '1.5px solid #2563eb' : '1.5px solid transparent',
-                  mr: 1,
+                  borderRadius: '8px',
+                  px: 3,
+                  py: 1.5,
+                  boxShadow: notifTab === 'unread' ? '0 2px 8px rgba(71, 85, 105, 0.15)' : 'none',
+                  border: notifTab === 'unread' ? '1px solid rgba(71, 85, 105, 0.2)' : '1px solid transparent',
+                  mr: 0.5,
                   minWidth: 0,
                   minHeight: 0,
-                  fontSize: 15,
+                  fontSize: 14,
                   textTransform: 'none',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: notifTab === 'unread' ? 'rgba(71, 85, 105, 0.15)' : 'rgba(71, 85, 105, 0.05)'
+                  }
                 }}
               >
                 Unread ({notifications.filter(n => !n.isRead).length})
@@ -643,19 +702,23 @@ export default function Navbar() {
               <Button
                 onClick={() => setNotifTab('read')}
                 sx={{
-                  bgcolor: notifTab === 'read' ? '#fff' : 'transparent',
-                  color: notifTab === 'read' ? '#2563eb' : '#64748b',
+                  bgcolor: notifTab === 'read' ? 'rgba(71, 85, 105, 0.1)' : 'transparent',
+                  color: notifTab === 'read' ? '#1e293b' : '#64748b',
                   fontWeight: notifTab === 'read' ? 700 : 500,
-                  borderRadius: 2,
-                  px: 2.5,
-                  py: 1.2,
-                  boxShadow: notifTab === 'read' ? '0 2px 8px rgba(56,112,255,0.08)' : 'none',
-                  border: notifTab === 'read' ? '1.5px solid #2563eb' : '1.5px solid transparent',
-                  mr: 1,
+                  borderRadius: '8px',
+                  px: 3,
+                  py: 1.5,
+                  boxShadow: notifTab === 'read' ? '0 2px 8px rgba(71, 85, 105, 0.15)' : 'none',
+                  border: notifTab === 'read' ? '1px solid rgba(71, 85, 105, 0.2)' : '1px solid transparent',
+                  mr: 0.5,
                   minWidth: 0,
                   minHeight: 0,
-                  fontSize: 15,
+                  fontSize: 14,
                   textTransform: 'none',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: notifTab === 'read' ? 'rgba(71, 85, 105, 0.15)' : 'rgba(71, 85, 105, 0.05)'
+                  }
                 }}
               >
                 Read ({notifications.filter(n => n.isRead).length})
@@ -663,122 +726,203 @@ export default function Navbar() {
               <Button
                 onClick={() => setNotifTab('all')}
                 sx={{
-                  bgcolor: notifTab === 'all' ? '#fff' : 'transparent',
-                  color: notifTab === 'all' ? '#2563eb' : '#64748b',
-                  fontWeight: notifTab === 'all' ? 700 : 400,
-                  borderRadius: 2,
-                  px: 2.5,
-                  py: 1.2,
-                  boxShadow: notifTab === 'all' ? '0 2px 8px rgba(56,112,255,0.08)' : 'none',
-                  border: notifTab === 'all' ? '1.5px solid #2563eb' : '1.5px solid transparent',
+                  bgcolor: notifTab === 'all' ? 'rgba(71, 85, 105, 0.1)' : 'transparent',
+                  color: notifTab === 'all' ? '#1e293b' : '#64748b',
+                  fontWeight: notifTab === 'all' ? 700 : 500,
+                  borderRadius: '8px',
+                  px: 3,
+                  py: 1.5,
+                  boxShadow: notifTab === 'all' ? '0 2px 8px rgba(71, 85, 105, 0.15)' : 'none',
+                  border: notifTab === 'all' ? '1px solid rgba(71, 85, 105, 0.2)' : '1px solid transparent',
                   minWidth: 0,
                   minHeight: 0,
-                  fontSize: 15,
+                  fontSize: 14,
                   textTransform: 'none',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: notifTab === 'all' ? 'rgba(71, 85, 105, 0.15)' : 'rgba(71, 85, 105, 0.05)'
+                  }
                 }}
               >
                 All ({notifications.length})
               </Button>
             </ButtonGroup>
           </Box>
-          <Box sx={{ flex: 1, overflowY: 'auto', p: 0, background: 'transparent' }}>
+
+          {/* Enhanced Content Area */}
+          <Box sx={{ 
+            flex: 1, 
+            overflowY: 'auto', 
+            p: 0, 
+            background: 'transparent',
+            '&::-webkit-scrollbar': {
+              width: '6px'
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(226, 232, 240, 0.5)',
+              borderRadius: '3px'
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(71, 85, 105, 0.3)',
+              borderRadius: '3px',
+              '&:hover': {
+                background: 'rgba(71, 85, 105, 0.5)'
+              }
+            }
+          }}>
             {notifLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-                <CircularProgress />
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                minHeight: 300,
+                flexDirection: 'column',
+                gap: 2
+              }}>
+                <CircularProgress sx={{ color: '#475569' }} />
+                <Typography variant="body2" color="text.secondary">
+                  Loading notifications...
+                </Typography>
               </Box>
             ) : notifError ? (
-              <Alert severity="error">{notifError}</Alert>
+              <Box sx={{ p: 3 }}>
+                <Alert 
+                  severity="error" 
+                  sx={{ 
+                    borderRadius: '12px',
+                    border: '1px solid rgba(239, 68, 68, 0.2)'
+                  }}
+                >
+                  {notifError}
+                </Alert>
+              </Box>
             ) : filteredNotifications.length === 0 ? (
-              <Box sx={{ p: 6, textAlign: 'center', color: theme.palette.text.secondary }}>
-                <Box sx={{ mb: 3 }}>
-                  <Notifications fontSize="large" color="disabled" sx={{ fontSize: 64 }} />
+              <Box sx={{ 
+                p: 6, 
+                textAlign: 'center', 
+                color: '#64748b',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2
+              }}>
+                <Box sx={{ 
+                  p: 3,
+                  borderRadius: '50%',
+                  background: 'rgba(71, 85, 105, 0.05)',
+                  border: '2px dashed rgba(71, 85, 105, 0.2)',
+                  mb: 2
+                }}>
+                  <Notifications sx={{ fontSize: 48, color: '#94a3b8' }} />
                 </Box>
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                  No notifications here
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: '#475569' }}>
+                  No notifications
                 </Typography>
-                <Typography variant="body1">
-                  {notifTab === 'unread' ? 'You have no unread notifications.' : notifTab === 'read' ? 'No notifications have been read yet.' : 'No notifications.'}
+                <Typography variant="body2" sx={{ color: '#64748b', maxWidth: 300 }}>
+                  {notifTab === 'unread' ? 'You have no unread notifications.' : 
+                   notifTab === 'read' ? 'No notifications have been read yet.' : 
+                   'No notifications available.'}
                 </Typography>
               </Box>
             ) : (
-              <Stack spacing={2} sx={{ p: 2 }}>
+              <Stack spacing={2} sx={{ p: 3 }}>
                 {filteredNotifications.map((notif, idx) => (
                   <Box key={notif.id}>
                     <Box
                       sx={{ position: 'relative', '&:hover .notif-delete-btn': { display: 'inline-flex' } }}
                     >
-                    <Card
-                      elevation={notif.isRead ? 0 : 2}
-                      sx={{
-                        borderRadius: 3,
-                        boxShadow: notif.isRead ? '0 1px 4px rgba(0,0,0,0.04)' : '0 4px 16px rgba(56, 112, 255, 0.08)',
-                        borderLeft: notif.type === 'System' ? '4px solid #0288d1' : (notif.isRead ? '4px solid #e0e7ef' : '4px solid #3b82f6'),
-                        bgcolor: notif.type === 'System' ? '#e3f2fd' : '#fff',
-                        position: 'relative',
-                        transition: 'box-shadow 0.2s, border 0.2s, background 0.2s, transform 0.2s',
-                        '&:hover': {
-                          boxShadow: notif.type === 'System' ? '0 8px 32px rgba(2,136,209,0.12)' : '0 8px 32px rgba(56, 112, 255, 0.12)',
-                          background: notif.type === 'System' ? '#bbdefb' : '#f7fafd',
-                          transform: 'translateY(-2px) scale(1.01)',
-                        },
-                        cursor: notif.relatedEntityId ? 'pointer' : 'default',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        minHeight: 90,
-                        pr: 2,
-                        pl: 2,
-                        py: 2.5,
-                      }}
-                      onClick={() => handleNotificationClick(notif)}
-                    >
-                      {notif.type === 'System' ? (
-                        <Avatar sx={{ width: 44, height: 44, mr: 2, bgcolor: '#0288d1', color: '#fff', fontWeight: 700, fontSize: 20, border: '2px solid #b3e5fc', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                          <InfoIcon />
-                        </Avatar>
-                      ) : (
-                        <Avatar
-                          src={notif.avatarUrl || undefined}
-                          sx={{
-                            width: 44,
-                            height: 44,
-                            mr: 2,
-                            bgcolor: notif.isRead ? '#e0e7ef' : '#3b82f6',
-                            color: notif.isRead ? '#64748b' : '#fff',
-                            fontWeight: 700,
-                            fontSize: 20,
-                            border: '2px solid #f1f5f9',
-                            boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
-                          }}
-                        >
-                          {notif.avatarUrl ? '' : notif.title?.charAt(0) || 'N'}
-                        </Avatar>
-                      )}
-                      <CardContent sx={{ flex: 1, p: 0, pr: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography
-                            variant="subtitle1"
+                      <Card
+                        elevation={notif.isRead ? 0 : 1}
+                        sx={{
+                          borderRadius: '16px',
+                          boxShadow: notif.isRead ? '0 2px 8px rgba(71, 85, 105, 0.06)' : '0 4px 20px rgba(71, 85, 105, 0.12)',
+                          borderLeft: notif.type === 'System' ? '4px solid #475569' : 
+                                     (notif.isRead ? '4px solid rgba(226, 232, 240, 0.8)' : '4px solid #475569'),
+                          bgcolor: notif.type === 'System' ? 'rgba(71, 85, 105, 0.02)' : 'rgba(255, 255, 255, 0.9)',
+                          backdropFilter: 'blur(10px)',
+                          position: 'relative',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          '&:hover': {
+                            boxShadow: notif.type === 'System' ? '0 8px 32px rgba(71, 85, 105, 0.15)' : '0 8px 32px rgba(71, 85, 105, 0.15)',
+                            background: notif.type === 'System' ? 'rgba(71, 85, 105, 0.05)' : 'rgba(255, 255, 255, 1)',
+                            transform: 'translateY(-2px) scale(1.01)',
+                          },
+                          cursor: notif.relatedEntityId ? 'pointer' : 'default',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          minHeight: 100,
+                          pr: 3,
+                          pl: 3,
+                          py: 3,
+                          border: '1px solid rgba(226, 232, 240, 0.6)'
+                        }}
+                        onClick={() => handleNotificationClick(notif)}
+                      >
+                        {notif.type === 'System' ? (
+                          <Avatar sx={{ 
+                            width: 48, 
+                            height: 48, 
+                            mr: 3, 
+                            bgcolor: '#475569', 
+                            color: '#fff', 
+                            fontWeight: 700, 
+                            fontSize: 20, 
+                            border: '2px solid rgba(71, 85, 105, 0.2)', 
+                            boxShadow: '0 4px 12px rgba(71, 85, 105, 0.15)' 
+                          }}>
+                            <InfoIcon />
+                          </Avatar>
+                        ) : (
+                          <Avatar
+                            src={notif.avatarUrl || undefined}
                             sx={{
-                              fontWeight: notif.type === 'System' ? 900 : 800,
-                              color: notif.type === 'System' ? '#0288d1' : '#1e293b',
-                              fontSize: 17,
-                              letterSpacing: 0.1,
-                              lineHeight: 1.2,
-                              textOverflow: 'ellipsis',
-                              overflow: 'hidden',
-                              whiteSpace: 'nowrap',
+                              width: 48,
+                              height: 48,
+                              mr: 3,
+                              bgcolor: notif.isRead ? 'rgba(71, 85, 105, 0.1)' : '#475569',
+                              color: notif.isRead ? '#64748b' : '#fff',
+                              fontWeight: 700,
+                              fontSize: 20,
+                              border: '2px solid rgba(226, 232, 240, 0.8)',
+                              boxShadow: '0 4px 12px rgba(71, 85, 105, 0.1)'
                             }}
                           >
-                            {notif.title || 'Notification'}
-                          </Typography>
-                          {notif.timestamp && (
+                            {notif.avatarUrl ? '' : notif.title?.charAt(0) || 'N'}
+                          </Avatar>
+                        )}
+                        <CardContent sx={{ flex: 1, p: 0, pr: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                             <Typography
-                              variant="caption"
-                              sx={{ color: '#94a3b8', fontSize: 13, ml: 2, minWidth: 90, textAlign: 'right' }}
+                              variant="subtitle1"
+                              sx={{
+                                fontWeight: notif.type === 'System' ? 700 : 600,
+                                color: notif.type === 'System' ? '#475569' : '#1e293b',
+                                fontSize: 16,
+                                letterSpacing: 0.1,
+                                lineHeight: 1.3,
+                                textOverflow: 'ellipsis',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                              }}
                             >
-                              {new Date(notif.timestamp).toLocaleString()}
+                              {notif.title || 'Notification'}
                             </Typography>
-                          )}
-                            {/* Delete button */}
+                            {notif.timestamp && (
+                              <Typography
+                                variant="caption"
+                                sx={{ 
+                                  color: '#94a3b8', 
+                                  fontSize: 12, 
+                                  ml: 2, 
+                                  minWidth: 80, 
+                                  textAlign: 'right',
+                                  fontWeight: 500
+                                }}
+                              >
+                                {new Date(notif.timestamp).toLocaleString()}
+                              </Typography>
+                            )}
+                            {/* Enhanced Delete button */}
                             <IconButton
                               edge="end"
                               color="error"
@@ -786,63 +930,85 @@ export default function Navbar() {
                               onClick={e => { e.stopPropagation(); handleDeleteNotification(notif.id); }}
                               sx={{
                                 ml: 1,
-                                opacity: 0.6,
-                                transition: 'opacity 0.2s',
-                                '&:hover': { opacity: 1, color: theme.palette.error.main },
+                                opacity: 0.7,
+                                transition: 'all 0.2s ease',
+                                '&:hover': { 
+                                  opacity: 1, 
+                                  color: '#dc2626',
+                                  backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                                  transform: 'scale(1.1)'
+                                },
                                 display: 'none',
                                 position: 'absolute',
                                 top: 8,
                                 right: 8,
-                                zIndex: 3
+                                zIndex: 3,
+                                borderRadius: '8px'
                               }}
                               className="notif-delete-btn"
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
-                        </Box>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: notif.type === 'System' ? '#01579b' : '#475569',
-                            mb: 0.5,
-                            fontSize: 15.5,
-                            fontWeight: notif.type === 'System' ? 700 : 500,
-                          }}
-                        >
-                          {notif.message}
-                        </Typography>
-                      </CardContent>
-                      {!notif.isRead && (
-                        <IconButton
-                          edge="end"
-                          color="primary"
-                          aria-label="mark as read"
-                          onClick={e => { e.stopPropagation(); handleMarkAsRead(notif.id); }}
-                          sx={{
-                            position: 'absolute',
-                            top: 18,
-                            right: 18,
-                            bgcolor: '#f1f5f9',
-                            color: '#3b82f6',
-                            boxShadow: '0 2px 8px rgba(56,112,255,0.08)',
-                            '&:hover': { bgcolor: '#dbeafe', color: '#2563eb' },
-                            zIndex: 2
-                          }}
-                        >
-                          <CheckCircleIcon fontSize="medium" />
-                        </IconButton>
-                      )}
-                    </Card>
+                          </Box>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: notif.type === 'System' ? '#475569' : '#64748b',
+                              mb: 0.5,
+                              fontSize: 14,
+                              fontWeight: notif.type === 'System' ? 600 : 500,
+                              lineHeight: 1.4
+                            }}
+                          >
+                            {notif.message}
+                          </Typography>
+                        </CardContent>
+                        {!notif.isRead && (
+                          <IconButton
+                            edge="end"
+                            color="primary"
+                            aria-label="mark as read"
+                            onClick={e => { e.stopPropagation(); handleMarkAsRead(notif.id); }}
+                            sx={{
+                              position: 'absolute',
+                              top: 12,
+                              right: 12,
+                              bgcolor: 'rgba(71, 85, 105, 0.1)',
+                              color: '#475569',
+                              boxShadow: '0 4px 12px rgba(71, 85, 105, 0.15)',
+                              '&:hover': { 
+                                bgcolor: 'rgba(71, 85, 105, 0.2)', 
+                                color: '#1e293b',
+                                transform: 'scale(1.05)'
+                              },
+                              zIndex: 2,
+                              borderRadius: '8px',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <CheckCircleIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Card>
                     </Box>
                     {idx < filteredNotifications.length - 1 && (
-                      <Divider sx={{ my: 2, borderColor: '#e0e7ef' }} />
+                      <Divider sx={{ my: 2, borderColor: 'rgba(226, 232, 240, 0.6)' }} />
                     )}
                   </Box>
                 ))}
               </Stack>
             )}
           </Box>
-          <Box sx={{ p: 2, borderTop: `1px solid #e0e7ef`, bgcolor: '#f7fafd', display: 'flex', gap: 2 }}>
+
+          {/* Enhanced Footer */}
+          <Box sx={{ 
+            p: 3, 
+            borderTop: '1px solid rgba(226, 232, 240, 0.8)', 
+            bgcolor: 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex', 
+            gap: 2 
+          }}>
             <Button
               onClick={handleMarkAllAsRead}
               variant="contained"
@@ -850,15 +1016,25 @@ export default function Navbar() {
               fullWidth
               disabled={notifications.filter(n => !n.isRead).length === 0}
               sx={{
-                borderRadius: 2,
+                borderRadius: '12px',
                 fontWeight: 600,
-                bgcolor: '#3b82f6',
+                bgcolor: '#475569',
                 color: '#fff',
-                boxShadow: '0 2px 8px rgba(56,112,255,0.08)',
-                '&:hover': { bgcolor: '#2563eb' },
+                boxShadow: '0 4px 12px rgba(71, 85, 105, 0.2)',
+                '&:hover': { 
+                  bgcolor: '#334155',
+                  boxShadow: '0 6px 20px rgba(71, 85, 105, 0.3)',
+                  transform: 'translateY(-1px)'
+                },
+                '&:disabled': {
+                  bgcolor: 'rgba(156, 163, 175, 0.5)',
+                  boxShadow: 'none',
+                  transform: 'none'
+                },
                 textTransform: 'none',
-                fontSize: 16,
-                py: 1.2
+                fontSize: 14,
+                py: 1.5,
+                transition: 'all 0.2s ease'
               }}
             >
               Mark all as read
@@ -870,13 +1046,25 @@ export default function Navbar() {
               fullWidth
               disabled={notifications.length === 0}
               sx={{
-                borderRadius: 2,
+                borderRadius: '12px',
                 fontWeight: 600,
-                borderColor: theme.palette.error.main,
-                color: theme.palette.error.main,
+                borderColor: '#dc2626',
+                color: '#dc2626',
                 textTransform: 'none',
-                fontSize: 16,
-                py: 1.2
+                fontSize: 14,
+                py: 1.5,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  borderColor: '#b91c1c',
+                  color: '#b91c1c',
+                  backgroundColor: 'rgba(220, 38, 38, 0.05)',
+                  transform: 'translateY(-1px)'
+                },
+                '&:disabled': {
+                  borderColor: 'rgba(156, 163, 175, 0.5)',
+                  color: 'rgba(156, 163, 175, 0.5)',
+                  transform: 'none'
+                }
               }}
             >
               Delete all
