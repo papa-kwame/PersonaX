@@ -28,10 +28,8 @@ const PersonalMaintenanceRequest = () => {
 
     try {
       const response = await axios.post(`/api/personal?userId=${userId}`, formData);
-      console.log('Request submitted:', response.data);
-    } catch (error) {
-      console.error('Error submitting request:', error);
-    }
+      } catch (error) {
+      }
   };
 
   return (

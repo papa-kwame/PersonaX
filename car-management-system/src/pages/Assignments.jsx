@@ -107,6 +107,9 @@ const GradientCard = styled(Card)({
   boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
   border: '1px solid rgba(255, 255, 255, 0.18)',
   transition: 'all 0.3s ease',
+  width: '100%',
+  maxWidth: '100%',
+  overflow: 'hidden',
   '&:hover': {
     transform: 'translateY(-5px)',
     boxShadow: '0 12px 40px 0 rgba(31, 38, 135, 0.2)'
@@ -266,7 +269,6 @@ const Assignment = ({ sidebarExpanded = true }) => {
         loading: false
       }));
     } catch (error) {
-      console.error('Error fetching data:', error);
       setState(prev => ({ ...prev, loading: false }));
     }
   };
@@ -281,8 +283,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
         selectedVehicleForHistory: state.vehicles.find(v => v.id === vehicleId)?.model
       }));
     } catch (error) {
-      console.error('Error fetching assignment history:', error);
-    }
+      }
   };
 
   const fetchVehicleDetails = async (id) => {
@@ -294,8 +295,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
         showVehicleModal: true
       }));
     } catch (error) {
-      console.error('Error fetching vehicle details:', error);
-    }
+      }
   };
 
   const handleUnassignVehicle = async (vehicleId) => {
@@ -307,8 +307,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
       });
       fetchData();
     } catch (error) {
-      console.error('Error unassigning vehicle:', error);
-    }
+      }
   };
 
   const handleRequestVehicle = async () => {
@@ -326,8 +325,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
       }));
       fetchData();
     } catch (error) {
-      console.error('Error submitting request:', error);
-    }
+      }
   };
 
   const formatDuration = (start, end) => {
@@ -417,8 +415,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
       }));
       fetchData();
     } catch (error) {
-      console.error('Error deleting vehicle:', error);
-    }
+      }
   };
 
   const handleSort = (key) => {
@@ -502,8 +499,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
       fetchData();
       setState(prev => ({ ...prev, showForm: false }));
     } catch (error) {
-      console.error('Error submitting form:', error);
-    } finally {
+      } finally {
       setState(prev => ({ ...prev, formLoading: false }));
     }
   };
@@ -576,7 +572,6 @@ const Assignment = ({ sidebarExpanded = true }) => {
 
   const renderHeader = () => (
     <Box sx={{ mb: 0 }}>
-    
 
     </Box>
   );
@@ -615,7 +610,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
             border: '1.5px solid rgba(10, 11, 14, 0.17)',
             backdropFilter: 'blur(8px)',
             position: 'relative',
-            minWidth: 0
+            minWidth: "500px"
           }}>
             <CardContent sx={{ 
               p: 3,
@@ -665,40 +660,111 @@ const Assignment = ({ sidebarExpanded = true }) => {
   );
 
   const renderCurrentAssignments = () => (
-    <Card sx={{ borderRadius: 4, boxShadow: 3, background: '#fff', mb: 4 }}>
+    <Card sx={{ 
+      borderRadius: '16px', 
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)', 
+      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      mb: 4,
+      width: '100%',
+      maxWidth: '100%',
+      overflow: 'hidden'
+    }}>
       <CardContent sx={{ p: 0 }}>
-        <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'primary.light', background: 'rgba(25, 118, 210, 0.03)' }}>
-          <Typography variant="h6" sx={{ fontWeight: 400 }}>
+        <Box sx={{ 
+          p: 3, 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          borderBottom: '1px solid rgba(0, 0, 0, 0.08)', 
+          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+          borderRadius: '16px 16px 0 0'
+        }}>
+          <Typography variant="h6" sx={{ 
+            fontWeight: 600,
+            color: '#1e293b',
+            fontSize: '1.25rem'
+          }}>
+            Current Vehicle Assignments
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <TextField
               size="small"
               placeholder="Search assignments..."
               InputProps={{
-               startAdornment: (
+                startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
+                    <SearchIcon fontSize="small" sx={{ color: '#64748b' }} />
                   </InputAdornment>
                 ),
-                sx: { borderRadius: '12px', background: '#f4f8fd', border: '1px solid #e3e8f0' }
+                sx: { 
+                  borderRadius: '12px', 
+                  background: 'rgba(255, 255, 255, 0.8)', 
+                  border: '1px solid rgba(0, 0, 0, 0.08)',
+                  '&:hover': {
+                    background: 'rgba(255, 255, 255, 0.9)'
+                  },
+                  '&.Mui-focused': {
+                    background: 'rgba(255, 255, 255, 1)',
+                    boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.2)'
+                  }
+                }
               }}
             />
-
           </Box>
         </Box>
-        <TableContainer component={Paper} sx={{ 
-          boxShadow: 'none', 
-          background: '#f9fafb', 
-          borderRadius: 2,
-          height: '400px',
-          overflow: 'auto'
+        <Box sx={{ 
+          width: '100%', 
+          overflow: 'hidden',
+          borderRadius: '0 0 16px 16px'
         }}>
-          <Table size="small">
+          <TableContainer sx={{ 
+            boxShadow: 'none', 
+            background: 'transparent',
+            minHeight: '370px',
+            overflow: 'auto',
+            width: '100%',
+            maxWidth: '100%',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+              height: '8px'
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(0,0,0,0.1)',
+              borderRadius: '4px'
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(0,0,0,0.3)',
+              borderRadius: '4px',
+              '&:hover': {
+                background: 'rgba(0,0,0,0.4)'
+              }
+            }
+          }}>
+          <Table size="medium" sx={{ 
+            minWidth: { xs: 500, sm: 600, md: 650 },
+            width: '100%'
+          }}>
             <TableHead>
-              <TableRow sx={{ backgroundColor: 'rgba(25, 118, 210, 0.04)' }}>
-                <TableCell sx={{ fontWeight: 800,  borderBottom: '2px solid #e3e8f0', fontSize: '1rem', letterSpacing: 0.2, textTransform: 'uppercase' }}>Vehicle</TableCell>
-                <TableCell sx={{ fontWeight: 800,  borderBottom: '2px solid #e3e8f0', fontSize: '1rem', letterSpacing: 0.2, textTransform: 'uppercase' }}>Assigned To</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 800,  borderBottom: '2px solid #e3e8f0', fontSize: '1rem', letterSpacing: 0.2, textTransform: 'uppercase' }}>Actions</TableCell>
+              <TableRow sx={{ 
+                background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+                '& th': {
+                  borderBottom: '2px solid rgba(0, 0, 0, 0.08)',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  color: '#475569',
+                  padding: '16px 12px',
+                  backgroundColor: 'inherit'
+                }
+              }}>
+                <TableCell>Vehicle</TableCell>
+                <TableCell>Assigned To</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -710,25 +776,42 @@ const Assignment = ({ sidebarExpanded = true }) => {
                     onClick={() => handleAssignmentClick(assignment)}
                     sx={{
                       '&:last-child td': { borderBottom: 0 },
-                      '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.06)' },
-                      cursor: 'pointer'
+                      '&:hover': { 
+                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(147, 197, 253, 0.04) 100%)',
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
+                      },
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      '& td': {
+                        borderBottom: '1px solid rgba(0, 0, 0, 0.04)',
+                        padding: '16px 12px'
+                      }
                     }}
                   >
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar sx={{
                           mr: 2,
-                      
-                          width: 40,
-                          height: 40
+                          width: 48,
+                          height: 48,
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
                         }}>
-                          <CarIcon />
+                          <CarIcon sx={{ color: 'white' }} />
                         </Avatar>
                         <Box>
-                          <Typography fontWeight={700} >
+                          <Typography sx={{ 
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            fontSize: '1rem'
+                          }}>
                             {assignment.vehicleMake} {assignment.vehicleModel}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{ 
+                            color: '#64748b',
+                            fontSize: '0.875rem'
+                          }}>
                             {assignment.licensePlate}
                           </Typography>
                         </Box>
@@ -738,46 +821,50 @@ const Assignment = ({ sidebarExpanded = true }) => {
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar sx={{
                           mr: 2,
-                          width: 40,
-                          height: 40
+                          width: 48,
+                          height: 48,
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
                         }}>
-                          <PersonIcon />
+                          <PersonIcon sx={{ color: 'white' }} />
                         </Avatar>
                         <Box>
-                          <Typography fontWeight={700}>{assignment.userName}</Typography>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography sx={{ 
+                            fontWeight: 600,
+                            color: '#1e293b',
+                            fontSize: '1rem'
+                          }}>
+                            {assignment.userName}
+                          </Typography>
+                          <Typography variant="body2" sx={{ 
+                            color: '#64748b',
+                            fontSize: '0.875rem'
+                          }}>
                             {assignment.userEmail}
                           </Typography>
                         </Box>
                       </Box>
                     </TableCell>
-
                     <TableCell align="right">
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Tooltip title="Vehicle details">
-                          <IconButton
-                            onClick={() => fetchVehicleDetails(assignment.vehicleId)}
-                            sx={{
-                              mr: 1,
-                              '&:hover': {
-                             
-                                color: '#fff'
-                              }
-                            }}
-                          >
-                            <InfoIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+
                         <Tooltip title="Assignment history">
                           <IconButton
-                            onClick={() => fetchAssignmentHistory(assignment.vehicleId)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              fetchAssignmentHistory(assignment.vehicleId);
+                            }}
                             sx={{
-                              mr: 1,
-                              color: 'info.main',
+                              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                              color: 'white',
+                              width: 36,
+                              height: 36,
                               '&:hover': {
-                                backgroundColor: 'info.light',
-                                color: '#fff'
-                              }
+                                background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+                                transform: 'scale(1.05)',
+                                boxShadow: '0 6px 20px rgba(139, 92, 246, 0.4)'
+                              },
+                              transition: 'all 0.2s ease'
                             }}
                           >
                             <HistoryIcon fontSize="small" />
@@ -785,13 +872,21 @@ const Assignment = ({ sidebarExpanded = true }) => {
                         </Tooltip>
                         <Tooltip title="Unassign vehicle">
                           <IconButton
-                            onClick={() => handleUnassignVehicle(assignment.vehicleId)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnassignVehicle(assignment.vehicleId);
+                            }}
                             sx={{
-                              color: 'error.main',
+                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              color: 'white',
+                              width: 36,
+                              height: 36,
                               '&:hover': {
-                                backgroundColor: 'error.light',
-                                color: '#fff'
-                              }
+                                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                                transform: 'scale(1.05)',
+                                boxShadow: '0 6px 20px rgba(239, 68, 68, 0.4)'
+                              },
+                              transition: 'all 0.2s ease'
                             }}
                           >
                             <CancelIcon fontSize="small" />
@@ -803,32 +898,54 @@ const Assignment = ({ sidebarExpanded = true }) => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={3} align="center" sx={{ py: 8 }}>
                     <Box sx={{
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      color: 'text.secondary'
+                      color: '#64748b'
                     }}>
-                      <AssignmentIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
-                      <Typography>No current vehicle assignments</Typography>
+                      <AssignmentIcon sx={{ 
+                        fontSize: 64, 
+                        mb: 2, 
+                        opacity: 0.6,
+                        color: '#94a3b8'
+                      }} />
+                      <Typography variant="h6" sx={{ 
+                        color: '#475569',
+                        fontWeight: 600,
+                        mb: 1
+                      }}>
+                        No Current Assignments
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        color: '#64748b',
+                        textAlign: 'center'
+                      }}>
+                        There are no active vehicle assignments at the moment.
+                      </Typography>
                     </Box>
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
-        </TableContainer>
+          </TableContainer>
+        </Box>
         {totalAssignmentPages > 0 && (
           <Box sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            p: 2,
-            borderTop: '1px solid #e3e8f0',
-            background: '#f8fafc'
+            p: 3,
+            borderTop: '1px solid rgba(0, 0, 0, 0.08)',
+            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+            borderRadius: '0 0 16px 16px'
           }}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ 
+              color: '#64748b',
+              fontWeight: 500
+            }}>
               Showing {(state.currentAssignmentsPage - 1) * state.itemsPerPage + 1}-
               {Math.min(state.currentAssignmentsPage * state.itemsPerPage, state.currentAssignments.length)} of {state.currentAssignments.length} assignments
             </Typography>
@@ -838,6 +955,17 @@ const Assignment = ({ sidebarExpanded = true }) => {
               onChange={(e, page) => handlePageChange('currentAssignments', page)}
               color="primary"
               shape="rounded"
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  '&.Mui-selected': {
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    color: 'white',
+                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                  }
+                }
+              }}
             />
           </Box>
         )}
@@ -846,7 +974,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
   );
 
   const renderAvailableVehicles = () => (
-    <GradientCard sx={{ borderRadius: 4, boxShadow: 3,  background: '#fff', mb: 4 }}>
+    <GradientCard sx={{ borderRadius: 4, boxShadow: 3,  background: '#fff', mb: 4 , height: '500px'}}>
       <CardContent sx={{ p: 0 }}>
         <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}` }}>
           <Typography variant="h6" sx={{ fontWeight: 400, }}>
@@ -1094,8 +1222,6 @@ const Assignment = ({ sidebarExpanded = true }) => {
       </DialogActions>
     </Dialog>
   );
-
- 
 
   const renderVehicleModal = () => {
     if (!state.vehicleDetails) return null;
@@ -1958,7 +2084,7 @@ const Assignment = ({ sidebarExpanded = true }) => {
                             value={state.formData.licensePlate}
                       onChange={handleChange}
                             error={!!state.validationErrors.licensePlate}
-                            helperText={state.validationErrors.licensePlate || 'Format: GC 1, GC 12, GC 1-23, GC 12-34, or GC 1234 (2 numbers after dash)'}
+                            helperText= {state.validationErrors.licensePlate }
                             required
                       variant="outlined"
                             size="medium"
@@ -2345,7 +2471,6 @@ const Assignment = ({ sidebarExpanded = true }) => {
                       </Grid>
                     </Box>
 
-
                   </Grid>
                 </Grid>
               </CardContent>
@@ -2507,18 +2632,48 @@ const Assignment = ({ sidebarExpanded = true }) => {
               </FormControl>
             </Box>
           )}
-          <TableContainer sx={{ 
-            height: '400px',
-            overflow: 'auto'
+          <Box sx={{ 
+            width: '100%', 
+            overflow: 'hidden',
+            borderRadius: '0 0 16px 16px'
           }}>
-            <Table>
+            <TableContainer sx={{ 
+              height: '100%',
+              minHeight: '360px',
+              overflow: 'auto',
+              width: '100%',
+              maxWidth: '100%',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+                height: '8px'
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'rgba(0,0,0,0.1)',
+                borderRadius: '4px'
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'rgba(0,0,0,0.3)',
+                borderRadius: '4px',
+                '&:hover': {
+                  background: 'rgba(0,0,0,0.4)'
+                }
+              }
+            }}>
+            <Table sx={{ 
+              minWidth: { xs: 600, sm: 700, md: 800 },
+              width: '100%'
+            }}>
               <TableHead>
                 <TableRow sx={{
                   backgroundColor: alpha(COLORS.PRIMARY, 0.03),
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 10,
                   '& th': {
                     fontWeight: 700,
                     color: COLORS.TEXT_SECONDARY,
-                    borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
+                    borderBottom: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`,
+                    backgroundColor: alpha(COLORS.PRIMARY, 0.03)
                   }
                 }}>
                   <TableCell
@@ -2697,13 +2852,16 @@ const Assignment = ({ sidebarExpanded = true }) => {
                 )}
               </TableBody>
             </Table>
-          </TableContainer>
+            </TableContainer>
+          </Box>
           {totalPages > 0 && (
             <Box sx={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               p: 2,
+              pt:0,
+              pb:0, 
               borderTop: `1px solid ${alpha(COLORS.DIVIDER, 0.1)}`
             }}>
               <Typography variant="body2" color="text.secondary">
@@ -2807,11 +2965,12 @@ const Assignment = ({ sidebarExpanded = true }) => {
   }
 
   return (
-    <Container maxWidth={false} sx={{ 
+    <Box sx={{ 
       mt: 4, 
-      maxWidth: '100% !important',
-      width: sidebarExpanded ? '100%' : 'calc(100% + 100px)',
-      transition: 'width 0.3s ease-in-out'
+      width: '100%',
+      maxWidth: '100vw',
+      px: { xs: 1, sm: 2, md: 3 },
+      overflow: 'hidden'
     }}>
       <ToastContainer
         position="top-right"
@@ -2825,7 +2984,12 @@ const Assignment = ({ sidebarExpanded = true }) => {
         pauseOnHover
       />
 
-      <Container maxWidth={false} sx={{ py: 4, maxWidth: '100% !important' }}>
+      <Box sx={{ 
+        py: 4, 
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden'
+      }}>
         {state.showForm ? (
           renderVehicleForm()
         ) : (
@@ -2884,8 +3048,8 @@ const Assignment = ({ sidebarExpanded = true }) => {
             />
           </>
         )}
-      </Container>
-    </Container>
+      </Box>
+    </Box>
   );
 };
 

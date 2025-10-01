@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import Breadcrumbs from './Breadcrumbs';
+import PerformanceDashboard from './PerformanceDashboard';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React from 'react';
 
 export default function Layout({ children }) {
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
   const authData = JSON.parse(localStorage.getItem('authData')) || {};
 
   const hasRole = (role) => authData?.roles?.includes(role);
@@ -17,6 +19,27 @@ export default function Layout({ children }) {
   const handleSidebarToggle = (expanded) => {
     setSidebarExpanded(expanded);
   };
+
+  // Keyboard shortcut for performance dashboard (Ctrl+M)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Check if Ctrl+M is pressed
+      if (event.ctrlKey && event.key === 'm') {
+        event.preventDefault(); // Prevent browser default behavior
+        if (hasRole('Admin')) {
+          setShowPerformanceDashboard(prev => !prev);
+        }
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [hasRole]);
 
   return (
     <div style={{ 
@@ -42,6 +65,7 @@ export default function Layout({ children }) {
         <div style={{ 
           flexGrow: 1, 
           padding: '1rem', 
+          paddingTop: '10px',
           backgroundColor: '#f8f9fa', 
           overflow: 'hidden',
           display: 'flex',
@@ -62,6 +86,14 @@ export default function Layout({ children }) {
           </div>
         </div>
       </div>
+
+      {/* Performance Dashboard Overlay */}
+      {hasRole('Admin') && (
+        <PerformanceDashboard 
+          isOpen={showPerformanceDashboard} 
+          onClose={() => setShowPerformanceDashboard(false)} 
+        />
+      )}
     </div>
   );
 }

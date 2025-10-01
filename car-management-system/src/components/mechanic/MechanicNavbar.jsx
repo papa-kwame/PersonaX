@@ -14,7 +14,6 @@ export default function MechanicNavbar() {
         <span className="navbar-toggler-icon"></span>
       </button>
 
-
     </nav>
   );
 }

@@ -7,8 +7,6 @@ import {
   Box,
   Typography,
   TextField,
-  Switch,
-  FormControlLabel,
   CircularProgress,
   Pagination,
   InputAdornment,
@@ -21,6 +19,11 @@ import {
   TableRow,
   Avatar,
   Stack,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   PersonCheck,
@@ -30,10 +33,12 @@ import {
   People,
   Search,
   Person,
+  Upload,
 } from 'react-bootstrap-icons';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Close, Visibility } from '@mui/icons-material';
 
 const AdminUsers = () => {
   const { userRoles } = useAuth();
@@ -58,6 +63,13 @@ const AdminUsers = () => {
   const usersPerPage = 8;
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+
+  // License-related state
+  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
+  const [licenseViewModalOpen, setLicenseViewModalOpen] = useState(false);
+  const [selectedUserForLicense, setSelectedUserForLicense] = useState(null);
+  const [licenseFile, setLicenseFile] = useState(null);
+  const [licenseImageUrl, setLicenseImageUrl] = useState(null);
 
   const loadUsers = async () => {
     try {
@@ -229,6 +241,95 @@ const AdminUsers = () => {
     setCurrentPage(value);
   };
 
+  // License-related functions
+  const openLicenseModal = (user) => {
+    setSelectedUserForLicense(user);
+    setLicenseFile(null);
+    setLicenseModalOpen(true);
+  };
+
+  const closeLicenseModal = () => {
+    setLicenseModalOpen(false);
+    setSelectedUserForLicense(null);
+    setLicenseFile(null);
+  };
+
+  const openLicenseViewModal = async (user) => {
+    try {
+      setSelectedUserForLicense(user);
+      setBusy(true);
+      
+      // Get the license image URL
+      const response = await api.get(`/api/Auth/license-image/${user.id}`, {
+        responseType: 'blob'
+      });
+      
+      const imageUrl = URL.createObjectURL(response.data);
+      setLicenseImageUrl(imageUrl);
+      setLicenseViewModalOpen(true);
+    } catch (error) {
+      toast.error('Failed to load license image');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const closeLicenseViewModal = () => {
+    setLicenseViewModalOpen(false);
+    setSelectedUserForLicense(null);
+    if (licenseImageUrl) {
+      URL.revokeObjectURL(licenseImageUrl);
+      setLicenseImageUrl(null);
+    }
+  };
+
+  const handleLicenseFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Please select a valid image or PDF file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+      
+      setLicenseFile(file);
+    }
+  };
+
+  const uploadLicense = async () => {
+    if (!licenseFile || !selectedUserForLicense) {
+      toast.error('Please select a file to upload');
+      return;
+    }
+
+    try {
+      setBusy(true);
+      const formData = new FormData();
+      formData.append('licenseImage', licenseFile);
+
+      await api.post(`/api/Auth/UploadLicenseImage?userId=${selectedUserForLicense.id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      toast.success('License uploaded successfully');
+      closeLicenseModal();
+      await loadUsers(); // Refresh user list to show updated license status
+    } catch (error) {
+      toast.error('Failed to upload license');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (busy && users.length === 0)
     return (
       <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" py={8}>
@@ -301,7 +402,8 @@ const AdminUsers = () => {
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Department</TableCell>
-                    <TableCell>Status</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>License</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -314,7 +416,7 @@ const AdminUsers = () => {
                         <Avatar sx={{   fontWeight: 700 }}>
                           <Person />
                         </Avatar>
-                        <Typography fontWeight={400}>{u.fullName}</Typography>
+                        <Typography fontWeight={400}>{u.fullName || u.userName}</Typography>
                       </Stack>
                     </TableCell>
                     <TableCell sx={{ color: 'text.secondary' }}>{u.email}</TableCell>
@@ -336,6 +438,32 @@ const AdminUsers = () => {
                       >
                         {u.isActive ? '🟢 Active' : '🔴 Inactive'}
                       </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        {u.licenseImagePath ? (
+                          <IconButton 
+                            onClick={() => openLicenseViewModal(u)} 
+                            size="small" 
+                            sx={{ color: 'primary.main' }}
+                            title="View License"
+                          >
+                            <Visibility />
+                          </IconButton>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            No License
+                          </Typography>
+                        )}
+                        <IconButton 
+                          onClick={() => openLicenseModal(u)} 
+                          size="small" 
+                          sx={{ color: 'secondary.main' }}
+                          title="Upload License"
+                        >
+                          <Upload />
+                        </IconButton>
+                      </Stack>
                     </TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -365,7 +493,7 @@ const AdminUsers = () => {
                 ))
               ) : (
                 <TableRow>
-                                  <TableCell colSpan={6} align="center" sx={{ color: 'text.secondary', py: 4 }}>
+                  <TableCell colSpan={7} align="center" sx={{ color: 'text.secondary', py: 4 }}>
                     No users found
                   </TableCell>
                 </TableRow>
@@ -540,6 +668,130 @@ const AdminUsers = () => {
           </Stack>
         </Box>
       </Modal>
+
+      {/* License Upload Modal */}
+      <Modal open={licenseModalOpen} onClose={closeLicenseModal}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 420,
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 4,
+          }}
+        >
+          <Typography variant="h6" mb={2} fontWeight={700} color="primary.main">
+            Upload License for {selectedUserForLicense?.fullName || selectedUserForLicense?.userName}
+          </Typography>
+          
+          <Box mb={3}>
+            <input
+              accept="image/*,.pdf"
+              style={{ display: 'none' }}
+              id="license-file-input"
+              type="file"
+              onChange={handleLicenseFileChange}
+            />
+            <label htmlFor="license-file-input">
+              <Button
+                variant="outlined"
+                component="span"
+                startIcon={<Upload />}
+                fullWidth
+                sx={{ borderRadius: 2, py: 2 }}
+              >
+                {licenseFile ? licenseFile.name : 'Choose License File'}
+              </Button>
+            </label>
+            {licenseFile && (
+              <Typography variant="caption" display="block" mt={1} color="text.secondary">
+                Selected: {licenseFile.name} ({(licenseFile.size / 1024 / 1024).toFixed(2)} MB)
+              </Typography>
+            )}
+          </Box>
+
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Supported formats: JPG, PNG, GIF, PDF (Max 5MB)
+          </Typography>
+
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={closeLicenseModal}
+              sx={{ borderRadius: 2, px: 4, py: 1.2, fontWeight: 700 }}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={uploadLicense}
+              sx={{ borderRadius: 2, px: 4, py: 1.2, fontWeight: 700 }}
+              disabled={busy || !licenseFile}
+            >
+              {busy ? <CircularProgress size={20} /> : 'Upload'}
+            </Button>
+          </Stack>
+        </Box>
+      </Modal>
+
+      {/* License View Modal */}
+      <Dialog 
+        open={licenseViewModalOpen} 
+        onClose={closeLicenseViewModal}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6" fontWeight={700}>
+              License for {selectedUserForLicense?.fullName || selectedUserForLicense?.userName}
+            </Typography>
+            <IconButton onClick={closeLicenseViewModal}>
+              <Close />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          {licenseImageUrl ? (
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              {licenseImageUrl.toLowerCase().includes('pdf') ? (
+                <iframe
+                  src={licenseImageUrl}
+                  width="100%"
+                  height="500px"
+                  title="License PDF"
+                />
+              ) : (
+                <img
+                  src={licenseImageUrl}
+                  alt="License"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '500px',
+                    objectFit: 'contain'
+                  }}
+                />
+              )}
+            </Box>
+          ) : (
+            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+              <CircularProgress />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeLicenseViewModal} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

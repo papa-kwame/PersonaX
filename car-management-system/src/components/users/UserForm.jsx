@@ -13,8 +13,7 @@ export default function UserForm({ user = null }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('User form submitted:', formData);
-  };
+    };
 
   return (
     <div className="user-form">

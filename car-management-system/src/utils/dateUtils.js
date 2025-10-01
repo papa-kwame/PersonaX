@@ -15,7 +15,6 @@ export const formatDate = (dateString, includeTime = false) => {
       return format(date, 'dd/MM/yyyy');
     }
   } catch (error) {
-    console.error('Error formatting date:', error);
     return 'Invalid Date';
   }
 };
@@ -35,7 +34,6 @@ export const formatDateDisplay = (dateString, includeTime = false) => {
       return format(date, 'dd MMM yyyy');
     }
   } catch (error) {
-    console.error('Error formatting date:', error);
     return 'Invalid Date';
   }
 };
@@ -48,7 +46,6 @@ export const formatDateShort = (dateString) => {
     const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
     return format(date, 'dd/MM');
   } catch (error) {
-    console.error('Error formatting date:', error);
     return 'Invalid Date';
   }
 };
@@ -61,7 +58,6 @@ export const formatMonthYear = (dateString) => {
     const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
     return format(date, 'MMM yyyy');
   } catch (error) {
-    console.error('Error formatting date:', error);
     return 'Invalid Date';
   }
 };
@@ -74,7 +70,6 @@ export const formatTime = (dateString) => {
     const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
     return format(date, 'HH:mm');
   } catch (error) {
-    console.error('Error formatting time:', error);
     return 'Invalid Time';
   }
 };
@@ -102,7 +97,6 @@ export const safeFormat = (dateString, formatType = 'default') => {
         return formatDate(dateString);
     }
   } catch (error) {
-    console.error('Error formatting date:', error);
     return 'Invalid Date';
   }
 }; 

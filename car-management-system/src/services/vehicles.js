@@ -6,7 +6,6 @@ export const getVehicles = async () => {
     const response = await api.get('/api/Vehicles');
     return response.data;
   } catch (error) {
-    console.error('Error fetching vehicles:', error);
     throw error;
   }
 };
@@ -16,7 +15,6 @@ export const getVehicleById = async (id) => {
     const response = await api.get(`/api/vehicles/${id}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching vehicle ${id}:`, error);
     throw error;
   }
 };
@@ -26,7 +24,6 @@ export const createVehicle = async (vehicleData, userId) => {
     const response = await api.post(`/api/vehicles?userId=${userId}`, vehicleData);
     return response.data;
   } catch (error) {
-    console.error('Error creating vehicle:', error);
     throw error;
   }
 };
@@ -36,7 +33,6 @@ export const updateVehicle = async (id, vehicleData, userId) => {
     const response = await api.put(`/api/vehicles/${id}?userId=${userId}`, vehicleData);
     return response.data;
   } catch (error) {
-    console.error(`Error updating vehicle ${id}:`, error);
     throw error;
   }
 };
@@ -46,7 +42,6 @@ export const deleteVehicle = async (id) => {
     const response = await api.delete(`/api/vehicles/${id}`);
     return response.data;
   } catch (error) {
-    console.error(`Error deleting vehicle ${id}:`, error);
     throw error;
   }
 };
@@ -81,7 +76,6 @@ export const getAllVehiclesSimple = async () => {
       licensePlate: v.licensePlate
     }));
   } catch (error) {
-    console.error('Error fetching vehicles for duplicate check:', error);
     throw error;
   }
 };
@@ -91,7 +85,6 @@ export const getVehiclesWithDueDates = async (days = 30) => {
     const response = await api.get(`/api/vehicles/due-dates?days=${days}`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching vehicles with due dates:', error);
     throw error;
   }
 };

@@ -25,8 +25,7 @@ const UserActivityWidget = ({ sidebarExpanded = true }) => {
       setRecentActivities(response.data);
     } catch (err) {
       setError('Failed to fetch activity data');
-      console.error('Error fetching activity data:', err);
-    } finally {
+      } finally {
       setLoading(false);
     }
   };

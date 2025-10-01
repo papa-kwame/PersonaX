@@ -80,7 +80,6 @@ const ProgressUpdates = ({ userId }) => {
         </div>
       </div>
 
-
       {loading ? (
         <div style={{ textAlign: 'center', padding: '2.5rem 0', color: '#2563eb', fontWeight: 700 }}>Loading...</div>
       ) : progressUpdates.length === 0 ? (
@@ -94,7 +93,6 @@ const ProgressUpdates = ({ userId }) => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
             {progressUpdates.map((update, idx) => (
-          
 
                 <div style={{
                   background: 'linear-gradient(120deg, rgba(255,255,255,0.98) 80%, #e0eaff 120%)',

@@ -15,8 +15,7 @@ const UserRequests = () => {
         const response = await axios.get(`/api/UserRequests/${userId}`);
         setRequests(response.data);
       } catch (error) {
-        console.error('Error fetching user requests:', error);
-      }
+        }
     };
 
     fetchUserRequests();

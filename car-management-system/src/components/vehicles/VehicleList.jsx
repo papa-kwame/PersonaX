@@ -441,7 +441,7 @@ const VehicleList = ({ sidebarExpanded = true }) => {
       {showForm ? (
         <Card className="shadow-sm border-0 mb-4">
           <Card.Header className="bg-primary text-white">
-            <h5 className="mb-0">{formData.id ? 'Edit Vehicle' : 'Add New Vehicle'}</h5>
+            <h5 className="mb-0">{formData.id ? '' : 'Add New Vehicle'}</h5>
           </Card.Header>
           <Card.Body>
             {formLoading && <div className="mb-3"><div className="progress" style={{ height: '4px' }}><div className="progress-bar progress-bar-striped progress-bar-animated" style={{ width: '100%' }}></div></div></div>}

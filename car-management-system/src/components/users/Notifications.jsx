@@ -24,8 +24,7 @@ export default function NotificationButton() {
         setNotifications(notifsResponse.data);
         setUnreadCount(countResponse.data);
       } catch (error) {
-        console.error('Error fetching notifications:', error);
-      }
+        }
     };
 
     fetchNotifications();
@@ -52,9 +51,8 @@ export default function NotificationButton() {
     connection.start()
       .then(() => {
         connection.invoke('JoinNotificationGroup', user.id);
-        console.log('SignalR Connected');
-      })
-      .catch(error => console.error('SignalR Connection Error: ', error));
+        })
+      .catch(error => );
 
     connection.on('ReceiveNotification', (notification) => {
       setNotifications(prev => [notification, ...prev]);
@@ -74,8 +72,7 @@ export default function NotificationButton() {
       );
       setUnreadCount(prev => prev > 0 ? prev - 1 : 0);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
+      }
   };
 
   const markAllAsRead = async () => {
@@ -86,8 +83,7 @@ export default function NotificationButton() {
       );
       setUnreadCount(0);
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
+      }
   };
 
   const getNotificationIcon = (type) => {

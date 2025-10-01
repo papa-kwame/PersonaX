@@ -52,7 +52,7 @@ export default function ChangePasswordOnFirstLogin() {
     }
 
     try {
-      await api.post('/api/auth/change-password-on-first-login', {
+      await api.post('/api/Auth/change-password-on-first-login', {
         email: formData.email,
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword
@@ -68,7 +68,6 @@ export default function ChangePasswordOnFirstLogin() {
         navigate('/login', { replace: true });
       }, 2000);
     } catch (err) {
-      console.error('Password change error:', err);
       const msg = err?.response?.data?.message || err?.response?.data || err.message || 'Password change failed. Please try again.';
       setToastMessage(msg);
       setShowToast(true);

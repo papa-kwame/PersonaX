@@ -229,7 +229,6 @@ const UserVehicleManagement = () => {
       }));
       fetchData();
     } catch (error) {
-      console.error('Error submitting request:', error);
       toast.error(error.response?.data?.title || 'Failed to submit request');
     }
   };

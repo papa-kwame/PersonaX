@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'
 import {
   Box, Typography, Card, CardContent, Grid, Button, Chip, IconButton, Dialog, DialogTitle, DialogContent,
   DialogActions, Avatar, Divider, Tooltip, alpha, TextField, DialogContentText, CircularProgress, LinearProgress
@@ -9,12 +9,14 @@ import {
   MonetizationOn as MoneyIcon, Notes as NotesIcon, Schedule as ScheduleIcon,
   Warning as WarningIcon, CheckCircle as CheckIcon, Cancel as CancelIcon,
   Info as InfoIcon, ColorLens as ColorLensIcon, LocalGasStation as LocalGasStationIcon,
-  Save as SaveIcon, WarningAmberOutlined as AlertTriangleIcon, Timer as ClockIcon
+  Save as SaveIcon, WarningAmberOutlined as AlertTriangleIcon, Timer as ClockIcon,
+  Visibility as VisibilityIcon, DriveFolderUpload as DriveFolderUploadIcon
 } from '@mui/icons-material';
 import { format, parseISO, isBefore, addDays } from 'date-fns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { useAuth } from '../../context/AuthContext';
 
 const COLORS = {
   PRIMARY: '#1a1a1a',
@@ -38,6 +40,151 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
   const [editingDocument, setEditingDocument] = useState(null);
   const [editDate, setEditDate] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Vehicle documents state
+  const [docsRoadworthy, setDocsRoadworthy] = useState([]);
+  const [docsInsurance, setDocsInsurance] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [uploading, setUploading] = useState({ roadworthy: false, insurance: false, general: false });
+  const [selectedFiles, setSelectedFiles] = useState({ roadworthy: null, insurance: null, general: null });
+  const [uploadDates, setUploadDates] = useState({ roadworthy: null, insurance: null });
+  const [previewDoc, setPreviewDoc] = useState(null); // { id, name, url }
+  const [replaceModal, setReplaceModal] = useState(false);
+  const [replaceDoc, setReplaceDoc] = useState(null); // { id, key, fileName }
+  const [replaceFile, setReplaceFile] = useState(null);
+  const [replaceDate, setReplaceDate] = useState(null);
+  const [replacing, setReplacing] = useState(false);
+  const [expanded, setExpanded] = useState({ roadworthy: false, insurance: false });
+
+  const getAuthData = () => {
+    const authData = localStorage.getItem('authData');
+    if (authData) {
+      const { token, userId } = JSON.parse(authData);
+      return { token, userId };
+    }
+    return { token: localStorage.getItem('authToken'), userId: localStorage.getItem('userId') };
+  };
+  
+  const { userId: ctxUserId } = useAuth() || {};
+  const { token, userId: authUserId } = getAuthData();
+  const userId = ctxUserId || authUserId;
+
+  const fetchDocuments = async (type) => {
+    if (!vehicle?.id) return;
+    try {
+      const res = await fetch(`https://localhost:7092/api/Vehicles/${vehicle.id}/documents/${type}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (type === 'roadworthy') setDocsRoadworthy(data);
+      if (type === 'insurance') setDocsInsurance(data);
+    } catch (e) {
+      }
+  };
+
+  useEffect(() => {
+    if (open && vehicle?.id) {
+      setLoadingDocs(true);
+      Promise.all([
+        fetchDocuments('roadworthy'),
+        fetchDocuments('insurance')
+      ]).finally(() => setLoadingDocs(false));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, vehicle?.id]);
+
+  const handleFileSelect = (type, file) => {
+    setSelectedFiles(prev => ({ ...prev, [type]: file }));
+  };
+
+  const handleUpload = async (type) => {
+    if (!selectedFiles[type]) return;
+    setUploading(prev => ({ ...prev, [type]: true }));
+    try {
+      const form = new FormData();
+      form.append('file', selectedFiles[type]);
+      let url = `https://localhost:7092/api/Vehicles/${vehicle.id}/documents/${type}?userId=${encodeURIComponent(userId)}`;
+      if (type !== 'general' && uploadDates[type]) {
+        url += `&expiryDate=${encodeURIComponent(uploadDates[type].toISOString())}`;
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form
+      });
+      if (res.ok) {
+        await fetchDocuments(type);
+        setSelectedFiles(prev => ({ ...prev, [type]: null }));
+      } else {
+        }
+    } catch (e) {
+      } finally {
+      setUploading(prev => ({ ...prev, [type]: false }));
+    }
+  };
+
+  const handleReplaceFile = async (documentId, newFile, newExpiryDate) => {
+    if (!newFile && !newExpiryDate) return;
+    try {
+      const form = new FormData();
+      if (newFile) form.append('file', newFile);
+      let url = `https://localhost:7092/api/Vehicles/documents/${documentId}?userId=${encodeURIComponent(userId)}`;
+      if (newExpiryDate) url += `&expiryDate=${encodeURIComponent(newExpiryDate.toISOString())}`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: form
+      });
+      if (res.ok) {
+        // Refresh all docs
+        await Promise.all([
+          fetchDocuments('roadworthy'),
+          fetchDocuments('insurance')
+        ]);
+      } else {
+        }
+    } catch (e) {
+      }
+  };
+
+  const openReplace = (doc) => {
+    setReplaceDoc(doc); // { id, key, fileName }
+    setReplaceFile(null);
+    setReplaceDate(null);
+    setReplaceModal(true);
+  };
+  const closeReplace = () => {
+    setReplaceModal(false);
+    setReplaceDoc(null);
+    setReplaceFile(null);
+    setReplaceDate(null);
+  };
+  const confirmReplace = async () => {
+    if (!replaceDoc) return;
+    setReplacing(true);
+    await handleReplaceFile(replaceDoc.id, replaceFile, replaceDate);
+    setReplacing(false);
+    closeReplace();
+  };
+
+  const openPreview = async (docId, name) => {
+    try {
+      const res = await fetch(`https://localhost:7092/api/Vehicles/documents/${docId}/file`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setPreviewDoc({ id: docId, name, url });
+    } catch (e) {
+      }
+  };
+
+  const closePreview = () => {
+    if (previewDoc?.url) URL.revokeObjectURL(previewDoc.url);
+    setPreviewDoc(null);
+  };
 
   const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString() : 'N/A';
 
@@ -116,11 +263,11 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
       };
       
       // Call the update API
-      const response = await fetch(`https://localhost:7092/api/vehicles/${vehicle.id}?userId=${localStorage.getItem('userId')}`, {
+      const response = await fetch(`https://localhost:7092/api/vehicles/${vehicle.id}?userId=${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(updatedVehicle)
       });
@@ -132,11 +279,9 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
         setEditingDocument(null);
         setEditDate(null);
       } else {
-        console.error('Failed to update document date');
-      }
+        }
     } catch (error) {
-      console.error('Error updating document date:', error);
-    } finally {
+      } finally {
       setIsUpdating(false);
     }
   };
@@ -169,7 +314,7 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
         <Box sx={{ height: '90vh', overflow: 'auto', backgroundColor: COLORS.BACKGROUND }}>
           {/* Header */}
           <Box sx={{
-            p: 4,
+            p: 1,
             background: COLORS.CARD_BG,
             borderBottom: `1px solid ${COLORS.CARD_BORDER}`,
             color: COLORS.TEXT_PRIMARY,
@@ -192,7 +337,6 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                   }}>
                     {vehicle.make} {vehicle.model} ( {vehicle.year} )
                   </Typography>
-                  
 
                   <Typography variant="body2" sx={{ 
                     color: COLORS.TEXT_SECONDARY,
@@ -275,8 +419,7 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
           {/* Document Status Cards */}
           <Box sx={{ p: 4, pb: 2 }}>
             <Typography variant="h5" sx={{ 
-              mb: 3, 
-              fontWeight: 700,
+              fontWeight: 400,
               color: COLORS.TEXT_PRIMARY,
               display: 'flex',
               alignItems: 'center',
@@ -288,9 +431,9 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
             
             <Grid container spacing={3}>
               {[
-                { title: 'Roadworthy Certificate', date: vehicle.roadworthyExpiry, type: 'document' },
-                { title: 'Insurance', date: vehicle.insuranceExpiry, type: 'document' },
-                { title: 'Next Service Due', date: vehicle.nextServiceDue, type: 'service' }
+                { key: 'roadworthy', title: 'Roadworthy Certificate', date: vehicle.roadworthyExpiry, type: 'document' },
+                { key: 'insurance', title: 'Insurance', date: vehicle.insuranceExpiry, type: 'document' },
+                { key: 'service', title: 'Next Service Due', date: vehicle.nextServiceDue, type: 'service' }
               ].map((doc, index) => {
                 const status = getExpiryStatus(doc.date);
                 const days = daysUntilExpiry(doc.date);
@@ -429,6 +572,96 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           {formatDate(doc.date)}
                         </Typography>
 
+                        {/* Embedded Upload for Roadworthy & Insurance (minimal by default; toggle with chevron) */}
+                        {(doc.key === 'roadworthy' || doc.key === 'insurance') && (
+                          <Box sx={{ mt: 1 }}>
+                            <Tooltip title={expanded[doc.key] ? 'Hide' : 'Manage'} placement="top">
+                              <IconButton
+                                size="small"
+                                onClick={() => setExpanded(prev => ({ ...prev, [doc.key]: !prev[doc.key] }))}
+                                sx={{
+                                  position: 'absolute',
+                                  top: 25,
+                                  right: (status === 'expired' || status === 'critical' || status === 'warning') ? 40 : 8,
+                                  backgroundColor: alpha(COLORS.TEXT_SECONDARY, 0.08),
+                                  '&:hover': { backgroundColor: alpha(COLORS.TEXT_SECONDARY, 0.16) }
+                                }}
+                              >
+                                <VisibilityIcon sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                            {expanded[doc.key] && (
+                              <>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                  <Button
+                                    size="small"
+                                    variant="text"
+                                    onClick={() => {
+                                      const list = (doc.key === 'roadworthy' ? docsRoadworthy : docsInsurance);
+                                      if (list && list.length > 0) {
+                                        const latest = [...list].sort((a,b) => new Date(b.uploadDate) - new Date(a.uploadDate))[0];
+                                        openPreview(latest.id, latest.fileName);
+                                      }
+                                    }}
+                                    disabled={(doc.key === 'roadworthy' ? docsRoadworthy : docsInsurance).length === 0}
+                                    sx={{ textTransform: 'none' }}
+                                  >
+                                    View latest
+                                  </Button>
+                                </Box>
+                                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                                  <DatePicker
+                                    label="Expiry Date (optional)"
+                                    value={uploadDates[doc.key]}
+                                    onChange={(d) => setUploadDates(prev => ({ ...prev, [doc.key]: d }))}
+                                    renderInput={(params) => <TextField {...params} size="small" fullWidth sx={{ mb: 1 }} />}
+                                  />
+                                </LocalizationProvider>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                  <Button component="label" variant="outlined" size="small">
+                                    Choose File
+                                    <input hidden type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => handleFileSelect(doc.key, e.target.files?.[0] || null)} />
+                                  </Button>
+                                  <Button
+                                    variant="contained"
+                                    size="small"
+                                    disabled={!selectedFiles[doc.key] || uploading[doc.key]}
+                                    onClick={() => handleUpload(doc.key)}
+                                  >
+                                    {uploading[doc.key] ? 'Uploading…' : 'Upload'}
+                                  </Button>
+                                </Box>
+
+                                <Divider sx={{ my: 1.5 }} />
+                                <Box sx={{ maxHeight: 140, overflow: 'auto' }}>
+                                  {loadingDocs ? (
+                                    <Typography variant="body2" color="text.secondary">Loading…</Typography>
+                                  ) : (
+                                    [...(doc.key === 'roadworthy' ? docsRoadworthy : docsInsurance)]
+                                      .sort((a,b) => new Date(b.uploadDate) - new Date(a.uploadDate))
+                                      .map((d) => (
+                                        <Box key={d.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5 }}>
+                                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <IconButton size="small" onClick={() => openPreview(d.id, d.fileName)}>
+                                              <VisibilityIcon sx={{ fontSize: 18 }} />
+                                            </IconButton>
+                                            <Box sx={{ cursor: 'pointer' }} onClick={() => openPreview(d.id, d.fileName)}>
+                                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{d.fileName}</Typography>
+                                              <Typography variant="caption" color="text.secondary">{new Date(d.uploadDate).toLocaleString()}</Typography>
+                                            </Box>
+                                          </Box>
+                                          <Box sx={{ display: 'flex', gap: 1 }}>
+                                            <Button size="small" variant="text" onClick={() => openReplace({ id: d.id, key: doc.key, fileName: d.fileName })}>Update</Button>
+                                          </Box>
+                                        </Box>
+                                      ))
+                                  )}
+                                </Box>
+                              </>
+                            )}
+                          </Box>
+                        )}
+
                         {/* Progress Bar */}
                         {status !== 'no-data' && (
                           <Box sx={{ mt: 2 }}>
@@ -453,6 +686,8 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                 );
               })}
             </Grid>
+
+            {/* Secondary upload panels removed; using embedded Manage sections per card */}
           </Box>
 
           {/* Vehicle Details */}
@@ -498,12 +733,12 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                     </Typography>
                     
                     <Grid container spacing={2}>
-    
-                      <Grid item xs={6}>
+                      {/* Top Row - 6 cards */}
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
-                           width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -530,11 +765,11 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
-                          width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -568,12 +803,11 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Box>
                         </Box>
                       </Grid>
-
-                      <Grid item xs={6}>
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
-                          width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -600,11 +834,11 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
-                          width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -631,11 +865,11 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
-                          width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -662,11 +896,11 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
-                          width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -693,11 +927,13 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
+
+                      {/* Bottom Row - 6 cards */}
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
-                          width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -724,11 +960,11 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ 
+                      <Grid item xs={2}>
+                        <Box sx={{
                           mb: 2,
                           p: 2,
-                          width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -752,14 +988,14 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                             mt: 0.5
                           }}>
                             {vehicle.serviceInterval?.toLocaleString() || 'N/A'} km
-                          </Typography>
-                        </Box>
+                            </Typography>
+                          </Box>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
-                          width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -786,11 +1022,11 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
-                          width: '120px',
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -817,11 +1053,11 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
-
-                      <Grid item xs={6}>
+                      <Grid item xs={2}>
                         <Box sx={{ 
                           mb: 2,
                           p: 2,
+                          width: '160px',
                           borderRadius: 2,
                           backgroundColor: alpha(COLORS.PRIMARY, 0.02),
                           border: `1px solid ${alpha(COLORS.PRIMARY, 0.08)}`,
@@ -848,20 +1084,37 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                           </Typography>
                         </Box>
                       </Grid>
+                      <Grid item xs={2}>
+                        {/* Empty space for balance */}
+                      </Grid>
 
                     </Grid>
                   </CardContent>
                 </Card>
               </Grid>
 
-
-      
-
-
             </Grid>
           </Box>
         </Box>
       </DialogContent>
+
+      {/* In-app Document Preview */}
+      <Dialog open={!!previewDoc} onClose={closePreview} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{previewDoc?.name}</Typography>
+          <IconButton onClick={closePreview}><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0 }}>
+          {previewDoc?.url && (
+            <Box sx={{ height: '75vh' }}>
+              <iframe title="doc-preview" src={previewDoc.url} style={{ width: '100%', height: '100%', border: 'none' }} />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closePreview}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Edit Document Modal */}
       <Dialog

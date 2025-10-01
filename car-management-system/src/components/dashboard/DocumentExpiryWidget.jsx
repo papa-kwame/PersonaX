@@ -48,8 +48,7 @@ const DocumentExpiryWidget = ({ sidebarExpanded = true }) => {
       setExpiryData(response.data);
     } catch (err) {
       setError('Failed to fetch document expiry data');
-      console.error('Error fetching expiry data:', err);
-    } finally {
+      } finally {
       setLoading(false);
     }
   };

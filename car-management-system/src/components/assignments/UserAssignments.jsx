@@ -193,7 +193,7 @@ const statusMap = {
   'Completed': 3,
 };
 
-const stageOrder = ['Comment', 'Review', 'Commit', 'Approve', 'Complete'];
+const stageOrder = ['Comment', 'Review', 'Approve', 'Commit', 'Complete'];
 
 const reverseMappings = {
   priority: {
@@ -216,7 +216,6 @@ const safeFormat = (date, formatStr) => {
   try {
     return format(parseISO(date), formatStr);
   } catch (error) {
-    console.error("Error formatting date:", error);
     return 'N/A';
   }
 };
@@ -719,8 +718,6 @@ const VehicleAssignmentApp = () => {
         ]);
 
         // TEMP: Log the API response for debugging
-        console.log('History API data:', historyRes.data);
-
         setRequests(requestsRes.data.map(formatRequestData));
         setVehicles(vehiclesRes.data);
         setHistory(historyRes.data.map(formatRequestData));
@@ -977,7 +974,6 @@ const VehicleAssignmentApp = () => {
       setOpenRejectDialog(false);
       setRejectionReason('');
     } catch (error) {
-      console.error('Error rejecting request:', error);
       const errorMessage = error.response?.data?.title ||
                         error.response?.data?.message ||
                         error.message ||
@@ -1043,13 +1039,12 @@ const VehicleAssignmentApp = () => {
 
   if (loading) {
     return (
-      <Container maxWidth={false} sx={{
+      <Container maxWidth="lg" sx={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         height: '80vh',
-        backgroundColor: professionalColors.background,
-        maxWidth: '100% !important'
+        backgroundColor: professionalColors.background
       }}>
         <CircularProgress size={60} thickness={4} sx={{ color: professionalColors.primary }} />
       </Container>
@@ -1057,11 +1052,10 @@ const VehicleAssignmentApp = () => {
   }
 
   return (
-    <Container maxWidth={false} sx={{
+    <Container maxWidth="xl" sx={{
       py: 4,
       backgroundColor: professionalColors.background,
-      maxHeight: '80vh',
-      maxWidth: '100% !important'
+      maxHeight: '80vh'
     }}>
       <StyledPaper elevation={2}>
         <Box sx={{
@@ -1201,7 +1195,7 @@ const VehicleAssignmentApp = () => {
           />
         </Tabs>
 
-        <Box sx={{ p: 3 , height: '600px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ p: 3 , height: '670px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {activeTab === 'inbox' && (
             <>
               {requests.length > 0 ? (
@@ -1356,7 +1350,7 @@ const VehicleAssignmentApp = () => {
                   border: `1px dashed ${professionalColors.border}`,
                   borderRadius: '8px',
                   backgroundColor: alpha(professionalColors.primary, 0.02),
-                  height: '600px',
+                  height: '670px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
@@ -1553,7 +1547,7 @@ const VehicleAssignmentApp = () => {
                   border: `1px dashed ${professionalColors.border}`,
                   borderRadius: '8px',
                   backgroundColor: alpha(professionalColors.primary, 0.02),
-                  height: '600px',
+                  height: '670px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
@@ -1737,7 +1731,7 @@ const VehicleAssignmentApp = () => {
                   border: `1px dashed ${professionalColors.border}`,
                   borderRadius: '8px',
                   backgroundColor: alpha(professionalColors.primary, 0.02),
-                  height: '600px',
+                  height: '670px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',

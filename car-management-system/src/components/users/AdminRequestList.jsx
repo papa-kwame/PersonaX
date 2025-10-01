@@ -40,8 +40,7 @@ export default function AdminRequestList() {
       setRequests(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       setError(err.message);
-      console.error('Error loading requests:', err);
-    } finally {
+      } finally {
       setLoading(false);
     }
   };
@@ -54,8 +53,7 @@ export default function AdminRequestList() {
       });
       fetchRequests();
     } catch (err) {
-      console.error('Status update failed:', err);
-    }
+      }
   };
 
   const handleEdit = (request) => {
@@ -81,8 +79,7 @@ export default function AdminRequestList() {
       setEditingId(null);
       fetchRequests();
     } catch (err) {
-      console.error('Update failed:', err);
-    }
+      }
   };
 
   const cancelEdit = () => {

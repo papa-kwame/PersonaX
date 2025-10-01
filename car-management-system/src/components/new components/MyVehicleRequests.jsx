@@ -17,7 +17,6 @@ const MyVehicleRequests = () => {
         const requestsArray = Array.isArray(response.data) ? response.data : [];
         setRequests(requestsArray);
       } catch (error) {
-        console.error('Error fetching vehicle requests:', error);
         setRequests([]); // Set requests to an empty array in case of error
       }
     };

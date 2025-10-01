@@ -76,10 +76,8 @@ export default function AdminRoles() {
       setEditingRole(null);
       setNewRole({ ...defaultRole });
     } catch (error) {
-      console.error('Error saving role:', error);
-    }
+      }
   };
-  
 
   const handleCloneRole = (sourceRoleId) => {
     const sourceRole = roles.find(r => r.id === sourceRoleId);

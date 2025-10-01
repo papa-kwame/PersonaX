@@ -33,7 +33,6 @@ export default function QuickActions() {
       link: "/vehicles/new",
       color: "#10b981"
     },
-    
 
   ];
 

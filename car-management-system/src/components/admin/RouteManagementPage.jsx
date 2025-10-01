@@ -101,7 +101,12 @@ const RouteManagementPage = () => {
 
   // Get token from localStorage
   const getToken = () => {
-    return localStorage.getItem('token');
+    const authData = localStorage.getItem('authData');
+    if (authData) {
+      const { token } = JSON.parse(authData);
+      return token;
+    }
+    return null;
   };
 
   const token = getToken();
@@ -132,7 +137,6 @@ const RouteManagementPage = () => {
       });
       return Array.isArray(response?.data) ? response.data : defaultValue;
     } catch (err) {
-      console.error(`Error fetching ${endpoint}:`, err);
       addToast(`Failed to load data from ${endpoint}`, 'error');
       return defaultValue;
     }
@@ -181,7 +185,6 @@ const RouteManagementPage = () => {
         return email.includes(searchTerm) || name.includes(searchTerm);
       });
     } catch (err) {
-      console.error('Error filtering users:', err);
       return [];
     }
   }, [users, userSearch]);
@@ -361,7 +364,6 @@ const RouteManagementPage = () => {
       addToast(`Route ${isEditing ? 'updated' : 'created'} successfully`);
       setShowRouteModal(false);
     } catch (err) {
-      console.error('Save route error:', err.response?.data);
       addToast(
         err.response?.data?.message ||
         err.response?.data?.title ||
@@ -389,7 +391,6 @@ const RouteManagementPage = () => {
       setRoutes(updatedRoutes);
       addToast('Route deleted successfully');
     } catch (err) {
-      console.error('Delete route error:', err.response?.data);
       addToast('Failed to delete route', 'error');
     }
   };
@@ -448,19 +449,43 @@ const RouteManagementPage = () => {
   const renderUserCell = (user) => {
     const safeUser = user || {};
     const email = safeUser.email || safeUser.userEmail || '';
-    const name = safeUser.name || email.split('@')[0] || 'Unknown';
+    const name = safeUser.name || safeUser.userName || email.split('@')[0] || 'Unknown';
     const avatarColor = getAvatarColor(email);
 
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Avatar sx={{ bgcolor: avatarColor, width: 24, height: 24, mr: 1 }}>
-          <Typography sx={{ fontSize: '0.75rem', color: avatarColor === '#f8f9fc' ? '#000' : '#fff' }}>
-            {email.charAt(0).toUpperCase()}
-          </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
+        <Avatar sx={{ 
+          bgcolor: avatarColor, 
+          width: { xs: 28, sm: 32 }, 
+          height: { xs: 28, sm: 32 },
+          fontSize: { xs: '0.7rem', sm: '0.8rem' },
+          fontWeight: 600
+        }}>
+          {name.charAt(0).toUpperCase()}
         </Avatar>
-        <Box>
-          <Typography>{name}</Typography>
-          <Typography variant="body2" color="text.secondary">{email}</Typography>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography variant="body2" sx={{ 
+            fontWeight: 600,
+            color: '#1e293b',
+            fontSize: { xs: '0.75rem', sm: '0.85rem' },
+            lineHeight: 1.2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {name}
+          </Typography>
+          <Typography variant="caption" sx={{ 
+            color: '#64748b',
+            fontSize: { xs: '0.65rem', sm: '0.7rem' },
+            lineHeight: 1.2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            display: 'block'
+          }}>
+            {email}
+          </Typography>
         </Box>
       </Box>
     );
@@ -494,11 +519,11 @@ const RouteManagementPage = () => {
 
   const getRoleColor = (role) => {
     switch (role) {
-      case 'Comment': return '#36b9cc';
-      case 'Review': return '#1cc88a';
-      case 'Approve': return '#4e73df';
-      case 'Commit': return '#f6c23e';
-      default: return '#858796';
+      case 'Comment': return '#0ea5e9'; // Sky blue
+      case 'Review': return '#10b981'; // Emerald green
+      case 'Approve': return '#3b82f6'; // Blue
+      case 'Commit': return '#f59e0b'; // Amber
+      default: return '#6b7280'; // Gray
     }
   };
 
@@ -530,16 +555,53 @@ const RouteManagementPage = () => {
         </Snackbar>
       ))}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar sx={{ width: 56, height: 56, mr: 2,backgroundColor: '#00000022' }}>
-            <LockIcon color="black" />
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        mb: 5,
+        p: { xs: 2, sm: 3 },
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+        border: '1px solid #e2e8f0',
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 3, sm: 0 }
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          textAlign: { xs: 'center', sm: 'left' }
+        }}>
+          <Avatar sx={{ 
+            width: { xs: 56, sm: 64 }, 
+            height: { xs: 56, sm: 64 }, 
+            mr: { xs: 0, sm: 3 },
+            mb: { xs: 2, sm: 0 },
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
+          }}>
+            <LockIcon sx={{ color: 'white', fontSize: { xs: 24, sm: 28 } }} />
           </Avatar>
           <Box>
-            <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', color: '#2c3e50' }}>
+            <Typography variant="h4" component="h2" sx={{ 
+              fontWeight: 800, 
+              color: '#1e293b',
+              fontSize: { xs: '1.5rem', sm: '2rem' },
+              mb: 0.5,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
               Route Management
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body1" sx={{ 
+              color: '#64748b',
+              fontSize: { xs: '1rem', sm: '1.1rem' },
+              fontWeight: 500
+            }}>
               Create and manage approval routes
             </Typography>
           </Box>
@@ -550,17 +612,35 @@ const RouteManagementPage = () => {
           startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
           disabled={loading}
           sx={{
-            backgroundColor: '#4e73df',
-            '&:hover': { backgroundColor: '#3a5ba0' },
-            boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)'
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            px: { xs: 3, sm: 4 },
+            py: 1.5,
+            borderRadius: '12px',
+            textTransform: 'none',
+            fontSize: { xs: '0.9rem', sm: '1rem' },
+            fontWeight: 600,
+            boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+            width: { xs: '100%', sm: 'auto' },
+            '&:hover': { 
+              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)'
+            },
+            '&:disabled': {
+              background: '#e2e8f0',
+              color: '#9ca3af',
+              transform: 'none',
+              boxShadow: 'none'
+            },
+            transition: 'all 0.3s ease'
           }}
         >
-          Add Route
+          + Add Route
         </Button>
       </Box>
 
       <Card sx={{ boxShadow: 'none', backgroundColor: 'transparent' }}>
-
 
         <Box sx={{ p: 3 }}>
           {loading && !routes.length ? (
@@ -569,94 +649,245 @@ const RouteManagementPage = () => {
               <Typography sx={{ mt: 2, color: 'text.secondary' }}>Loading routes...</Typography>
             </Box>
           ) : routes.length > 0 ? (
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
               {routes.map(route => (
-                <Grid item key={route.id || Math.random()} xs={12} sm={6} md={4}>
-                  <Card sx={{ height: '100%', boxShadow: 2, borderLeft: '4px solid #4e73df' }}>
-                    <Card sx={{ p: 2, height: '100%' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                        <Box>
-                          <Typography variant="h6" sx={{ color: '#2c3e50' }}>
+                <Grid item key={route.id || Math.random()} xs={12} sm={6} lg={4}>
+                  <Card sx={{ 
+                    height: '100%', 
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)'
+                    }
+                  }}>
+                    <Box sx={{ 
+                      p: { xs: 2, sm: 3 }, 
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      {/* Header Section */}
+                      <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'flex-start', 
+                        mb: 3,
+                        pb: 2,
+                        borderBottom: '1px solid #f1f5f9',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: { xs: 2, sm: 0 }
+                      }}>
+                        <Box sx={{ flex: 1, pr: { xs: 0, sm: 2 } }}>
+                          <Typography variant="h6" sx={{ 
+                            color: '#1e293b',
+                            fontWeight: 700,
+                            fontSize: { xs: '1rem', sm: '1.1rem' },
+                            mb: 1,
+                            lineHeight: 1.3
+                          }}>
                             {route.name || 'Unnamed Route'}
                           </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
                           <Chip
                             icon={<BusinessIcon fontSize="small" />}
                             label={route.department || 'No Department'}
-                            sx={{ mt: 1, mb: 1, backgroundColor: 'background.paper', color: 'text.secondary' }}
-                          />
-                          {route.isDefault && <Chip label="Default" color="info" sx={{ mb: 1 }} />}
-                          <Typography variant="body2" color="text.secondary">
+                              size="small"
+                              sx={{ 
+                                backgroundColor: '#f8fafc',
+                                color: '#475569',
+                                border: '1px solid #e2e8f0',
+                                fontWeight: 500,
+                                fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                              }}
+                            />
+                            {route.isDefault && (
+                              <Chip 
+                                label="Default" 
+                                size="small"
+                                sx={{ 
+                                  backgroundColor: '#dbeafe',
+                                  color: '#1e40af',
+                                  fontWeight: 600,
+                                  fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                                }} 
+                              />
+                            )}
+                          </Box>
+                          <Typography variant="body2" sx={{ 
+                            color: '#64748b',
+                            fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                            lineHeight: 1.4
+                          }}>
                             {route.description || 'No description provided'}
                           </Typography>
                         </Box>
-                        <Box>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          gap: 0.5,
+                          alignSelf: { xs: 'flex-end', sm: 'auto' }
+                        }}>
                           <IconButton
-                            color="secondary"
                             size="small"
                             onClick={() => openEditRouteModal(route)}
-                            sx={{ mr: 1 }}
+                            sx={{ 
+                              bgcolor: '#f1f5f9',
+                              color: '#475569',
+                              '&:hover': {
+                                bgcolor: '#e2e8f0',
+                                transform: 'scale(1.1)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
                           <IconButton
-                            color="error"
                             size="small"
                             onClick={() => deleteRoute(route.id)}
+                            sx={{ 
+                              bgcolor: '#fef2f2',
+                              color: '#dc2626',
+                              '&:hover': {
+                                bgcolor: '#fee2e2',
+                                transform: 'scale(1.1)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
                           >
                             <CloseIcon fontSize="small" />
                           </IconButton>
                         </Box>
                       </Box>
-                      <Box sx={{ mb: 2, flexGrow: 1 }}>
-                        <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', color: 'text.secondary', display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <ChatBubbleOutlineIcon sx={{ mr: 1, fontSize: '1rem' }} />
+
+                      {/* Route Flow Section */}
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography variant="subtitle2" sx={{ 
+                          textTransform: 'uppercase', 
+                          color: '#64748b',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          letterSpacing: '0.5px',
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          mb: 2
+                        }}>
+                          <ChatBubbleOutlineIcon sx={{ mr: 1, fontSize: '1rem', color: '#3b82f6' }} />
                           Route Flow ({route.users?.length || 0})
                         </Typography>
-                        <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
-                          <Table>
+                        
+                        <Box sx={{ 
+                          backgroundColor: '#f8fafc',
+                          borderRadius: '12px',
+                          border: '1px solid #e2e8f0',
+                          overflow: 'hidden'
+                        }}>
+                          <Table size="small">
                             <TableHead>
-                              <TableRow>
-                                <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>Role</TableCell>
-                                <TableCell sx={{ textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.75rem' }}>User</TableCell>
+                              <TableRow sx={{ backgroundColor: '#f1f5f9' }}>
+                                <TableCell sx={{ 
+                                  textTransform: 'uppercase', 
+                                  color: '#475569',
+                                  fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                                  fontWeight: 700,
+                                  letterSpacing: '0.5px',
+                                  py: { xs: 1, sm: 1.5 },
+                                  borderBottom: '2px solid #e2e8f0'
+                                }}>
+                                  Role
+                                </TableCell>
+                                <TableCell sx={{ 
+                                  textTransform: 'uppercase', 
+                                  color: '#475569',
+                                  fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                                  fontWeight: 700,
+                                  letterSpacing: '0.5px',
+                                  py: { xs: 1, sm: 1.5 },
+                                  borderBottom: '2px solid #e2e8f0'
+                                }}>
+                                  User
+                                </TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
                               {(route.users || [])
                                 .sort((a, b) => requiredRolesInOrder.indexOf(a.role) - requiredRolesInOrder.indexOf(b.role))
                                 .map((user, index) => (
-                                  <TableRow key={`${route.id}-${user.userId}`}>
-                                    <TableCell>{renderUserCell(user)}</TableCell>
-                                    <TableCell>
+                                  <TableRow 
+                                    key={`${route.id}-${user.userId}`}
+                                    sx={{
+                                      '&:hover': { backgroundColor: '#f8fafc' },
+                                      '&:last-child td': { borderBottom: 0 }
+                                    }}
+                                  >
+                                    <TableCell sx={{ py: { xs: 1.5, sm: 2 } }}>
                                       <Chip
                                         label={user.role || 'Unknown'}
+                                        size="small"
                                         sx={{
                                           backgroundColor: getRoleColor(user.role),
                                           color: 'white',
-                                          textTransform: 'capitalize'
+                                          textTransform: 'capitalize',
+                                          fontWeight: 600,
+                                          fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                                          height: { xs: 20, sm: 24 }
                                         }}
                                       />
+                                    </TableCell>
+                                    <TableCell sx={{ py: { xs: 1.5, sm: 2 } }}>
+                                      {renderUserCell(user)}
                                     </TableCell>
                                   </TableRow>
                                 ))}
                             </TableBody>
                           </Table>
-                        </TableContainer>
+                        </Box>
                       </Box>
-                    </Card>
+                      </Box>
                   </Card>
                 </Grid>
               ))}
             </Grid>
           ) : (
-            <Box sx={{ textAlign: 'center', py: 5 }}>
-              <Avatar sx={{ bgcolor: 'primary.light', width: 64, height: 64, mb: 2, mx: 'auto' }}>
-                <ShieldIcon color="black" />
+            <Box sx={{ 
+              textAlign: 'center', 
+              py: 8,
+              px: 4,
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+              border: '1px solid #e2e8f0'
+            }}>
+              <Avatar sx={{ 
+                width: 80, 
+                height: 80, 
+                mb: 3, 
+                mx: 'auto',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
+              }}>
+                <ShieldIcon sx={{ color: 'white', fontSize: 40 }} />
               </Avatar>
-              <Typography variant="h5" sx={{ color: '#2c3e50', mb: 2 }}>
+              <Typography variant="h4" sx={{ 
+                color: '#1e293b', 
+                mb: 2,
+                fontWeight: 700,
+                fontSize: '1.8rem'
+              }}>
                 No routes created yet
               </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                Create your first approval route to get started
+              <Typography variant="body1" sx={{ 
+                color: '#64748b',
+                mb: 4,
+                fontSize: '1.1rem',
+                maxWidth: 400,
+                mx: 'auto',
+                lineHeight: 1.6
+              }}>
+                Create your first approval route to get started with managing your workflow processes
               </Typography>
               <Button
                 variant="contained"
@@ -664,12 +895,30 @@ const RouteManagementPage = () => {
                 startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
                 disabled={loading}
                 sx={{
-                  backgroundColor: '#4e73df',
-                  '&:hover': { backgroundColor: '#3a5ba0' },
-                  boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)'
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  px: 6,
+                  py: 2,
+                  borderRadius: '12px',
+                  textTransform: 'none',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+                  '&:hover': { 
+                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)'
+                  },
+                  '&:disabled': {
+                    background: '#e2e8f0',
+                    color: '#9ca3af',
+                    transform: 'none',
+                    boxShadow: 'none'
+                  },
+                  transition: 'all 0.3s ease'
                 }}
               >
-                Create Route
+                Create Your First Route
               </Button>
             </Box>
           )}

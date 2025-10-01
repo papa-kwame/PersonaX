@@ -34,12 +34,14 @@ const SchedulePage = () => {
   const [schedules, setSchedules] = useState([]);
   const [approvedRequests, setApprovedRequests] = useState([]);
   const [mechanics, setMechanics] = useState([]);
+  const [acceptedMechanic, setAcceptedMechanic] = useState(null);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [loading, setLoading] = useState({
     schedules: false,
     requests: false,
     mechanics: false,
-    scheduling: false
+    scheduling: false,
+    acceptedMechanic: false
   });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -48,6 +50,10 @@ const SchedulePage = () => {
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [allProgressUpdates, setAllProgressUpdates] = useState([]);
   const [loadingProgress, setLoadingProgress] = useState(false);
+
+  // Logistics state per schedule
+  const [logisticsBySchedule, setLogisticsBySchedule] = useState({}); // { [scheduleId]: snapshot }
+  const [logisticsForms, setLogisticsForms] = useState({}); // { [scheduleId]: { pickupRequired, pickupAddress, ... , open: bool } }
 
   const [scheduleData, setScheduleData] = useState({
     assignedMechanicId: '',
@@ -59,7 +65,6 @@ const SchedulePage = () => {
   const formatDateString = (dateString) => {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      console.error('Invalid date string:', dateString);
       return new Date().toISOString();
     }
     return date.toISOString();
@@ -129,7 +134,6 @@ const SchedulePage = () => {
         setMechanics(mechanicsResponse.data);
         setProgressUpdates(progressUpdatesResponse.data);
       } catch (err) {
-        console.error('Error fetching data:', err);
         setError('Failed to load data. Please try again later.');
       } finally {
         setLoading(prev => ({ ...prev, schedules: false, requests: false, mechanics: false }));
@@ -226,8 +230,39 @@ const SchedulePage = () => {
     setShowDayModal(true);
   };
 
-  const handleRequestClick = (request) => {
+  const fetchAcceptedMechanic = async (requestId) => {
+    try {
+      setLoading(prev => ({ ...prev, acceptedMechanic: true }));
+      const response = await api.get(`api/MaintenanceRequest/${requestId}/accepted-mechanic`);
+      setAcceptedMechanic(response.data);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        // No mechanic accepted yet
+        setAcceptedMechanic(null);
+        return null;
+      }
+      throw error;
+    } finally {
+      setLoading(prev => ({ ...prev, acceptedMechanic: false }));
+    }
+  };
+
+  const handleRequestClick = async (request) => {
     setSelectedRequest(request);
+    
+    // Fetch the accepted mechanic for this request
+    try {
+      const acceptedMech = await fetchAcceptedMechanic(request.id);
+      
+      setScheduleData({
+        assignedMechanicId: acceptedMech ? acceptedMech.mechanicId : '',
+        maintenanceRequestId: request.id,
+        scheduledDate: new Date().toISOString().split('T')[0],
+        reason: request.description,
+        comments: ''
+      });
+    } catch (error) {
     setScheduleData({
       assignedMechanicId: '',
       maintenanceRequestId: request.id,
@@ -235,6 +270,8 @@ const SchedulePage = () => {
       reason: request.description,
       comments: ''
     });
+    }
+    
     setShowRequestModal(false);
     setShowScheduleModal(true);
   };
@@ -245,8 +282,8 @@ const SchedulePage = () => {
   };
 
   const handleScheduleMaintenance = async () => {
-    if (!scheduleData.assignedMechanicId) {
-      toast.error('Please select a mechanic');
+    if (!acceptedMechanic || !acceptedMechanic.mechanicId) {
+      toast.error('No mechanic has been accepted for this request yet. Please complete the cost deliberation process first.');
       return;
     }
 
@@ -256,6 +293,7 @@ const SchedulePage = () => {
 
       const payload = {
         ...scheduleData,
+        assignedMechanicId: acceptedMechanic.mechanicId,
         scheduledDate: new Date(scheduleData.scheduledDate).toISOString()
       };
 
@@ -309,12 +347,97 @@ const SchedulePage = () => {
       setSchedules(schedulesResponse.data);
       setApprovedRequests(approvedRequestsResponse.data);
       setShowScheduleModal(false);
-      toast.success('Schedule Requested successfully!');
+      toast.success(`Maintenance scheduled successfully with ${acceptedMechanic.mechanicName}!`);
     } catch (err) {
-      console.error('Error scheduling maintenance:', err);
       toast.error(err.response?.data?.message || 'Failed to schedule maintenance');
     } finally {
       setLoading(prev => ({ ...prev, scheduling: false }));
+    }
+  };
+
+  // ===== Logistics helpers =====
+  const getUserId = () => {
+    const authData = localStorage.getItem('authData');
+    if (authData) {
+      const { userId } = JSON.parse(authData);
+      return userId;
+    }
+    return localStorage.getItem('userId'); // Fallback
+  };
+  const userId = getUserId();
+  const toIso = (v) => (v ? new Date(v).toISOString() : null);
+
+  const loadLogistics = async (scheduleId) => {
+    try {
+      const res = await api.get(`api/MaintenanceRequest/${scheduleId}/schedule/logistics-snapshot`);
+      setLogisticsBySchedule(prev => ({ ...prev, [scheduleId]: res.data }));
+      toast.success('Loaded logistics');
+    } catch (e) {
+      toast.error('Failed to load logistics');
+    }
+  };
+
+  const togglePlanForm = (scheduleId) => {
+    setLogisticsForms(prev => ({
+      ...prev,
+      [scheduleId]: {
+        pickupRequired: prev[scheduleId]?.pickupRequired ?? true,
+        pickupAddress: prev[scheduleId]?.pickupAddress ?? '',
+        pickupWindowStart: prev[scheduleId]?.pickupWindowStart ?? '',
+        pickupWindowEnd: prev[scheduleId]?.pickupWindowEnd ?? '',
+        returnRequired: prev[scheduleId]?.returnRequired ?? true,
+        returnAddress: prev[scheduleId]?.returnAddress ?? '',
+        returnWindowStart: prev[scheduleId]?.returnWindowStart ?? '',
+        returnWindowEnd: prev[scheduleId]?.returnWindowEnd ?? '',
+        contactName: prev[scheduleId]?.contactName ?? '',
+        contactPhone: prev[scheduleId]?.contactPhone ?? '',
+        notes: prev[scheduleId]?.notes ?? '',
+        open: !prev[scheduleId]?.open
+      }
+    }));
+  };
+
+  const updatePlanField = (scheduleId, field, value) => {
+    setLogisticsForms(prev => ({
+      ...prev,
+      [scheduleId]: { ...(prev[scheduleId] || {}), [field]: value }
+    }));
+  };
+
+  const submitPlan = async (scheduleId) => {
+    const form = logisticsForms[scheduleId] || {};
+    const payload = {
+      pickupRequired: !!form.pickupRequired,
+      pickupAddress: form.pickupAddress || null,
+      pickupWindowStart: toIso(form.pickupWindowStart),
+      pickupWindowEnd: toIso(form.pickupWindowEnd),
+      returnRequired: !!form.returnRequired,
+      returnAddress: form.returnAddress || null,
+      returnWindowStart: toIso(form.returnWindowStart),
+      returnWindowEnd: toIso(form.returnWindowEnd),
+      contactName: form.contactName || null,
+      contactPhone: form.contactPhone || null,
+      notes: form.notes || null
+    };
+    try {
+      await api.post(`api/MaintenanceRequest/${scheduleId}/schedule/plan-logistics?user=${encodeURIComponent(userId)}`, payload);
+      toast.success('Logistics planned');
+      await loadLogistics(scheduleId);
+    } catch (e) {
+      toast.error(e.response?.data || 'Failed to save logistics');
+    }
+  };
+
+  const postEvent = async (scheduleId, path, note) => {
+    try {
+      await api.post(`api/MaintenanceRequest/${scheduleId}/schedule/${path}?user=${encodeURIComponent(userId)}`, {
+        timestamp: new Date().toISOString(),
+        note: note || ''
+      });
+      toast.success('Updated');
+      await loadLogistics(scheduleId);
+    } catch (e) {
+      toast.error(e.response?.data || 'Failed to update');
     }
   };
 
@@ -511,7 +634,6 @@ const SchedulePage = () => {
                         <Badge pill bg={getStatusBadgeColor(activity.status)} className="ms-2">
                           {activity.status}  {formatDateDisplay(activity.completedDate)}
                         </Badge>
-              
                     
                       </div>
                     </div>
@@ -595,6 +717,89 @@ const SchedulePage = () => {
                           <span><strong>Comment:</strong> {activityProgress.comment}</span>
                         </div>
                       )}
+
+                      {/* Logistics Section */}
+                      <div className="section-header" style={{ marginTop: 16 }}>
+                        <i className="bi bi-truck"></i> Logistics
+                      </div>
+                      <div className="d-flex flex-wrap gap-2 mb-2">
+                        <Button size="sm" variant="outline-primary" onClick={() => loadLogistics(activity.id)}>Load</Button>
+                        <Button size="sm" variant="outline-secondary" onClick={() => togglePlanForm(activity.id)}>
+                          {logisticsForms[activity.id]?.open ? 'Hide Plan' : 'Plan / Update'}
+                        </Button>
+                        <Button size="sm" variant="outline-dark" onClick={() => postEvent(activity.id, 'pickup')}>Picked up</Button>
+                        <Button size="sm" variant="outline-dark" onClick={() => postEvent(activity.id, 'work-start')}>Start work</Button>
+                        <Button size="sm" variant="outline-dark" onClick={() => postEvent(activity.id, 'ready-for-return')}>Ready for return</Button>
+                        <Button size="sm" variant="success" onClick={() => postEvent(activity.id, 'returned')}>Returned</Button>
+                      </div>
+
+                      {logisticsForms[activity.id]?.open && (
+                        <div className="p-3" style={{ background: '#fbfbfc', border: '1px solid #eef1f5', borderRadius: 10 }}>
+                          <Row className="g-2">
+                            <Col md={6}>
+                              <Form.Check
+                                type="switch"
+                                id={`pickup-${activity.id}`}
+                                label="Pickup required"
+                                checked={!!(logisticsForms[activity.id]?.pickupRequired)}
+                                onChange={(e) => updatePlanField(activity.id, 'pickupRequired', e.target.checked)}
+                              />
+                              <Form.Control
+                                className="mt-2"
+                                placeholder="Pickup address"
+                                value={logisticsForms[activity.id]?.pickupAddress || ''}
+                                onChange={(e) => updatePlanField(activity.id, 'pickupAddress', e.target.value)}
+                              />
+                              <div className="d-flex gap-2 mt-2">
+                                <Form.Control type="datetime-local" value={logisticsForms[activity.id]?.pickupWindowStart || ''} onChange={(e) => updatePlanField(activity.id, 'pickupWindowStart', e.target.value)} />
+                                <Form.Control type="datetime-local" value={logisticsForms[activity.id]?.pickupWindowEnd || ''} onChange={(e) => updatePlanField(activity.id, 'pickupWindowEnd', e.target.value)} />
+                              </div>
+                            </Col>
+                            <Col md={6}>
+                              <Form.Check
+                                type="switch"
+                                id={`return-${activity.id}`}
+                                label="Return required"
+                                checked={!!(logisticsForms[activity.id]?.returnRequired)}
+                                onChange={(e) => updatePlanField(activity.id, 'returnRequired', e.target.checked)}
+                              />
+                              <Form.Control
+                                className="mt-2"
+                                placeholder="Return address"
+                                value={logisticsForms[activity.id]?.returnAddress || ''}
+                                onChange={(e) => updatePlanField(activity.id, 'returnAddress', e.target.value)}
+                              />
+                              <div className="d-flex gap-2 mt-2">
+                                <Form.Control type="datetime-local" value={logisticsForms[activity.id]?.returnWindowStart || ''} onChange={(e) => updatePlanField(activity.id, 'returnWindowStart', e.target.value)} />
+                                <Form.Control type="datetime-local" value={logisticsForms[activity.id]?.returnWindowEnd || ''} onChange={(e) => updatePlanField(activity.id, 'returnWindowEnd', e.target.value)} />
+                              </div>
+                            </Col>
+                          </Row>
+                          <Row className="g-2 mt-2">
+                            <Col md={6}>
+                              <Form.Control placeholder="Contact name" value={logisticsForms[activity.id]?.contactName || ''} onChange={(e) => updatePlanField(activity.id, 'contactName', e.target.value)} />
+                            </Col>
+                            <Col md={6}>
+                              <Form.Control placeholder="Contact phone" value={logisticsForms[activity.id]?.contactPhone || ''} onChange={(e) => updatePlanField(activity.id, 'contactPhone', e.target.value)} />
+                            </Col>
+                          </Row>
+                          <Form.Control as="textarea" rows={2} className="mt-2" placeholder="Notes" value={logisticsForms[activity.id]?.notes || ''} onChange={(e) => updatePlanField(activity.id, 'notes', e.target.value)} />
+                          <div className="d-flex justify-content-end mt-2">
+                            <Button size="sm" onClick={() => submitPlan(activity.id)}>Save plan</Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {logisticsBySchedule[activity.id] && (
+                        <div className="mt-2 p-3" style={{ background: '#ffffff', border: '1px dashed #e6ebf2', borderRadius: 10 }}>
+                          <div className="d-flex flex-wrap gap-3 small text-muted">
+                            <span><strong>Picked up:</strong> {logisticsBySchedule[activity.id].pickedUpAt ? formatDateDisplay(logisticsBySchedule[activity.id].pickedUpAt, true) : '-'}</span>
+                            <span><strong>Work started:</strong> {logisticsBySchedule[activity.id].workStartedAt ? formatDateDisplay(logisticsBySchedule[activity.id].workStartedAt, true) : '-'}</span>
+                            <span><strong>Ready:</strong> {logisticsBySchedule[activity.id].readyForReturnAt ? formatDateDisplay(logisticsBySchedule[activity.id].readyForReturnAt, true) : '-'}</span>
+                            <span><strong>Returned:</strong> {logisticsBySchedule[activity.id].returnedAt ? formatDateDisplay(logisticsBySchedule[activity.id].returnedAt, true) : '-'}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -622,7 +827,6 @@ const SchedulePage = () => {
           )}
         </Modal.Body>
 
-
       </Modal>
     );
   };
@@ -635,151 +839,195 @@ const SchedulePage = () => {
         show={showScheduleModal}
         onHide={() => setShowScheduleModal(false)}
         centered
-        className="schedule-modal"
+        className="modern-schedule-modal"
+        backdrop="static"
       >
-        <Modal.Header closeButton className="modal-header">
-          <Modal.Title>
-            <i className="bi bi-calendar-plus me-2"></i>
-            Schedule Request
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {error && <Alert variant="danger" dismissible onClose={() => setError(null)}>{error}</Alert>}
+        <div className="modern-schedule-content">
+          {/* Modern Header */}
+          <div className="modern-schedule-header">
+            <div className="modern-schedule-title">
+              <i className="bi bi-calendar-plus-fill modern-schedule-icon"></i>
+              <span>Schedule Maintenance Request</span>
+            </div>
+            <button 
+              className="modern-schedule-close"
+              onClick={() => setShowScheduleModal(false)}
+            >
+              ×
+            </button>
+          </div>
 
-          <div className="request-details mb-4">
-            <h5 className="section-title">
-              <i className="bi bi-info-circle me-2"></i>
-              Request Information
-            </h5>
-            <div className="details-grid">
-              <div className="detail-item">
-                <span className="detail-label">Vehicle:</span>
-                <span className="detail-value">{selectedRequest.vehicleMake} {selectedRequest.vehicleModel}</span>
+          {/* Modern Body */}
+          <div className="modern-schedule-body">
+            {error && (
+              <div className="modern-alert modern-alert-error">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                {error}
+                <button 
+                  className="modern-alert-close"
+                  onClick={() => setError(null)}
+                >
+                  ×
+                </button>
               </div>
-              <div className="detail-item">
-                <span className="detail-label">License Plate:</span>
-                <span className="detail-value" style={{ display: 'flex', alignItems: 'center', minHeight: 44 }}>
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    position: 'relative',
-                    background: '#fff',
-                    border: '2.5px solid #222',
-                    borderRadius: '6px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
-                    fontFamily: 'Impact, Arial Black, Arial, sans-serif',
-                    fontWeight: 900,
-                    fontSize: 26,
-                    color: '#181818',
-                    letterSpacing: 2,
-                    width: 210,
-                    height: 44,
-                    padding: '0 12px',
-                    margin: '2px 0',
-                    userSelect: 'all',
-                    overflow: 'hidden',
-                  }}>
+            )}
+
+            {/* Request Information Card */}
+            <div className="modern-info-card">
+              <div className="modern-card-header">
+                <i className="bi bi-info-circle-fill modern-card-icon"></i>
+                <span>Request Information</span>
+              </div>
+              <div className="modern-info-grid">
+                <div className="modern-info-item">
+                  <span className="modern-info-label">Vehicle</span>
+                  <span className="modern-info-value">{selectedRequest.vehicleMake} {selectedRequest.vehicleModel}</span>
+                </div>
+                <div className="modern-info-item">
+                  <span className="modern-info-label">License Plate</span>
+                  <div className="modern-license-plate">
                     {selectedRequest.licensePlate}
-                    <span style={{ position: 'absolute', top: 3, right: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div className="modern-flag-container">
                       <img
                         src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Flag_of_Ghana.svg/640px-Flag_of_Ghana.svg.png"
                         alt="Ghana Flag"
-                        style={{ width: 22, height: 14, border: '1px solid #222', borderRadius: 2, marginBottom: 1 }}
+                        className="modern-flag"
                       />
-                      <span style={{ fontWeight: 700, color: '#181818', fontSize: 10, letterSpacing: 1, marginTop: 0 }}>GH</span>
-                    </span>
-                  </span>
-                </span>
+                      <span className="modern-country-code">GH</span>
               </div>
-              <div className="detail-item">
-                <span className="detail-label">Priority:</span>
-                <span className="detail-value">
-                  <Badge bg={getPriorityBadgeColor(selectedRequest.priority)}>
+                  </div>
+                </div>
+                <div className="modern-info-item">
+                  <span className="modern-info-label">Priority</span>
+                  <Badge className={`modern-priority-badge ${selectedRequest.priority.toLowerCase()}`}>
                     {selectedRequest.priority}
                   </Badge>
-                </span>
               </div>
-              <div className="detail-item">
-                <span className="detail-label">Description:</span>
-                <span className="detail-value">{selectedRequest.description}</span>
+                <div className="modern-info-item">
+                  <span className="modern-info-label">Description</span>
+                  <span className="modern-info-value">{selectedRequest.description}</span>
               </div>
             </div>
           </div>
 
-          <Form>
-            <h5 className="section-title mb-3">
-              <i className="bi bi-gear me-2"></i>
-              Scheduling Details
-            </h5>
-
-            <Form.Group className="mb-3">
-              <Form.Label>
+            {/* Scheduling Details Card */}
+            <div className="modern-info-card">
+              <div className="modern-card-header">
+                <i className="bi bi-gear-fill modern-card-icon"></i>
+                <span>Scheduling Details</span>
+              </div>
+              
+              <div className="modern-mechanic-section">
+                <div className="modern-section-label">
                 <i className="bi bi-person-wrench me-2"></i>
                 Assigned Mechanic 
-              </Form.Label>
-              <Form.Control
-                as="select"
-                name="assignedMechanicId"
-                value={scheduleData.assignedMechanicId}
-                onChange={handleInputChange}
-                required
-                className="form-select-lg"
-              >
-                <option value="">Select mechanic</option>
-                {mechanics.map(mechanic => (
-                  <option key={mechanic.id} value={mechanic.id}>
-                    {mechanic.userName}
-                  </option>
-                ))}
-              </Form.Control>
-              <Form.Text className="text-muted">
-                Select the mechanic responsible for this maintenance
-              </Form.Text>
-            </Form.Group>
+                </div>
+                
+                {loading.acceptedMechanic ? (
+                  <div className="modern-loading-card">
+                    <div className="modern-spinner"></div>
+                    <span>Loading accepted mechanic...</span>
+                  </div>
+                ) : acceptedMechanic ? (
+                  <div className="modern-mechanic-card modern-mechanic-success">
+                    <div className="modern-mechanic-header">
+                      <i className="bi bi-check-circle-fill modern-success-icon"></i>
+                      <div className="modern-mechanic-info">
+                        <h6 className="modern-mechanic-name">{acceptedMechanic.mechanicName}</h6>
+                        <div className="modern-mechanic-details">
+                          <div className="modern-mechanic-detail">
+                            <i className="bi bi-envelope me-2"></i>
+                            {acceptedMechanic.mechanicEmail}
+                          </div>
+                          {acceptedMechanic.mechanicPhone && (
+                            <div className="modern-mechanic-detail">
+                              <i className="bi bi-telephone me-2"></i>
+                              {acceptedMechanic.mechanicPhone}
+                            </div>
+                          )}
+                          <div className="modern-mechanic-detail modern-cost">
+                            <i className="bi bi-currency-dollar me-2"></i>
+                            Final Cost: ${acceptedMechanic.finalAmount}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <input type="hidden" name="assignedMechanicId" value={acceptedMechanic.mechanicId} />
+                  </div>
+                ) : (
+                  <div className="modern-mechanic-card modern-mechanic-warning">
+                    <div className="modern-mechanic-header">
+                      <i className="bi bi-exclamation-triangle-fill modern-warning-icon"></i>
+                      <div className="modern-mechanic-info">
+                        <h6 className="modern-mechanic-name">No Mechanic Accepted Yet</h6>
+                        <p className="modern-mechanic-message">
+                          This request hasn't completed the cost deliberation process yet. 
+                          Please ensure a mechanic proposal has been accepted before scheduling.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="modern-help-text">
+                  {acceptedMechanic 
+                    ? "This is the mechanic who was selected through the cost deliberation process"
+                    : "Complete the cost deliberation process first to assign a mechanic"
+                  }
+                </div>
+              </div>
+            </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>
-                <i className="bi bi-chat-left-text me-2"></i>
-                Additional Comments
-              </Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
+            {/* Additional Comments Card */}
+            <div className="modern-info-card">
+              <div className="modern-card-header">
+                <i className="bi bi-chat-left-text-fill modern-card-icon"></i>
+                <span>Additional Comments</span>
+              </div>
+              <div className="modern-comments-section">
+                <textarea
                 name="comments"
                 value={scheduleData.comments}
                 onChange={handleInputChange}
                 placeholder="Enter any special instructions or notes for the mechanic..."
-                className="form-control-lg"
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer className="modal-footer">
+                  className="modern-comments-textarea"
+                  rows={2}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Modern Footer */}
+          <div className="modern-schedule-footer">
           <Button
             variant="outline-secondary"
             onClick={() => setShowScheduleModal(false)}
             disabled={loading.scheduling}
+              className="modern-cancel-btn"
           >
+              <i className="bi bi-x-lg me-2"></i>
             Cancel
           </Button>
           <Button
             variant="primary"
             onClick={handleScheduleMaintenance}
             disabled={loading.scheduling}
-            className="d-flex align-items-center"
+              className="modern-request-btn"
           >
             {loading.scheduling ? (
               <>
-                <LoadingSpinner size="12px" text="Scheduling..." />
+                  <div className="modern-spinner me-2"></div>
+                  Scheduling...
               </>
             ) : (
               <>
-                <i className="bi bi-check-circle me-2"></i>
-                Request
+                  <i className="bi bi-check-circle-fill me-2"></i>
+                  Schedule Request
               </>
             )}
           </Button>
-        </Modal.Footer>
+          </div>
+        </div>
       </Modal>
     );
   };
@@ -789,88 +1037,100 @@ const SchedulePage = () => {
       <Modal
         show={showRequestModal}
         onHide={() => setShowRequestModal(false)}
-        size="lg"
+        size="xl"
         centered
-        className="requests-modal"
+        className="modern-requests-modal"
+        backdrop="static"
       >
-        <Modal.Header closeButton className="modal-header">
-          <Modal.Title>
-            <div className='me22'>
-              <i className="bi bi-list-check me-2 me333"></i>
-              Approved Requests 
+        <div className="modern-modal-content">
+          {/* Modern Header */}
+          <div className="modern-modal-header">
+            <div className="modern-modal-title">
+              <i className="bi bi-check-circle-fill modern-modal-icon"></i>
+              <span>Approved Maintenance Requests</span>
             </div>
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
+            <button 
+              className="modern-modal-close"
+              onClick={() => setShowRequestModal(false)}
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Modern Body */}
+          <div className="modern-modal-body">
           {loading.requests ? (
-            <div className="text-center py-4">
-              <LoadingSpinner size="sm" text="Loading requests..." fullPage={false} />
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-3 text-muted">Loading approved requests...</p>
             </div>
           ) : approvedRequests.length > 0 ? (
-            <ListGroup variant="flush" className="request-list">
+              <div className="modern-request-list">
               {approvedRequests.map(request => (
-                <ListGroup.Item
+                  <div
                   key={request.id}
-                  action
+                    className="modern-request-card"
                   onClick={() => handleRequestClick(request)}
-                  className="py-3 request-item"
-                >
-                  <Row className="align-items-center">
-                    <Col md={4}>
-                      <h6 className="mb-1 request-title">
+                  >
+                    <div className="modern-request-main">
+                      <div className="modern-request-info">
+                        <div className="modern-request-title">
                         {request.vehicleMake} {request.vehicleModel}
-                      </h6>
-                      <small className="text-muted">
-                        <i className="bi bi-upc-scan me-1"></i>
+                        </div>
+                        <div className="modern-request-plate">
+                          <i className="bi bi-upc-scan me-2"></i>
                         {request.licensePlate}
-                      </small>
-                    </Col>
-                    <Col md={4}>
-                      <p className="mb-1 text-truncate request-description">
-                        <i className="bi bi-card-text me-1"></i>
+                        </div>
+                        <div className="modern-request-description">
+                          <i className="bi bi-card-text me-2"></i>
                         {request.description}
-                      </p>
-                      <small className="text-muted">
-                        <i className="bi bi-person me-1"></i>
+                        </div>
+                        <div className="modern-request-user">
+                          <i className="bi bi-person me-2"></i>
                         Requested by: {request.requestedByUserName}
-                      </small>
-                    </Col>
-                    <Col md={2} className="text-center">
+                        </div>
+                      </div>
+                      <div className="modern-request-meta">
                       <Badge
-                        bg={getPriorityBadgeColor(request.priority)}
-                        className="priority-badge"
+                          className={`modern-priority-badge ${request.priority.toLowerCase()}`}
                       >
                         {request.priority}
                       </Badge>
-                    </Col>
-                    <Col md={2} className="text-end">
-                      <small className="text-muted request-date">
-                        <i className="bi bi-calendar me-1"></i>
+                        <div className="modern-request-date">
+                          <i className="bi bi-calendar3 me-2"></i>
                         {formatDateDisplay(request.requestDate)}
-                      </small>
-                    </Col>
-                  </Row>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          ) : (
-            <div className="text-center py-4 empty-requests">
-              <i className="bi bi-check-circle text-muted" style={{ fontSize: '3rem' }}></i>
-              <h5 className="mt-3">No approved requests available</h5>
-              <p className="text-muted">
-                All approved requests have been scheduled or there are no pending approvals.
-              </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-5 empty-requests">
+                <div className="empty-state-icon">
+                  <i className="bi bi-check-circle-fill"></i>
             </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer className="modal-footer">
+                <h4 className="mt-4 mb-3">All Caught Up!</h4>
+                <p className="text-muted mb-4">
+                  No approved requests are currently available for scheduling.
+                </p>
+                <div className="empty-state-actions">
           <Button
-            variant="outline-secondary"
+                    variant="outline-primary"
             onClick={() => setShowRequestModal(false)}
+                    className="me-2"
           >
-            Close
+                    <i className="bi bi-arrow-left me-2"></i>
+                    Back to Schedule
           </Button>
-        </Modal.Footer>
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
       </Modal>
     );
   };

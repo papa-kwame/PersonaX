@@ -35,10 +35,10 @@ const Breadcrumbs = () => {
 
   return (
     <Box sx={{ 
-      py: 0.5, 
+      py: 1, 
       px: 1, 
       backgroundColor: 'transparent',
-      height: '24px',
+      height: '0px',
       display: 'flex',
       alignItems: 'center'
     }}>

@@ -52,10 +52,10 @@ const VehicleIcons = {
 
 // Enhanced styled components
 const StyledButton = styled(Button)(({ theme }) => ({
-  background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+  background: 'linear-gradient(135deg,rgb(79, 133, 79) 0%, #334155 100%)',
   color: 'white',
-  padding: '12px 24px',
-  fontWeight: 600,
+  padding: '10px 14px',
+  fontWeight: 300,
   fontSize: '0.95rem',
   borderRadius: '12px',
   boxShadow: '0 4px 15px rgba(30, 41, 59, 0.3)',
@@ -579,7 +579,6 @@ const VehicleRequestForm = () => {
         const response = await api.get('/Vehicles');
         setVehicles(response.data);
       } catch (err) {
-        console.error('Failed to fetch vehicles:', err);
         const errorMessage = err.response?.data?.message || 'Failed to load vehicles';
         setError(errorMessage);
         enqueueSnackbar(errorMessage, { 
@@ -648,7 +647,6 @@ const VehicleRequestForm = () => {
       
       handleClose();
     } catch (err) {
-      console.error('Request failed:', err);
       const errorMessage = err.response?.data?.message || 
                          err.response?.data || 
                          err.message || 
@@ -675,7 +673,6 @@ const VehicleRequestForm = () => {
       <StyledButton
         variant="contained"
         onClick={handleOpen}
-        startIcon={<AddIcon />}
       >
         Request Vehicle
       </StyledButton>

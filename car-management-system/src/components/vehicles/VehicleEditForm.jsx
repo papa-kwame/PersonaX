@@ -6,6 +6,7 @@ import {
   FiDollarSign, FiClock, FiFileText, FiUser
 } from 'react-icons/fi';
 import { getVehicleById, updateVehicle } from '../../services/vehicles';
+import StandardDatePicker from '../shared/StandardDatePicker';
 
 export default function VehicleEditForm() {
   const { id } = useParams();
@@ -13,10 +14,10 @@ export default function VehicleEditForm() {
 
   const [formData, setFormData] = useState({
     make: '', model: '', year: '', licensePlate: '', vin: '',
-    currentMileage: 0, status: 'Available', purchaseDate: '',
+    currentMileage: 0, status: 'Available', purchaseDate: null,
     purchasePrice: 0, color: '', fuelType: 'Gasoline',
-    lastServiceDate: '', roadworthyExpiry: '', registrationExpiry: '',
-    insuranceExpiry: '', nextServiceDue: '', serviceInterval: 10000,
+    lastServiceDate: null, roadworthyExpiry: null, registrationExpiry: null,
+    insuranceExpiry: null, nextServiceDue: null, serviceInterval: 10000,
     vehicleType: 'Sedan', seatingCapacity: 5, transmission: 'Automatic',
     engineSize: '', notes: ''
   });
@@ -30,12 +31,12 @@ export default function VehicleEditForm() {
         const vehicle = await getVehicleById(id);
         setFormData({
           ...vehicle,
-          purchaseDate: vehicle.purchaseDate?.split('T')[0],
-          lastServiceDate: vehicle.lastServiceDate?.split('T')[0],
-          roadworthyExpiry: vehicle.roadworthyExpiry?.split('T')[0],
-          registrationExpiry: vehicle.registrationExpiry?.split('T')[0],
-          insuranceExpiry: vehicle.insuranceExpiry?.split('T')[0],
-          nextServiceDue: vehicle.nextServiceDue?.split('T')[0]
+          purchaseDate: vehicle.purchaseDate ? new Date(vehicle.purchaseDate) : null,
+          lastServiceDate: vehicle.lastServiceDate ? new Date(vehicle.lastServiceDate) : null,
+          roadworthyExpiry: vehicle.roadworthyExpiry ? new Date(vehicle.roadworthyExpiry) : null,
+          registrationExpiry: vehicle.registrationExpiry ? new Date(vehicle.registrationExpiry) : null,
+          insuranceExpiry: vehicle.insuranceExpiry ? new Date(vehicle.insuranceExpiry) : null,
+          nextServiceDue: vehicle.nextServiceDue ? new Date(vehicle.nextServiceDue) : null
         });
       } catch (err) {
         setError(err.response?.data?.message || err.message);
@@ -55,10 +56,28 @@ export default function VehicleEditForm() {
     }));
   };
 
+  const handleDateChange = (field, date) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: date
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await updateVehicle(id, formData);
+      // Convert Date objects to ISO strings for API
+      const submitData = {
+        ...formData,
+        purchaseDate: formData.purchaseDate ? formData.purchaseDate.toISOString() : null,
+        lastServiceDate: formData.lastServiceDate ? formData.lastServiceDate.toISOString() : null,
+        nextServiceDue: formData.nextServiceDue ? formData.nextServiceDue.toISOString() : null,
+        roadworthyExpiry: formData.roadworthyExpiry ? formData.roadworthyExpiry.toISOString() : null,
+        registrationExpiry: formData.registrationExpiry ? formData.registrationExpiry.toISOString() : null,
+        insuranceExpiry: formData.insuranceExpiry ? formData.insuranceExpiry.toISOString() : null
+      };
+      
+      await updateVehicle(id, submitData);
       navigate(`/vehicles/${id}`);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -125,23 +144,75 @@ export default function VehicleEditForm() {
 
           <div className="form-column">
             <h3><FiDollarSign /> Purchase Details</h3>
-            <FormGroup label="Purchase Date" name="purchaseDate" type="date" value={formData.purchaseDate} onChange={handleChange} />
+            <div className="form-group">
+              <label>Purchase Date</label>
+              <StandardDatePicker
+                value={formData.purchaseDate}
+                onChange={(date) => handleDateChange('purchaseDate', date)}
+                label="Purchase Date"
+                format="dd/MM/yyyy"
+              />
+            </div>
             <FormGroup label="Purchase Price" name="purchasePrice" type="number" value={formData.purchasePrice} onChange={handleChange} />
             <FormGroup label="Current Mileage" name="currentMileage" type="number" value={formData.currentMileage} onChange={handleChange} />
           </div>
 
           <div className="form-column">
             <h3><FiCalendar /> Dates & Maintenance</h3>
-            <FormGroup label="Last Service Date" name="lastServiceDate" type="date" value={formData.lastServiceDate} onChange={handleChange} />
-            <FormGroup label="Next Service Due" name="nextServiceDue" type="date" value={formData.nextServiceDue} onChange={handleChange} />
+            <div className="form-group">
+              <label>Last Service Date</label>
+              <StandardDatePicker
+                value={formData.lastServiceDate}
+                onChange={(date) => handleDateChange('lastServiceDate', date)}
+                label="Last Service Date"
+                format="dd/MM/yyyy"
+              />
+            </div>
+            <div className="form-group">
+              <label>Next Service Due</label>
+              <StandardDatePicker
+                value={formData.nextServiceDue}
+                onChange={(date) => handleDateChange('nextServiceDue', date)}
+                label="Next Service Due"
+                format="dd/MM/yyyy"
+                minDate={new Date()}
+              />
+            </div>
             <FormGroup label="Service Interval (km)" name="serviceInterval" type="number" value={formData.serviceInterval} onChange={handleChange} />
           </div>
 
           <div className="form-column">
             <h3><FiFileText /> Documents & Expiries</h3>
-            <FormGroup label="Roadworthy Expiry" name="roadworthyExpiry" type="date" value={formData.roadworthyExpiry} onChange={handleChange} />
-            <FormGroup label="Registration Expiry" name="registrationExpiry" type="date" value={formData.registrationExpiry} onChange={handleChange} />
-            <FormGroup label="Insurance Expiry" name="insuranceExpiry" type="date" value={formData.insuranceExpiry} onChange={handleChange} />
+            <div className="form-group">
+              <label>Roadworthy Expiry</label>
+              <StandardDatePicker
+                value={formData.roadworthyExpiry}
+                onChange={(date) => handleDateChange('roadworthyExpiry', date)}
+                label="Roadworthy Expiry"
+                format="dd/MM/yyyy"
+                minDate={new Date()}
+              />
+            </div>
+            <div className="form-group">
+              <label>Registration Expiry</label>
+              <StandardDatePicker
+                value={formData.registrationExpiry}
+                onChange={(date) => handleDateChange('registrationExpiry', date)}
+                label="Registration Expiry"
+                format="dd/MM/yyyy"
+                minDate={new Date()}
+              />
+            </div>
+            <div className="form-group">
+              <label>Insurance Expiry</label>
+              <StandardDatePicker
+                value={formData.insuranceExpiry}
+                onChange={(date) => handleDateChange('insuranceExpiry', date)}
+                label="Insurance Expiry"
+                format="dd/MM/yyyy"
+                minDate={new Date()}
+              />
+            </div>
           </div>
         </div>
 

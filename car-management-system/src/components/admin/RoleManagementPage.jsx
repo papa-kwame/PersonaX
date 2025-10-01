@@ -109,8 +109,7 @@ const RoleManagementPage = () => {
         });
       } catch (err) {
         toast.error('Failed to load data. Please try again later.');
-        console.error('API Error:', err);
-      } finally {
+        } finally {
         setLoading(false);
       }
     };
@@ -412,24 +411,50 @@ const RoleManagementPage = () => {
         </Box>
       </Card>
 
-      <Modal open={showRolesModal} onClose={() => setShowRolesModal(false)}>
-        <Box sx={{ ...modalStyle, width: 700, borderRadius: 4, p: 4, maxHeight: '90vh', overflowY: 'auto' }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
-            Manage System Roles
-          </Typography>
+      <Modal 
+        open={showRolesModal} 
+        onClose={() => setShowRolesModal(false)}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        <Box sx={{ 
+          ...modalStyle, 
+          width: { xs: '95%', sm: '90%', md: 700 }, 
+          maxWidth: '90vw',
+          p: 4 
+        }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main' }}>
+              Manage System Roles
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setShowCreateRoleModal(true)}
+              sx={{ borderRadius: 2, fontWeight: 700 }}
+              startIcon={<AddCircleOutline />}
+            >
+              Add Role
+            </Button>
+          </Box>
  
-          <TableContainer component={Paper} sx={{ borderRadius: 4, boxShadow: '0 2px 12px rgba(60,72,100,0.07)' }}>
+          <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 2px 12px rgba(60,72,100,0.07)' }}>
             <Table>
               <TableHead sx={{ bgcolor: '#f5f7fa' }}>
                 <TableRow>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Role</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {data.roles.map(role => (
-                  <TableRow key={role.id}>
+                  <TableRow key={role.id} hover>
                     <TableCell>
                       <Chip
                         label={role.name}
@@ -442,9 +467,10 @@ const RoleManagementPage = () => {
                     <TableCell align="right">
                       <IconButton
                         color="error"
-                                onClick={() => handleDeleteRole(role.id)}
-                                disabled={role.name === 'Admin'}
-                              >
+                        onClick={() => handleDeleteRole(role.id)}
+                        disabled={role.name === 'Admin'}
+                        size="small"
+                      >
                         <Delete />
                       </IconButton>
                     </TableCell>
@@ -453,111 +479,165 @@ const RoleManagementPage = () => {
                 {data.roles.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={3} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                              {searchTerm ? 'No roles match your search' : 'No roles found'}
+                      No roles found
                     </TableCell>
                   </TableRow>
-                        )}
+                )}
               </TableBody>
-                    </Table>
+            </Table>
           </TableContainer>
-
-          <Modal open={showCreateRoleModal} onClose={() => setShowCreateRoleModal(false)}>
-            <Box sx={{ ...modalStyle, width: 400, borderRadius: 4, p: 4 }}>
-              <Typography variant="h6" component="h2" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
-                Create New Role
-              </Typography>
-              <TextField
-                fullWidth
-                label="Role Name"
-                variant="outlined"
-                value={newRole.name}
-                onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="Description"
-                variant="outlined"
-                multiline
-                rows={4}
-                value={newRole.description}
-                onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
-                sx={{ mb: 2 }}
-              />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button variant="outlined" onClick={() => setShowCreateRoleModal(false)} sx={{ mr: 1, fontWeight: 700 }}>
-            Cancel
-          </Button>
-          <Button 
-                  variant="contained"
-                  color="primary"
-            onClick={handleCreateRole}
-            disabled={!newRole.name || loading}
-                  sx={{ fontWeight: 700 }}
-          >
-                  {loading ? <CircularProgress size={24} /> : 'Create Role'}
-          </Button>
-              </Box>
-            </Box>
-          </Modal>
         </Box>
       </Modal>
 
-      <Modal open={showAddRoleModal} onClose={() => setShowAddRoleModal(false)}>
-        <Box sx={{ ...modalStyle, width: 420, borderRadius: 4, p: 4 }}>
-          <Typography variant="h6" component="h2" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
+      {/* Create Role Modal */}
+      <Modal 
+        open={showCreateRoleModal} 
+        onClose={() => setShowCreateRoleModal(false)}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        <Box sx={{ 
+          ...modalStyle, 
+          width: { xs: '95%', sm: 400 }, 
+          maxWidth: '90vw',
+          p: 4 
+        }}>
+          <Typography variant="h5" component="h2" sx={{ fontWeight: 700, mb: 3, color: 'primary.main' }}>
+            Create New Role
+          </Typography>
+          <TextField
+            fullWidth
+            label="Role Name"
+            variant="outlined"
+            value={newRole.name}
+            onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
+            sx={{ mb: 3 }}
+            required
+          />
+          <TextField
+            fullWidth
+            label="Description"
+            variant="outlined"
+            multiline
+            rows={4}
+            value={newRole.description}
+            onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
+            sx={{ mb: 3 }}
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button 
+              variant="outlined" 
+              onClick={() => setShowCreateRoleModal(false)} 
+              sx={{ fontWeight: 700, borderRadius: 2 }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="contained"
+              color="primary"
+              onClick={handleCreateRole}
+              disabled={!newRole.name || loading}
+              sx={{ fontWeight: 700, borderRadius: 2 }}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Create Role'}
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Add Role Modal */}
+      <Modal 
+        open={showAddRoleModal} 
+        onClose={() => setShowAddRoleModal(false)}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        <Box sx={{ 
+          ...modalStyle, 
+          width: { xs: '95%', sm: 500 }, 
+          maxWidth: '90vw',
+          p: 4 
+        }}>
+          <Typography variant="h5" component="h2" sx={{ fontWeight: 700, mb: 3, color: 'primary.main' }}>
             Manage Roles for {selectedUser?.name || selectedUser?.email.split('@')[0]}
           </Typography>
-          <Typography variant="subtitle1" sx={{ mb: 2 }}>
-            Current Roles
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {selectedUser?.roles.map(role => (
-              <Chip
-                key={role} 
-                label={role}
-                color="secondary"
-                size="small"
-                sx={{ fontWeight: 500, fontSize: 13, borderRadius: 2 }}
-                onDelete={() => setSelectedRoles(selectedRoles.filter(r => r !== role))}
-              />
-            ))}
-            {selectedUser?.roles.length === 0 && (
-              <Typography variant="body2" color="text.secondary">No roles assigned</Typography>
-            )}
+          
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+              Current Roles
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, minHeight: 40, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: '#fafafa' }}>
+              {selectedUser?.roles.map(role => (
+                <Chip
+                  key={role} 
+                  label={role}
+                  color="secondary"
+                  size="small"
+                  sx={{ fontWeight: 500, fontSize: 13, borderRadius: 2 }}
+                  onDelete={() => setSelectedRoles(selectedRoles.filter(r => r !== role))}
+                />
+              ))}
+              {selectedUser?.roles.length === 0 && (
+                <Typography variant="body2" color="text.secondary">No roles assigned</Typography>
+              )}
+            </Box>
           </Box>
+
           {availableRoles.length > 0 && (
-            <>
-              <Typography variant="subtitle1" sx={{ mb: 2 }}>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
                 Available Roles
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, minHeight: 40, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: '#fafafa' }}>
                 {availableRoles.map(role => (
                   <Chip
                     key={role}
                     label={role}
                     color={selectedRoles.includes(role) ? 'primary' : 'default'}
                     size="small"
-                    sx={{ fontWeight: 500, fontSize: 13, borderRadius: 2, cursor: 'pointer' }}
+                    sx={{ 
+                      fontWeight: 500, 
+                      fontSize: 13, 
+                      borderRadius: 2, 
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: selectedRoles.includes(role) ? 'primary.dark' : 'action.hover'
+                      }
+                    }}
                     onClick={() => handleRoleSelection(role)}
                   />
                 ))}
               </Box>
-            </>
+            </Box>
           )}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button variant="outlined" onClick={() => setShowAddRoleModal(false)} sx={{ mr: 1, fontWeight: 700 }}>
-            Cancel
-          </Button>
-          <Button 
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button 
+              variant="outlined" 
+              onClick={() => setShowAddRoleModal(false)} 
+              sx={{ fontWeight: 700, borderRadius: 2 }}
+            >
+              Cancel
+            </Button>
+            <Button 
               variant="contained"
               color="primary"
-            onClick={handleSaveRoles}
-            disabled={loading}
-              sx={{ fontWeight: 700 }}
-          >
+              onClick={handleSaveRoles}
+              disabled={loading}
+              sx={{ fontWeight: 700, borderRadius: 2 }}
+            >
               {loading ? <CircularProgress size={24} /> : 'Save Changes'}
-          </Button>
+            </Button>
           </Box>
         </Box>
       </Modal>
@@ -571,9 +651,25 @@ const modalStyle = {
   left: '50%',
   transform: 'translate(-50%, -50%)',
   bgcolor: 'background.paper',
-  boxShadow: 24,
-  p: 4,
-  borderRadius: 2,
+  boxShadow: '0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.20)',
+  borderRadius: 3,
+  outline: 'none',
+  maxHeight: '90vh',
+  overflow: 'auto',
+  '&::-webkit-scrollbar': {
+    width: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: '#f1f1f1',
+    borderRadius: '4px',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: '#c1c1c1',
+    borderRadius: '4px',
+    '&:hover': {
+      background: '#a8a8a8',
+    },
+  },
 };
 
 export default RoleManagementPage;

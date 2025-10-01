@@ -26,7 +26,8 @@ import {
   ListItemText,
   Tabs,
   Tab,
-  Tooltip
+  Tooltip,
+  alpha
 } from '@mui/material';
 import {
   DirectionsCar as CarIcon,
@@ -57,11 +58,13 @@ import { formatDate as formatDateUtil, formatDateDisplay } from '../../utils/dat
 
 const API_URL = 'https://localhost:7092/api';
 
-const StyledCard = styled(Card)(({ theme, sidebarExpanded }) => ({
+const StyledCard = styled(Card, {
+  shouldForwardProp: (prop) => prop !== 'sidebarExpanded',
+})(({ theme, sidebarExpanded }) => ({
   width: '100%',
   minWidth: sidebarExpanded ? 600 : 700,
   maxWidth: sidebarExpanded ? 600 : 700,
-  minHeight: 430,
+  minHeight: 460,
   borderRadius: 16,
   boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
   display: 'flex',
@@ -134,158 +137,256 @@ const VehicleCard = ({ vehicle, onClick, upcomingMaintenanceCount, nextMaintenan
 
   return (
     <motion.div
-      whileHover={{ y: -7 }}
+      whileHover={{ y: -3 }}
       whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 20, damping: 5 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      style={{ width: '100%', height: '100%' }}
     >
       <Box
         onClick={onClick}
         sx={{
           display: 'flex',
-          alignItems: 'center',
-          p: 2,
-          mb: 2,
+          flexDirection: 'column',
+          width: '100%',
+          height: '100%',
+          minHeight: 200,
           borderRadius: 3,
-          backgroundColor: theme?.palette?.background?.paper || '#fff',
+          backgroundColor: theme?.palette?.background?.paper || '#ffffff',
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: `1px solid ${theme?.palette?.divider || '#e0e0e0'}`,
           borderLeft: `4px solid ${getVehicleColor(vehicle.status)}`,
-          transition: 'all 0.3s ease',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden',
           '&:hover': {
-            boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
-            transform: 'translateY(-2px)'
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            transform: 'translateY(-2px)',
+            '&::before': {
+              opacity: 1
+            }
+          },
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(135deg, ${alpha(theme?.palette?.primary?.main || '#1976d2', 0.03)} 0%, ${alpha(theme?.palette?.primary?.light || '#42a5f5', 0.01)} 100%)`,
+            opacity: 0,
+            transition: 'opacity 0.3s ease',
+            pointerEvents: 'none'
           }
         }}
       >
-        <Box sx={{ position: 'relative', mr: 2 }}>
-          <Avatar
-            src={getVehicleImage(vehicle.vehicleType)}
-            sx={{
-              width: 64,
-              height: 64,
-              bgcolor: theme?.palette?.background?.default || '#fff',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              border: `2px solid ${theme?.palette?.divider || '#ddd'}`,
-              '& img': {
-                objectFit: 'contain',
-                padding: 1
-              }
-            }}
-          />
-          <Badge
-            badgeContent={upcomingMaintenanceCount}
-            color="warning"
-            overlap="circular"
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            sx={{
-              position: 'absolute',
-              bottom: -4,
-              right: -4,
-              '& .MuiBadge-badge': {
-                fontWeight: 'bold',
+        {/* Top Section - Vehicle Info & Status */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          p: 2,
+          pb: 1
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <Avatar
+              src={getVehicleImage(vehicle.vehicleType)}
+              sx={{
+                width: 40,
+                height: 40,
+                bgcolor: theme?.palette?.background?.default || '#f5f5f5',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                border: `2px solid ${alpha(theme?.palette?.divider || '#e0e0e0', 0.3)}`,
+                mr: 1.5,
+                '& img': {
+                  objectFit: 'contain',
+                  padding: 0.5
+                }
+              }}
+            />
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  lineHeight: 1.2,
+                  color: 'text.primary',
+                  mb: 0.2
+                }}
+              >
+                {vehicle.make} {vehicle.model}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
+                  fontSize: '0.8rem',
+                  color: 'text.secondary',
+                  lineHeight: 1.1
+                }}
+              >
+                {vehicle.vehicleType} • {vehicle.year || 'N/A'}
+              </Typography>
+            </Box>
+          </Box>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {upcomingMaintenanceCount > 0 && (
+              <Badge
+                badgeContent={upcomingMaintenanceCount}
+                color="warning"
+                overlap="circular"
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                sx={{
+                  '& .MuiBadge-badge': {
+                    fontWeight: 600,
+                    fontSize: '0.65rem',
+                    border: `2px solid ${theme?.palette?.background?.paper || '#ffffff'}`,
+                    minWidth: 20,
+                    height: 20,
+                    bgcolor: theme?.palette?.warning?.main || '#ff9800'
+                  }
+                }}
+              >
+                <Box sx={{ width: 8, height: 8 }} />
+              </Badge>
+            )}
+            <Chip
+              label={vehicle.status}
+              size="small"
+              sx={{
+                fontWeight: 600,
                 fontSize: '0.7rem',
-                border: `2px solid ${theme?.palette?.background?.paper || '#fff'}`,
-                minWidth: 24,
-                height: 24
-              }
-            }}
-          />
+                height: 24,
+                bgcolor: alpha(getVehicleColor(vehicle.status), 0.1),
+                color: getVehicleColor(vehicle.status),
+                border: `1px solid ${alpha(getVehicleColor(vehicle.status), 0.2)}`,
+                borderRadius: 2
+              }}
+            />
+          </Box>
         </Box>
 
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+        {/* Middle Section - License Plate (like car image) */}
+      {/*  <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          p: 2,
+          py: 1.5,
+          position: 'relative'
+        }}>
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            py: 2,
+            px: 3,
+            borderRadius: 2,
+            background: `linear-gradient(135deg, ${alpha(theme?.palette?.primary?.main || '#1976d2', 0.08)} 0%, ${alpha(theme?.palette?.primary?.light || '#42a5f5', 0.04)} 100%)`,
+            border: `2px solid ${alpha(theme?.palette?.primary?.main || '#1976d2', 0.15)}`,
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
             <Typography
-              variant="subtitle1"
+              variant="h4"
               sx={{
-                fontWeight: 700,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                color: 'text.primary'
+                fontWeight: 800,
+                fontSize: '1.5rem',
+                letterSpacing: 1,
+                color: 'primary.dark',
+                textAlign: 'center',
+                fontFamily: 'monospace'
               }}
             >
-              {vehicle.make} {vehicle.model}
+              {vehicle.licensePlate}
             </Typography>
-            <Chip
-              label={vehicle.vehicleType}
-              size="small"
-              sx={{
-                ml: 1.5,
-                fontWeight: 600,
-                fontSize: '0.65rem',
-                height: 20,
-                bgcolor: 'rgba(0, 0, 0, 0.05)',
-                color: 'text.secondary'
-              }}
-            />
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <Chip
-              label={vehicle.licensePlate}
-              size="small"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: 0.5,
-                bgcolor: 'rgba(25, 118, 210, 0.1)',
-                color: 'primary.dark',
-                mr: 1.5
-              }}
-            />
             <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              color: vehicle.status === 'active' ? 'success.main' : 'error.main'
-            }}>
-              <Box sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                bgcolor: vehicle.status === 'active' ? 'success.main' : 'error.main',
-                mr: 0.5,
-                boxShadow: `0 0 6px ${vehicle.status === 'active' ? 'rgba(76, 175, 80, 0.5)' : 'rgba(244, 67, 54, 0.5)'}`
-              }} />
-              <Typography variant="caption" sx={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                {vehicle.status}
-              </Typography>
-            </Box>
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: `linear-gradient(45deg, transparent 30%, ${alpha(theme?.palette?.primary?.main || '#1976d2', 0.05)} 50%, transparent 70%)`,
+              animation: 'shimmer 2s infinite',
+              '@keyframes shimmer': {
+                '0%': { transform: 'translateX(-100%)' },
+                '100%': { transform: 'translateX(100%)' }
+              }
+            }} />
           </Box>
-
-          {nextMaintenanceDate && (
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              backgroundColor: 'rgba(255, 152, 0, 0.08)',
-              borderRadius: 2,
-              px: 1.5,
-              py: 0.8,
-              width: 'fit-content'
-            }}>
-              <EventIcon sx={{
-                fontSize: '1rem',
-                color: 'warning.main',
-                mr: 1
-              }} />
-              <Typography variant="caption" sx={{
-                fontWeight: 600,
-                color: 'warning.dark'
-              }}>
-                Next service: {formatDateDisplay(nextMaintenanceDate)}
-              </Typography>
-            </Box>
-          )}
+        </Box>*/} 
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 2 }}>
+          <GhanaianLicensePlate licensePlate={vehicle.licensePlate} />
         </Box>
 
-        <IconButton sx={{
-          ml: 1,
-          backgroundColor: 'rgba(25, 118, 210, 0.1)',
-          color: 'primary.main',
-          '&:hover': {
-            backgroundColor: 'rgba(25, 118, 210, 0.2)'
-          }
+        {/* Bottom Section - Details & Actions */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          p: 2,
+          pt: 1,
+          mt: 'auto'
         }}>
-          <InfoIcon />
-        </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            {nextMaintenanceDate && (
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: alpha(theme?.palette?.warning?.main || '#ff9800', 0.08),
+                borderRadius: 2,
+                px: 1.5,
+                py: 0.8,
+                border: `1px solid ${alpha(theme?.palette?.warning?.main || '#ff9800', 0.2)}`
+              }}>
+                <EventIcon sx={{
+                  fontSize: '0.9rem',
+                  color: 'warning.main',
+                  mr: 1
+                }} />
+                <Box>
+                  <Typography variant="caption" sx={{
+                    fontWeight: 600,
+                    fontSize: '0.65rem',
+                    color: 'warning.dark',
+                    lineHeight: 1.1,
+                    display: 'block'
+                  }}>
+                    Next Service
+                  </Typography>
+                  <Typography variant="caption" sx={{
+                    fontWeight: 500,
+                    fontSize: '0.6rem',
+                    color: 'text.secondary',
+                    lineHeight: 1.1
+                  }}>
+                    {formatDateDisplay(nextMaintenanceDate)}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          <IconButton 
+            sx={{
+              backgroundColor: alpha(theme?.palette?.primary?.main || '#1976d2', 0.1),
+              color: 'primary.main',
+              width: 36,
+              height: 36,
+              flexShrink: 0,
+              '&:hover': {
+                backgroundColor: alpha(theme?.palette?.primary?.main || '#1976d2', 0.2),
+                transform: 'scale(1.05)'
+              },
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <InfoIcon sx={{ fontSize: '1.1rem' }} />
+          </IconButton>
+        </Box>
       </Box>
     </motion.div>
   );
@@ -326,7 +427,7 @@ const GhanaianLicensePlate = ({ licensePlate }) => {
       justifyContent: 'space-between',
       width: 330,
       height: 74,
-      background: 'linear-gradient(135deg, #fff 70%, #e9e9e9 100%)',
+      background: 'linear-gradient(135deg, #ddd7d74d 70%, #e9e9e93a 100%)',
       border: '3px solid #222',
       borderRadius: '8px',
       boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
@@ -337,29 +438,19 @@ const GhanaianLicensePlate = ({ licensePlate }) => {
       fontFamily: 'Impact, Arial Black, Arial, sans-serif',
       overflow: 'hidden',
       letterSpacing: 2,
-      '::after': {
-        content: '""',
-        position: 'absolute',
-        inset: 0,
-        pointerEvents: 'none',
-        background: 'repeating-linear-gradient(120deg, transparent, transparent 12px, rgba(0,0,0,0.03) 14px, transparent 16px)',
-        opacity: 0.7,
-        zIndex: 2
-      }
     }}>
       {/* Plate Text */}
       <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, zIndex: 3 }}>
         <Typography variant="h5" sx={{
-          fontWeight: 900,
+          fontWeight: 600,
           color: '#181818',
-          fontFamily: 'Impact, Arial Black, Arial, sans-serif',
           fontSize: 34,
           lineHeight: 1,
           mr: 1.5,
           textShadow: '0 1px 0 #fff, 0 2px 2px #bbb',
         }}>{region}</Typography>
         <Typography variant="h5" sx={{
-          fontWeight: 900,
+          fontWeight: 600,
           color: '#181818',
           fontSize: 34,
           lineHeight: 1,
@@ -392,20 +483,10 @@ const GhanaianLicensePlate = ({ licensePlate }) => {
         letterSpacing: 1,
         zIndex: 3
       }}>GH</Typography>
-      {/* Thin inner border for depth */}
-      <Box sx={{
-        position: 'absolute',
-        inset: 4,
-        border: '1.5px solid #bbb',
-        borderRadius: '6px',
-        pointerEvents: 'none',
-        zIndex: 2
-      }} />
+
     </Box>
   );
 };
-
-
 
 const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
   const theme = useTheme();
@@ -509,8 +590,7 @@ const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
         await fetchUploadedDocuments(requestId);
       }
     } catch (error) {
-      console.error('Error uploading document:', error);
-    }
+      }
   };
 
   const handleDocumentDownload = async (documentId, fileName) => {
@@ -531,8 +611,7 @@ const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Error downloading document:', error);
-    }
+      }
   };
 
   const handleSubmit = async (e) => {
@@ -556,53 +635,31 @@ const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
 
     try {
       setProcessing(true);
-      console.log('Starting combined request submission and file upload...');
-      console.log('Payload:', payload);
-      console.log('Upload file state:', uploadFile);
-      console.log('File to upload:', uploadFile?.name || 'No file');
-      console.log('File object:', uploadFile);
-      
       // Step 1: Create the maintenance request
       const res = await axios.post(`${API_URL}/MaintenanceRequest/personal?userId=${authData.userId}`, payload, {
         headers: { Authorization: `Bearer ${authData.token}` }
       });
       
-      console.log('✅ Request created successfully:', res.data);
-      
       let uploadSuccess = false;
       
       // Step 2: Upload document if provided
       if (uploadFile && res.data && res.data.requestId) {
-        console.log('📁 Uploading file:', uploadFile.name);
-        console.log('📁 File size:', uploadFile.size, 'bytes');
-        console.log('📁 File type:', uploadFile.type);
-        console.log('📁 Request ID:', res.data.requestId);
-        
         const formDataObj = new FormData();
         formDataObj.append('file', uploadFile);
         
         // Log FormData contents
-        console.log('📁 FormData entries:');
         for (let [key, value] of formDataObj.entries()) {
-          console.log(`  ${key}:`, value);
-        }
+          }
         
         try {
-          console.log('📁 Making upload request to:', `${API_URL}/MaintenanceRequest/${res.data.requestId}/upload-document?userId=${authData.userId}`);
-          
           const uploadRes = await axios.post(`${API_URL}/MaintenanceRequest/${res.data.requestId}/upload-document?userId=${authData.userId}`, formDataObj, {
             headers: { 
               'Content-Type': 'multipart/form-data', 
               Authorization: `Bearer ${authData.token}` 
             }
           });
-          console.log('✅ File uploaded successfully:', uploadRes.data);
           uploadSuccess = true;
         } catch (uploadError) {
-          console.error('❌ Error uploading file:', uploadError);
-          console.error('❌ Error response:', uploadError.response?.data);
-          console.error('❌ Error status:', uploadError.response?.status);
-          console.error('❌ Error message:', uploadError.message);
           uploadSuccess = false;
         }
       }
@@ -615,8 +672,7 @@ const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
         try {
           await fetchUploadedDocuments(res.data.requestId);
         } catch (fetchError) {
-          console.error('❌ Error fetching documents:', fetchError);
-        }
+          }
       }
       
       // Step 5: Show final success message
@@ -640,8 +696,6 @@ const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
       
     } catch (error) {
       setProcessing(false);
-      console.error('❌ Error in combined submission:', error);
-      console.error('Error details:', error.response?.data);
       alert('❌ Failed to submit request. Please try again.');
     }
   };
@@ -685,11 +739,9 @@ const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
       const response = await axios.get(`${API_URL}/MaintenanceRequest/${requestId}/documents`, {
         headers: { Authorization: `Bearer ${authData.token}` }
       });
-      console.log('Documents response:', response.data);
       // The API returns { RequestId, Documents } structure
       setUploadedDocuments(response.data.documents || []);
     } catch (error) {
-      console.error('Error fetching documents:', error);
       setUploadedDocuments([]);
     } finally {
       setFetchingDocs(false);
@@ -724,20 +776,9 @@ const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
               p: 0.8,
               boxShadow: '0 3px 10px rgba(25, 118, 210, 0.3)'
             }} />
-            My Assigned Vehicles
+            My Assigned Vehicle
           </Typography>
-          <Chip
-            label={`${vehicles.length} ${vehicles.length === 1 ? 'vehicle' : 'vehicles'}`}
-            variant="outlined"
-            size="small"
-            sx={{
-              fontWeight: 700,
-              borderColor: 'primary.main',
-              color: 'primary.dark',
-              backgroundColor: 'rgba(25, 118, 210, 0.1)',
-              letterSpacing: '0.5px'
-            }}
-          />
+
         </Box>
 
         {loading ? (
@@ -1220,7 +1261,6 @@ const VehicleAssignedCard = ({ sidebarExpanded = true }) => {
                       id="maintenance-upload"
                       style={{ display: 'none' }}
                       onChange={e => {
-                        console.log('File selected:', e.target.files[0]);
                         setUploadFile(e.target.files[0]);
                       }}
                     />

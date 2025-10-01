@@ -16,14 +16,10 @@ export const returnVehicle = async (assignmentId, returnNotes) => {
   return response.data;
 };
 
-
-
 export const getUsers = async () => {
   const response = await api.get('/api/Users');
   return response.data;
 };
-
-
 
 export const getVehicles = async () => {
   const response = await api.get('/api/Vehicles');

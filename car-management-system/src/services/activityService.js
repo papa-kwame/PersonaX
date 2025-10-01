@@ -53,11 +53,11 @@ class ActivityService {
 
       await api.post('/api/Auth/activity/ping', { userId });
     } catch (error) {
-      console.error('Failed to ping activity:', error);
-      // If unauthorized, stop tracking
+      // If unauthorized, stop tracking silently
       if (error.response?.status === 401) {
         this.stopActivityTracking();
       }
+      // Don't log other errors to prevent console spam
     }
   }
 
@@ -123,7 +123,7 @@ class ActivityService {
         userAgent: navigator.userAgent
       });
     } catch (error) {
-      console.error('Failed to log page view:', error);
+      // Silently handle errors to prevent console spam
     }
   }
 
@@ -136,13 +136,13 @@ class ActivityService {
       if (!userId) return;
 
       await api.post('/api/UserActivity/log', {
-        userId,
-        activityType,
-        module,
-        description,
-        entityType,
-        entityId,
-        details: {
+        UserId: userId,
+        ActivityType: activityType,
+        Module: module,
+        Description: description,
+        EntityType: entityType,
+        EntityId: entityId,
+        Details: {
           ...details,
           timestamp: new Date().toISOString(),
           pageUrl: this.currentPage,
@@ -150,7 +150,11 @@ class ActivityService {
         }
       });
     } catch (error) {
-      console.error('Failed to log activity:', error);
+      // Silently handle errors to prevent console spam
+      // Only log critical errors that need attention
+      if (error.response?.status >= 500) {
+        console.warn('Activity logging server error:', error.response?.status);
+      }
     }
   }
 
@@ -206,8 +210,7 @@ class ActivityService {
         }
       }
     } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
+      } finally {
       this.stopActivityTracking();
       localStorage.removeItem('authData');
     }

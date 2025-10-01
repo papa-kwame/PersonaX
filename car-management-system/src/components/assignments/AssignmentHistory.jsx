@@ -32,7 +32,6 @@ const AssignmentHistory = ({ vehicleId }) => {
         setHistory(historyRes.data);
         setVehicleInfo(vehicleRes.data);
       } catch (error) {
-        console.error('Error fetching assignment history:', error);
         setError(error.response?.data?.title || 'Failed to fetch assignment history');
         toast.error(error.response?.data?.title || 'Failed to fetch assignment history');
       } finally {

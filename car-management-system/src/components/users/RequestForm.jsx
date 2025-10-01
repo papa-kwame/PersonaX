@@ -19,8 +19,7 @@ export default function RequestForm() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('User ID:', userId);
-  }, [userId]);
+    }, [userId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,9 +55,6 @@ export default function RequestForm() {
       };
 
       // Debugging log to check the payload and userId
-      console.log('Submitting payload:', payload);
-      console.log('User ID in submit:', userId);
-
       await api.post(`/api/VehicleRequest?userId=${userId}`, payload);
       setMessage({ text: 'Request submitted successfully!', type: 'success' });
       setFormData({ reason: '', startDate: null, endDate: null });
@@ -67,8 +63,7 @@ export default function RequestForm() {
       setTimeout(() => navigate('/requests'), 2000);
     } catch (err) {
       setMessage({ text: `Error: ${err.response?.data?.message || err.message}`, type: 'error' });
-      console.error('Submission error:', err.response?.data);
-    } finally {
+      } finally {
       setIsSubmitting(false);
     }
   };

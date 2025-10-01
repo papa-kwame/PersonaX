@@ -91,8 +91,7 @@ export default function AdminAudit({ sidebarExpanded = true }) {
       setLastRefresh(new Date());
     } catch (err) {
       setError('Failed to fetch activity data');
-      console.error('Error fetching activity data:', err);
-    } finally {
+      } finally {
       if (isRefresh) {
         setRefreshing(false);
       } else {
@@ -323,7 +322,6 @@ export default function AdminAudit({ sidebarExpanded = true }) {
           <Toolbar sx={{ px: 3 }}>
             <Box sx={{ flexGrow: 1 }}>
 
-              
               <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
                 <Grid item xs={12} sm={6} md={2}>
                   <FormControl size="small" sx={{ 
@@ -452,12 +450,11 @@ export default function AdminAudit({ sidebarExpanded = true }) {
                 </Grid>
               </Grid>
             </Box>
-            
 
           </Toolbar>
         </AppBar>
 
-        <Box sx={{ p: 4 }}>
+        <Box sx={{ p: 2}}>
          
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} sm={6} md={3}>
@@ -634,7 +631,6 @@ export default function AdminAudit({ sidebarExpanded = true }) {
               </Button>
             </Box>
 
-            
             <CardContent sx={{ p: 0 }}>
               {/* Activity Timeline Tab */}
               {activeTab === 0 && (
@@ -786,7 +782,7 @@ export default function AdminAudit({ sidebarExpanded = true }) {
                       {/* Fixed Pagination */}
                       <Box sx={{ 
                         mt: 2,
-                        p: 2,
+                        p: 1,
                         bgcolor: 'white',
                         border: '1px solid',
                         borderColor: 'grey.200',
@@ -804,7 +800,7 @@ export default function AdminAudit({ sidebarExpanded = true }) {
                               value={rowsPerPage}
                               onChange={handleChangeRowsPerPage}
                               sx={{ 
-                                height: 32,
+                                height: 12,
                                 '& .MuiOutlinedInput-notchedOutline': {
                                   borderColor: 'grey.300'
                                 }
@@ -860,7 +856,6 @@ export default function AdminAudit({ sidebarExpanded = true }) {
               {/* User Analytics Tab */}
               {activeTab === 1 && (
                 <Box sx={{ p: 3 }}>
-
 
                   {/* Enhanced User Analytics Content */}
                   <Grid container spacing={3}>

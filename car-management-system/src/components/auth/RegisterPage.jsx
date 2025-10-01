@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import NavbarHome from '../shared/NavbarHome';
+import FloatingShapes from '../shared/FloatingShapes';
 import { Toast, ToastContainer } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Login.css'; // Ensure you have the appropriate styling
@@ -19,8 +20,42 @@ const Register = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('danger'); // 'danger' or 'success'
+  const [departments, setDepartments] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
 
   const navigate = useNavigate();
+
+  // Fetch departments from backend API
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await axios.get('https://localhost:7092/api/Routes/departments');
+        // Filter out 'Default' department for registration
+        const filteredDepartments = response.data.filter(dept => dept !== 'Default');
+        setDepartments(filteredDepartments);
+      } catch (error) {
+        // Fallback to hardcoded list if API fails
+        setDepartments([
+          'Audit',
+          'Business Development',
+          'Consulting',
+          'Customer Support',
+          'Finance',
+          'HR',
+          'Legal',
+          'Management',
+          'Operations',
+          'Software',
+          'Support',
+          'Systems Integration'
+        ]);
+      } finally {
+        setLoadingDepartments(false);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -55,8 +90,6 @@ const Register = () => {
 
       // Replace with your actual API endpoint
       const response = await axios.post('https://localhost:7092/api/Auth/register', registrationData);
-      console.log('Registration successful:', response.data);
-      
       // Show success toast
       setToastMessage('Registration successful! Redirecting to login page...');
       setToastType('success');
@@ -68,7 +101,6 @@ const Register = () => {
       }, 5000);
       
     } catch (err) {
-      console.error('Registration error:', err.response || err);
       const msg = err?.response?.data?.message || err.message || 'Registration failed. Please try again.';
       setToastMessage(msg);
       setToastType('danger');
@@ -81,8 +113,9 @@ const Register = () => {
   return (
     <>
       <NavbarHome />
-      <div className="login-page">
-        <div className="login-card">
+      <div className="login-page" style={{ position: 'relative' }}>
+        <FloatingShapes />
+        <div className="login-card" style={{ position: 'relative', zIndex: 1 }}>
           <h2 className="login-title">Create Account</h2>
           <form onSubmit={handleSubmit} className="login-form">
             <div className="mb-3">
@@ -126,16 +159,23 @@ const Register = () => {
             </div>
             <div className="mb-3">
               <label htmlFor="department" className="form-label">Department</label>
-              <input
-                type="text"
+              <select
                 className="form-control"
                 id="department"
-                placeholder="Enter your Department"
                 value={formData.department}
                 onChange={handleChange}
                 required
-                disabled={isSubmitting}
-              />
+                disabled={isSubmitting || loadingDepartments}
+              >
+                <option value="">
+                  {loadingDepartments ? 'Loading departments...' : 'Select your Department'}
+                </option>
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="mb-3">
               <label htmlFor="password" className="form-label">Password</label>

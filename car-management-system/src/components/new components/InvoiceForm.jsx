@@ -67,7 +67,6 @@ const MaintenanceSchedules = () => {
   }, [isAuthenticated, userId]);
 
   const handleApiError = (error, defaultMessage) => {
-    console.error('API Error:', error);
     const errorMessage = error.response?.data?.title || 
                         error.response?.data?.detail || 
                         error.message || 
@@ -141,14 +140,14 @@ const MaintenanceSchedules = () => {
         }
       };
 
-      console.log('Submitting payload:', payload); // Debug log
+      // Debug log
 
       const response = await api.post(
         `/api/MaintenanceRequest/${state.selectedSchedule.id}/complete-with-invoice`,
         payload
       );
 
-      console.log('Completion successful:', response.data); // Debug log
+      // Debug log
 
       // Update local state optimistically
       setState(prev => ({

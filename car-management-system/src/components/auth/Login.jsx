@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { login as apiLogin } from '../../services/auth';
 import { useAuth } from '../../context/AuthContext';
 import NavbarHome from '../shared/NavbarHome';
+import FloatingShapes from '../shared/FloatingShapes';
 import { Toast, ToastContainer } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Login.css';
@@ -58,7 +59,6 @@ export default function Login() {
         navigate('/unauthorized', { replace: true });
       }
     } catch (err) {
-      console.error('Login error:', err);
       const msg = err?.response?.data?.message || err.message || 'Login failed. Please try again.';
       setToastMessage(msg);
       setShowToast(true);
@@ -70,8 +70,9 @@ export default function Login() {
   return (
     <>
       <NavbarHome />
-      <div className="login-page">
-        <div className="login-card">
+      <div className="login-page" style={{ position: 'relative' }}>
+        <FloatingShapes />
+        <div className="login-card" style={{ position: 'relative', zIndex: 1 }}>
           <h2 className="login-title">Welcome Back</h2>
           <form onSubmit={handleSubmit} className="login-form">
             <div className="mb-3">

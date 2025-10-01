@@ -25,8 +25,7 @@ const AssignmentDetail = () => {
         setVehicle(vehicleRes.data);
         if (userRes) setUser(userRes.data);
       } catch (error) {
-        console.error('Error fetching assignment details:', error);
-      } finally {
+        } finally {
         setLoading(false);
       }
     };

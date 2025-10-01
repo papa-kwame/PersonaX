@@ -33,12 +33,13 @@ import {
 import { toast } from 'react-toastify';
 import { getVehicleById, createVehicle, updateVehicle, getAllVehiclesSimple } from '../../services/vehicles';
 import { useAuth } from '../../context/AuthContext';
+import StandardDatePicker from '../shared/StandardDatePicker';
 
 // Date formatting utility
 const formatDateForInput = (dateString) => {
-  if (!dateString) return '';
+  if (!dateString) return null;
   const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
+  return isNaN(date.getTime()) ? null : date;
 };
 
 const formatDateForDisplay = (dateString) => {
@@ -181,14 +182,14 @@ export default function VehicleForm() {
     transmission: 'Automatic',
     engineSize: '',
     seatingCapacity: 5,
-    purchaseDate: '',
+    purchaseDate: null,
     purchasePrice: 0,
-    lastServiceDate: '',
+    lastServiceDate: null,
     serviceInterval: 10000,
-    nextServiceDue: '',
-    roadworthyExpiry: '',
-    registrationExpiry: '',
-    insuranceExpiry: '',
+    nextServiceDue: null,
+    roadworthyExpiry: null,
+    registrationExpiry: null,
+    insuranceExpiry: null,
     notes: ''
   });
 
@@ -236,7 +237,18 @@ export default function VehicleForm() {
     try {
       // Use custom model if "Other" is selected
       const finalModel = formData.model === 'Other' ? customModel : formData.model;
-      const submitData = { ...formData, model: finalModel };
+      
+      // Convert Date objects to ISO strings for API
+      const submitData = {
+        ...formData,
+        model: finalModel,
+        purchaseDate: formData.purchaseDate ? formData.purchaseDate.toISOString() : null,
+        lastServiceDate: formData.lastServiceDate ? formData.lastServiceDate.toISOString() : null,
+        nextServiceDue: formData.nextServiceDue ? formData.nextServiceDue.toISOString() : null,
+        roadworthyExpiry: formData.roadworthyExpiry ? formData.roadworthyExpiry.toISOString() : null,
+        registrationExpiry: formData.registrationExpiry ? formData.registrationExpiry.toISOString() : null,
+        insuranceExpiry: formData.insuranceExpiry ? formData.insuranceExpiry.toISOString() : null
+      };
 
       // Check for duplicate VIN or license plate
       const allVehicles = await getAllVehiclesSimple();
@@ -289,6 +301,13 @@ export default function VehicleForm() {
     if (isSubmitted) {
       validateField(name, name === 'licensePlate' ? formatLicensePlate(value) : value);
     }
+  };
+
+  const handleDateChange = (field, date) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: date
+    }));
   };
 
   const handleModelChange = (event, newValue) => {
@@ -515,12 +534,11 @@ export default function VehicleForm() {
 
   return (
     <Box sx={{
-      maxHeight: '80vh',
+      minHeight: '100vh',
       bgcolor: '#f8fafc',
-      py: 4,
-      px: 2
+      
     }}>
-      <Box sx={{ maxWidth: 1600, mx: 'auto' }}>
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
         {/* Header */}
         <Box sx={{ 
           display: 'flex', 
@@ -659,11 +677,11 @@ export default function VehicleForm() {
               <Grid container>
                 {/* Left Column - Basic Information */}
                 <Grid item xs={12} md={6} sx={{ p: 4, borderRight: { md: '1px solid #e5e7eb' } }}>
-                  <Box sx={{ mb: 4 }}>
+                  <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" sx={{ 
                   fontWeight: 600,
                       color: '#111827',
-                      mb: 3,
+                      mb: 2,
                   display: 'flex',
                       alignItems: 'center',
                       gap: 1
@@ -677,7 +695,7 @@ export default function VehicleForm() {
                   Basic Information
                 </Typography>
 
-                    <Grid container spacing={3}>
+                    <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
                         <FormControl fullWidth size="medium">
                           <InputLabel>Make</InputLabel>
@@ -876,7 +894,7 @@ export default function VehicleForm() {
                           value={formData.licensePlate}
                           onChange={handleChange}
                           error={!!validationErrors.licensePlate}
-                          helperText={validationErrors.licensePlate || 'Format: GC 1, GC 12, GC 1-23, GC 12-34, or GC 1234 (2 numbers after dash)'}
+                          helperText={validationErrors.licensePlate}
                           required
                           variant="outlined"
                           size="medium"
@@ -1018,11 +1036,11 @@ export default function VehicleForm() {
 
                 {/* Right Column - Technical & Maintenance */}
                 <Grid item xs={12} md={6} sx={{ p: 4 }}>
-                  <Box sx={{ mb: 4 }}>
+                  <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" sx={{ 
                   fontWeight: 600,
                       color: '#111827',
-                      mb: 3,
+                      mb: 2,
                   display: 'flex',
                       alignItems: 'center',
                       gap: 1
@@ -1036,7 +1054,7 @@ export default function VehicleForm() {
                   Technical & Maintenance
                 </Typography>
 
-                    <Grid container spacing={3}>
+                    <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
                       <TextField
                           label="Current Mileage"
@@ -1130,208 +1148,74 @@ export default function VehicleForm() {
                       </Grid>
 
                       <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Purchase Date"
-                          name="purchaseDate"
-                          type="date"
+                        <StandardDatePicker
                           value={formData.purchaseDate}
-                          onChange={handleChange}
-                          variant="outlined"
+                          onChange={(date) => handleDateChange('purchaseDate', date)}
+                          label="Purchase Date"
+                          format="dd/MM/yyyy"
                           size="medium"
-                        InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            placeholder: 'DD/MM/YYYY'
-                          }}
-                          sx={{
-                            width: 212,
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1976d2'
-                              }
-                            },
-                            '& input::-webkit-datetime-edit': {
-                              color: 'transparent'
-                            },
-                            '& input:focus::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            },
-                            '& input:valid::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            }
-                          }}
-                      />
-                    </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Last Service Date"
-                          name="lastServiceDate"
-                          type="date"
-                          value={formData.lastServiceDate}
-                          onChange={handleChange}
-                          variant="outlined"
-                          size="medium"
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            placeholder: 'DD/MM/YYYY'
-                          }}
-                          sx={{
-                            width: 212,
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1976d2'
-                              }
-                            },
-                            '& input::-webkit-datetime-edit': {
-                              color: 'transparent'
-                            },
-                            '& input:focus::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            },
-                            '& input:valid::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            }
-                          }}
+                          sx={{ width: 212 }}
                         />
                       </Grid>
 
                       <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Next Service Due"
-                          name="nextServiceDue"
-                          type="date"
+                        <StandardDatePicker
+                          value={formData.lastServiceDate}
+                          onChange={(date) => handleDateChange('lastServiceDate', date)}
+                          label="Last Service Date"
+                          format="dd/MM/yyyy"
+                          size="medium"
+                          sx={{ width: 212 }}
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} sm={6}>
+                        <StandardDatePicker
                           value={formData.nextServiceDue}
-                          onChange={handleChange}
-                          variant="outlined"
+                          onChange={(date) => handleDateChange('nextServiceDue', date)}
+                          label="Next Service Due"
+                          format="dd/MM/yyyy"
+                          minDate={new Date()}
                           size="medium"
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            placeholder: 'DD/MM/YYYY'
-                          }}
-                          sx={{
-                            width: 212,
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1976d2'
-                              }
-                            },
-                            '& input::-webkit-datetime-edit': {
-                              color: 'transparent'
-                            },
-                            '& input:focus::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            },
-                            '& input:valid::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            }
-                          }}
+                          sx={{ width: 212 }}
                         />
-                  </Grid>
+                      </Grid>
 
                       <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Roadworthy Expiry"
-                          name="roadworthyExpiry"
-                          type="date"
+                        <StandardDatePicker
                           value={formData.roadworthyExpiry}
-                          onChange={handleChange}
-                          variant="outlined"
+                          onChange={(date) => handleDateChange('roadworthyExpiry', date)}
+                          label="Roadworthy Expiry"
+                          format="dd/MM/yyyy"
+                          minDate={new Date()}
                           size="medium"
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            placeholder: 'DD/MM/YYYY'
-                          }}
-                          sx={{
-                            width: 212,
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1976d2'
-                              }
-                            },
-                            '& input::-webkit-datetime-edit': {
-                              color: 'transparent'
-                            },
-                            '& input:focus::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            },
-                            '& input:valid::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            }
-                          }}
+                          sx={{ width: 212 }}
                         />
-                </Grid>
+                      </Grid>
 
                       <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Registration Expiry"
-                          name="registrationExpiry"
-                          type="date"
+                        <StandardDatePicker
                           value={formData.registrationExpiry}
-                          onChange={handleChange}
-                          variant="outlined"
+                          onChange={(date) => handleDateChange('registrationExpiry', date)}
+                          label="Registration Expiry"
+                          format="dd/MM/yyyy"
+                          minDate={new Date()}
                           size="medium"
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            placeholder: 'DD/MM/YYYY'
-                          }}
-                          sx={{
-                            width: 212,
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1976d2'
-                              }
-                            },
-                            '& input::-webkit-datetime-edit': {
-                              color: 'transparent'
-                            },
-                            '& input:focus::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            },
-                            '& input:valid::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            }
-                          }}
+                          sx={{ width: 212 }}
                         />
-              </Grid>
+                      </Grid>
 
                       <Grid item xs={12} sm={6}>
-                        <TextField
-                          label="Insurance Expiry"
-                          name="insuranceExpiry"
-                          type="date"
+                        <StandardDatePicker
                           value={formData.insuranceExpiry}
-                          onChange={handleChange}
-                          variant="outlined"
+                          onChange={(date) => handleDateChange('insuranceExpiry', date)}
+                          label="Insurance Expiry"
+                          format="dd/MM/yyyy"
+                          minDate={new Date()}
                           size="medium"
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{
-                            placeholder: 'DD/MM/YYYY'
-                          }}
-                          sx={{
-                            width: 212,
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#1976d2'
-                              }
-                            },
-                            '& input::-webkit-datetime-edit': {
-                              color: 'transparent'
-                            },
-                            '& input:focus::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            },
-                            '& input:valid::-webkit-datetime-edit': {
-                              color: 'inherit'
-                            }
-                          }}
+                          sx={{ width: 212 }}
                         />
-            </Grid>
+                      </Grid>
                     </Grid>
                   </Box>
                 </Grid>

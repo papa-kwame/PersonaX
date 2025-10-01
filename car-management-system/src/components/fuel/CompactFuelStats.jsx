@@ -12,8 +12,10 @@ import {
   MenuItem,
   useTheme,
   Divider,
-  Fade
+  Fade,
+  alpha
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import {
   BarChart,
   Bar,
@@ -23,11 +25,79 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import { LocalGasStation } from '@mui/icons-material';
+import { LocalGasStation, TrendingUp, TrendingDown } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 
-const AnimatedPaper = motion(Paper);
+// Import fuel station logos
+import goilLogo from '../../assets/fuelstationlogos/goil-logo.webp';
+import shellLogo from '../../assets/fuelstationlogos/Shell-Logo.png';
+import starOilLogo from '../../assets/fuelstationlogos/star-oil.webp';
+import frimpsLogo from '../../assets/fuelstationlogos/frimps-logo.png';
+import zenLogo from '../../assets/fuelstationlogos/Zen-logo.png';
+
+// Professional color palette
+const professionalColors = {
+  primary: '#2563eb',
+  secondary: '#64748b',
+  success: '#059669',
+  warning: '#d97706',
+  error: '#dc2626',
+  info: '#0891b2',
+  background: '#f8fafc',
+  surface: '#ffffff',
+  text: '#1e293b',
+  border: '#e2e8f0'
+};
+
+const AnimatedPaper = motion.create(Paper);
+
+const StyledPaper = styled(AnimatedPaper)(({ theme }) => ({
+  borderRadius: '24px',
+  background: `linear-gradient(135deg, ${professionalColors.surface} 0%, ${alpha(professionalColors.surface, 0.8)} 100%)`,
+  border: `1px solid ${professionalColors.border}`,
+  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.08)',
+  overflow: 'hidden',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.12)'
+  }
+}));
+
+const StyledSelect = styled(Select)(({ theme }) => ({
+  fontSize: '0.75rem',
+  height: '36px',
+  borderRadius: '10px',
+  '& .MuiOutlinedInput-notchedOutline': {
+    borderColor: professionalColors.border,
+    borderRadius: '10px'
+  },
+  '&:hover .MuiOutlinedInput-notchedOutline': {
+    borderColor: professionalColors.primary
+  },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+    borderColor: professionalColors.primary,
+    borderWidth: '2px'
+  }
+}));
+
+// Function to get fuel station logo
+const getFuelStationLogo = (fuelStationType) => {
+  const logoMap = {
+    0: goilLogo,      // GOIL
+    1: null,          // Total (no logo available)
+    2: shellLogo,     // Shell
+    3: null,          // PetroSA (no logo available)
+    4: frimpsLogo,    // Frimps
+    5: null,          // Puma (no logo available)
+    6: starOilLogo,   // StarOil
+    7: null,          // AlliedOil (no logo available)
+    8: zenLogo,       // ZenPetroleum
+    9: null,          // Other (no logo available)
+  };
+  return logoMap[fuelStationType] || null;
+};
 
 const CompactFuelStats = () => {
   const theme = useTheme();
@@ -50,7 +120,6 @@ const CompactFuelStats = () => {
       setFuelLogs(Array.isArray(response.data) ? response.data : []);
       setLoading(false);
     } catch (err) {
-      console.error('Failed to fetch fuel logs', err);
       setLoading(false);
     }
   };
@@ -79,7 +148,7 @@ const CompactFuelStats = () => {
         label,
         fullDate,
         totalFuel: 0,
-        fill: theme.palette.primary.main
+        fill: professionalColors.primary
       };
     }
 
@@ -103,11 +172,32 @@ const CompactFuelStats = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+      <StyledPaper
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        sx={{
+          width: 400,
+          height: 345,
+          p: 3,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
+      >
         <Fade in timeout={500}>
-          <CircularProgress size={24} thickness={4} />
+          <CircularProgress 
+            size={32} 
+            thickness={4}
+            sx={{ 
+              color: professionalColors.primary,
+              '& .MuiCircularProgress-circle': {
+                strokeLinecap: 'round'
+              }
+            }}
+          />
         </Fade>
-      </Box>
+      </StyledPaper>
     );
   }
 
@@ -127,81 +217,71 @@ const CompactFuelStats = () => {
   const percentageChange = getPercentageChange();
 
   return (
-    <AnimatedPaper
+    <StyledPaper
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       sx={{
         width: 400,
         height: 345,
-        p: 2.5,
-        borderRadius: '14px',
+        p: 3,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
-        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.08)',
-        border: `1px solid ${theme.palette.divider}`,
-        background: theme.palette.background.paper
+        overflow: 'hidden'
       }}
     >
       {/* Header Row */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2.5}>
-        <Box display="flex" alignItems="center">
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
             component={motion.div}
-            whileHover={{ rotate: 15 }}
+            whileHover={{ rotate: 15, scale: 1.1 }}
             sx={{
-              width: 36,
-              height: 36,
-              borderRadius: '10px',
+              width: 44,
+              height: 44,
+              borderRadius: '14px',
+              background: `linear-gradient(135deg, ${professionalColors.primary} 0%, ${alpha(professionalColors.primary, 0.8)} 100%)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              mr: 1.5
+              color: 'white',
+              boxShadow: '0 8px 24px rgba(37, 99, 235, 0.3)'
             }}
           >
-            <LocalGasStation sx={{
-              color: theme.palette.primary.main,
-              fontSize: '20px'
-            }} />
+            <LocalGasStation sx={{ fontSize: 22 }} />
           </Box>
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: professionalColors.text, lineHeight: 1.2 }}>
               Fuel Consumption
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+            <Typography variant="body2" color={professionalColors.secondary} sx={{ fontSize: '0.75rem' }}>
               {timeRange === 'month' ? 'Monthly overview' : 'Daily tracking'}
             </Typography>
           </Box>
         </Box>
 
         <FormControl size="small" sx={{ minWidth: 100 }}>
-          <InputLabel sx={{ fontSize: '0.75rem' }}>Time Range</InputLabel>
-          <Select
+          <InputLabel sx={{ fontSize: '0.75rem', color: professionalColors.secondary }}>
+            Time Range
+          </InputLabel>
+          <StyledSelect
             value={timeRange}
             label="Time Range"
             onChange={(e) => setTimeRange(e.target.value)}
-            sx={{ 
-              fontSize: '0.75rem', 
-              height: '34px',
-              borderRadius: '8px',
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: theme.palette.divider
-              }
-            }}
             MenuProps={{
               PaperProps: {
                 sx: {
-                  borderRadius: '8px',
+                  borderRadius: '12px',
                   mt: 0.5,
-                  boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)'
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                  border: `1px solid ${professionalColors.border}`
                 }
               }
             }}
           >
             <MenuItem value="day" sx={{ fontSize: '0.75rem' }}>Daily</MenuItem>
             <MenuItem value="month" sx={{ fontSize: '0.75rem' }}>Monthly</MenuItem>
-          </Select>
+          </StyledSelect>
         </FormControl>
       </Box>
 
@@ -211,21 +291,19 @@ const CompactFuelStats = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        display="flex" 
-        justifyContent="space-between" 
-        mb={2.5}
-        gap={1.5}
         sx={{
-          backgroundColor: theme.palette.mode === 'dark' 
-            ? theme.palette.grey[900] 
-            : theme.palette.grey[50],
-          borderRadius: '12px',
-          p: 1.5,
-          border: `1px solid ${theme.palette.divider}`
+          display: 'flex',
+          justifyContent: 'space-between',
+          mb: 3,
+          gap: 2,
+          backgroundColor: `linear-gradient(135deg, ${alpha(professionalColors.background, 0.8)} 0%, ${alpha(professionalColors.background, 0.5)} 100%)`,
+          borderRadius: '16px',
+          p: 2,
+          border: `1px solid ${alpha(professionalColors.border, 0.5)}`
         }}
       >
-        <Box textAlign="center" flex={1}>
-          <Typography variant="caption" color="text.secondary" sx={{ 
+        <Box sx={{ textAlign: 'center', flex: 1 }}>
+          <Typography variant="caption" color={professionalColors.secondary} sx={{ 
             fontSize: '0.65rem',
             fontWeight: 600,
             letterSpacing: '0.5px',
@@ -236,9 +314,7 @@ const CompactFuelStats = () => {
           <Typography variant="h5" fontWeight={700} sx={{ 
             fontSize: '1.25rem',
             lineHeight: 1.3,
-            background: theme.palette.mode === 'dark'
-              ? `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`
-              : `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+            background: `linear-gradient(135deg, ${professionalColors.primary} 0%, ${alpha(professionalColors.primary, 0.8)} 100%)`,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
@@ -248,8 +324,8 @@ const CompactFuelStats = () => {
 
         <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
 
-        <Box textAlign="center" flex={1}>
-          <Typography variant="caption" color="text.secondary" sx={{ 
+        <Box sx={{ textAlign: 'center', flex: 1 }}>
+          <Typography variant="caption" color={professionalColors.secondary} sx={{ 
             fontSize: '0.65rem',
             fontWeight: 600,
             letterSpacing: '0.5px',
@@ -259,7 +335,8 @@ const CompactFuelStats = () => {
           </Typography>
           <Typography variant="h5" fontWeight={700} sx={{ 
             fontSize: '1.25rem',
-            lineHeight: 1.3
+            lineHeight: 1.3,
+            color: professionalColors.text
           }}>
             {avgFuel.toFixed(1)}<span style={{ fontSize: '0.8rem', opacity: 0.8 }}>L</span>
           </Typography>
@@ -267,8 +344,8 @@ const CompactFuelStats = () => {
 
         <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
 
-        <Box textAlign="center" flex={1}>
-          <Typography variant="caption" color="text.secondary" sx={{ 
+        <Box sx={{ textAlign: 'center', flex: 1 }}>
+          <Typography variant="caption" color={professionalColors.secondary} sx={{ 
             fontSize: '0.65rem',
             fontWeight: 600,
             letterSpacing: '0.5px',
@@ -276,47 +353,60 @@ const CompactFuelStats = () => {
           }}>
             Last Period
           </Typography>
-          <Box display="flex" alignItems="center" justifyContent="center">
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Typography variant="h5" fontWeight={700} sx={{ 
               fontSize: '1.25rem',
               lineHeight: 1.3,
-              mr: 0.5
+              mr: 0.5,
+              color: professionalColors.text
             }}>
               {lastPeriodFuel.toFixed(1)}<span style={{ fontSize: '0.8rem', opacity: 0.8 }}>L</span>
             </Typography>
             {percentageChange !== 0 && (
-              <Typography variant="caption" sx={{
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                color: percentageChange > 0 ? theme.palette.success.main : theme.palette.error.main,
-                bgcolor: percentageChange > 0 
-                  ? theme.palette.success.light 
-                  : theme.palette.error.light,
-                px: 0.5,
-                borderRadius: '4px',
-                lineHeight: 1.5
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1,
+                py: 0.25,
+                borderRadius: '8px',
+                background: percentageChange > 0 
+                  ? `linear-gradient(135deg, ${alpha(professionalColors.success, 0.1)} 0%, ${alpha(professionalColors.success, 0.05)} 100%)`
+                  : `linear-gradient(135deg, ${alpha(professionalColors.error, 0.1)} 0%, ${alpha(professionalColors.error, 0.05)} 100%)`,
+                border: `1px solid ${percentageChange > 0 ? alpha(professionalColors.success, 0.2) : alpha(professionalColors.error, 0.2)}`
               }}>
-                {percentageChange > 0 ? '↑' : '↓'} {Math.abs(percentageChange).toFixed(1)}%
-              </Typography>
+                {percentageChange > 0 ? (
+                  <TrendingUp sx={{ fontSize: 12, color: professionalColors.success }} />
+                ) : (
+                  <TrendingDown sx={{ fontSize: 12, color: professionalColors.error }} />
+                )}
+                <Typography variant="caption" sx={{
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                  color: percentageChange > 0 ? professionalColors.success : professionalColors.error
+                }}>
+                  {Math.abs(percentageChange).toFixed(1)}%
+                </Typography>
+              </Box>
             )}
           </Box>
         </Box>
       </Box>
 
       {/* Mini Chart */}
-      <Box flexGrow={1} height="100%" sx={{ mt: -1 }}>
+      <Box sx={{ flexGrow: 1, height: '100%', mt: -1 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 10 }}
+              tick={{ fontSize: 10, fill: professionalColors.secondary }}
               axisLine={false}
               tickLine={false}
               tickMargin={8}
             />
             <YAxis
               width={28}
-              tick={{ fontSize: 10 }}
+              tick={{ fontSize: 10, fill: professionalColors.secondary }}
               domain={[0, 'dataMax + 10']}
               axisLine={false}
               tickLine={false}
@@ -324,11 +414,11 @@ const CompactFuelStats = () => {
             <Tooltip
               contentStyle={{
                 fontSize: 11,
-                borderRadius: 8,
-                padding: '6px 10px',
-                boxShadow: theme.shadows[3],
-                border: 'none',
-                background: theme.palette.background.paper
+                borderRadius: 12,
+                padding: '8px 12px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                border: `1px solid ${professionalColors.border}`,
+                background: professionalColors.surface
               }}
               formatter={(value) => [`${value} L`, 'Fuel Consumption']}
               labelFormatter={(value, payload) => {
@@ -342,15 +432,15 @@ const CompactFuelStats = () => {
             />
             <Bar
               dataKey="totalFuel"
-              barSize={16}
-              radius={[6, 6, 0, 0]}
+              barSize={18}
+              radius={[8, 8, 0, 0]}
               onMouseEnter={(data, index) => setHoveredBar(index)}
               onMouseLeave={() => setHoveredBar(null)}
             >
               {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={entry.totalFuel > 0 ? theme.palette.primary.main : theme.palette.action.disabled}
+                  fill={entry.totalFuel > 0 ? professionalColors.primary : alpha(professionalColors.secondary, 0.3)}
                   opacity={hoveredBar === index ? 1 : entry.totalFuel > 0 ? 0.85 : 0.4}
                   component={motion.rect}
                   animate={{
@@ -366,23 +456,23 @@ const CompactFuelStats = () => {
       </Box>
 
       {/* Footer */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mt: 0.5 }}>
-        <Typography variant="caption" color="text.secondary" sx={{
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+        <Typography variant="caption" color={professionalColors.secondary} sx={{
           fontSize: '0.65rem',
           opacity: 0.7
         }}>
           {timeRange === 'month' ? 'Last 6 months' : 'Last 6 days'}
         </Typography>
-        <Box display="flex" alignItems="center">
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box sx={{
-            width: 10,
-            height: 10,
-            bgcolor: theme.palette.primary.main,
-            borderRadius: '2px',
+            width: 12,
+            height: 12,
+            background: `linear-gradient(135deg, ${professionalColors.primary} 0%, ${alpha(professionalColors.primary, 0.8)} 100%)`,
+            borderRadius: '3px',
             mr: 0.5,
             opacity: 0.8
           }} />
-          <Typography variant="caption" color="text.secondary" sx={{
+          <Typography variant="caption" color={professionalColors.secondary} sx={{
             fontSize: '0.65rem',
             opacity: 0.7
           }}>
@@ -390,7 +480,7 @@ const CompactFuelStats = () => {
           </Typography>
         </Box>
       </Box>
-    </AnimatedPaper>
+    </StyledPaper>
   );
 };
 

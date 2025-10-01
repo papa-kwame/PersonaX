@@ -219,13 +219,10 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
         api.get('/api/Auth/users'),
       ]);
 
-      console.log('Users API response:', usersResponse.data); // Debug user structure
-
       setFuelLogs(logsResponse.data);
       setVehicles(vehiclesResponse.data);
       setUsers(usersResponse.data);
     } catch (error) {
-      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -326,16 +323,17 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
       fetchData();
       handleCloseDialog();
     } catch (error) {
-      console.error('Error saving fuel log:', error);
     }
   };
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/api/FuelLogs/${id}`);
+      // Find the log to get the userId
+      const log = fuelLogs.find(l => l.id === id);
+      const userId = log?.userId || 'admin';
+      await api.delete(`/api/FuelLogs/${id}?userId=${userId}`);
       fetchData();
     } catch (error) {
-      console.error('Error deleting fuel log:', error);
     }
   };
 
@@ -539,7 +537,6 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
       const response = await api.get(`/api/FuelLogs/stats/${vehicleId}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching vehicle stats:', error);
       return null;
     }
   };
@@ -770,8 +767,8 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                 fontWeight: 400
               }}>
                 Track and manage vehicle fuel consumption
-              </Typography>
-            </Box>
+            </Typography>
+          </Box>
           </Box>
           
           <Stack direction="row" spacing={2} sx={{ 
@@ -814,8 +811,8 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
               }} 
               onClick={() => setOpenExportModal(true)}
             >
-              Export
-            </Button>
+                Export
+              </Button>
             
             <Button
               variant="outlined"
@@ -837,23 +834,23 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
               Analytics
             </Button>
             
-            <IconButton
-              onClick={fetchData}
-              sx={{
+              <IconButton
+                onClick={fetchData}
+                sx={{
                 border: '1px solid #d1d5db',
                 borderRadius: '6px',
                 background: '#ffffff',
                 color: '#6b7280',
                 p: 1.5,
-                '&:hover': {
+                  '&:hover': {
                   backgroundColor: '#f9fafb',
                   color: '#374151',
                   borderColor: '#9ca3af'
-                },
-              }}
-            >
-              <Refresh />
-            </IconButton>
+                  },
+                }}
+              >
+                <Refresh />
+              </IconButton>
           </Stack>
         </Box>
 
@@ -863,7 +860,7 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
             alignItems: 'center',
             gap: 3,
             p: 3,
-            mb: 4,
+          mb: 4,
             borderRadius: '8px',
             background: '#ffffff',
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
@@ -872,16 +869,16 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
             flexDirection: { xs: 'column', md: 'row' },
           }}
         >
-          <TextField
-            variant="outlined"
+              <TextField
+                variant="outlined"
             placeholder="Search fuel logs..."
             size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
                   <Search sx={{ color: '#6b7280' }} />
-                </InputAdornment>
-              ),
+                    </InputAdornment>
+                  ),
               sx: { 
                 borderRadius: '6px', 
                 background: '#ffffff',
@@ -896,17 +893,17 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
               '& .MuiInputBase-root': {
                 height: '40px'
               }
-            }}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+                }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
           
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <InputLabel sx={{ color: '#6b7280' }}>Vehicle</InputLabel>
-            <Select
-              value={filters.vehicleId}
-              onChange={(e) => handleFilterChange('vehicleId', e.target.value)}
-              label="Vehicle"
+                <Select
+                  value={filters.vehicleId}
+                  onChange={(e) => handleFilterChange('vehicleId', e.target.value)}
+                  label="Vehicle"
               sx={{ 
                 borderRadius: '6px',
                 background: '#ffffff',
@@ -915,22 +912,22 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                 '&:hover fieldset': { borderColor: '#9ca3af' },
                 '&.Mui-focused fieldset': { borderColor: '#374151' }
               }}
-            >
-              <MenuItem value="">All Vehicles</MenuItem>
-              {vehicles.map((vehicle) => (
-                <MenuItem key={vehicle.id} value={vehicle.id}>
+                >
+                  <MenuItem value="">All Vehicles</MenuItem>
+                  {vehicles.map((vehicle) => (
+                    <MenuItem key={vehicle.id} value={vehicle.id}>
                   {vehicle.make} {vehicle.model} ({vehicle.licensePlate})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
           
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel sx={{ color: '#6b7280' }}>User</InputLabel>
-            <Select
-              value={filters.userId}
-              onChange={(e) => handleFilterChange('userId', e.target.value)}
-              label="User"
+                <Select
+                  value={filters.userId}
+                  onChange={(e) => handleFilterChange('userId', e.target.value)}
+                  label="User"
               sx={{ 
                 borderRadius: '6px',
                 background: '#ffffff',
@@ -939,18 +936,18 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                 '&:hover fieldset': { borderColor: '#9ca3af' },
                 '&.Mui-focused fieldset': { borderColor: '#374151' }
               }}
-            >
-              <MenuItem value="">All Users</MenuItem>
-              {users.map((user) => (
-                <MenuItem key={user.id} value={user.id}>
+                >
+                  <MenuItem value="">All Users</MenuItem>
+                  {users.map((user) => (
+                    <MenuItem key={user.id} value={user.id}>
                   {user.userName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
           
-          <Button
-            variant="outlined"
+              <Button
+                variant="outlined"
             startIcon={<Search />}
             onClick={applyFilters}
             sx={{ 
@@ -1063,8 +1060,8 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                 }}
               >
                <TableContainer sx={{ borderRadius: '8px', overflow: 'hidden' }}>
-                 <Table stickyHeader>
-                   <TableHead>
+  <Table stickyHeader>
+    <TableHead>
                      <TableRow sx={{ backgroundColor: '#f9fafb' }}>
                        <StyledTableCell sx={{ 
                          fontWeight: 600, 
@@ -1122,8 +1119,8 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                        }}>
                          Actions
                        </StyledTableCell>
-                     </TableRow>
-                   </TableHead>
+      </TableRow>
+    </TableHead>
     <TableBody>
       {filteredLogs.length > 0 ? (
         filteredLogs
@@ -1281,7 +1278,7 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                 mb: 1
               }}>
                 No fuel logs found
-              </Typography>
+            </Typography>
               <Typography sx={{ 
                 color: '#9ca3af', 
                 fontSize: '0.875rem' 
@@ -1369,8 +1366,6 @@ const AdminFuelLogger = ({ sidebarExpanded = true }) => {
                               </Typography>
 
                               <Divider sx={{ my: 1 }} />
-
-  
 
                               <Grid container spacing={1} sx={{ mb: 2 }}>
                                 <Grid item xs={4}>

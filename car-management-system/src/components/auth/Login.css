@@ -1,7 +1,7 @@
 /* Login.css */
 
 .login-page {
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    background: rgba(27, 43, 54, 0.97);
     min-height: 100vh;
     display: flex;
     align-items: center;

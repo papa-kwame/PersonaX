@@ -33,18 +33,30 @@ import {
   HowToReg as ApproveIcon,
   DirectionsCar as VehicleIcon,
   Person as PersonIcon,
-  History as HistoryIcon
+  History as HistoryIcon,
+  MonetizationOn as MonetizationOnIcon
 } from '@mui/icons-material';
+import CostDeliberationBadge from './CostDeliberationBadge';
+import CostDeliberationModal from './CostDeliberationModal';
+import DocumentUpload from '../new components/DocumentUpload';
 
 const RequestDetail = ({ requestId, onBack, showNotification, setLoading }) => {
   const [request, setRequest] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
-  const [comments, setComments] = useState('');
-  const [processDialogOpen, setProcessDialogOpen] = useState(false);
+  const [processStageDialog, setProcessStageDialog] = useState(false);
   const [currentAction, setCurrentAction] = useState('');
+  const [comments, setComments] = useState('');
+  const [processing, setProcessing] = useState(false);
+
+  // COST DELIBERATION STATE
+  const [costDeliberationModalOpen, setCostDeliberationModalOpen] = useState(false);
+
+  // DOCUMENT STATE
+  const [documents, setDocuments] = useState([]);
 
   useEffect(() => {
     fetchRequestDetails();
+    fetchDocuments();
   }, [requestId]);
 
   const fetchRequestDetails = async () => {
@@ -61,35 +73,152 @@ const RequestDetail = ({ requestId, onBack, showNotification, setLoading }) => {
     }
   };
 
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch(`/api/MaintenanceRequest/${requestId}/documents`);
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments(data.documents || []);
+      }
+    } catch (error) {
+      }
+  };
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
   const handleProcessStage = (action) => {
     setCurrentAction(action);
-    setProcessDialogOpen(true);
+    setProcessStageDialog(true);
   };
 
   const submitProcessStage = async () => {
-    setLoading(true);
     try {
-      const response = await fetch(`/api/MaintenanceRequest/${requestId}/process-stage`, {
+      setProcessing(true);
+      const authData = localStorage.getItem('authData');
+      if (!authData) throw new Error('No authentication data found');
+      
+      const { token, userId: authUserId } = JSON.parse(authData);
+      const userId = authUserId || localStorage.getItem('userId');
+
+      // Check if cost deliberation is required for Review stage
+      if (request?.currentStage === 'Review') {
+        const canProcessResponse = await fetch(`/api/MaintenanceRequest/${requestId}/can-process-review`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!canProcessResponse.ok) {
+          const errorData = await canProcessResponse.json();
+          showNotification(errorData.reason || 'Cost deliberation must be completed before processing Review stage', 'error');
+          setProcessing(false);
+          
+          // Highlight the cost deliberation section if cost deliberation is required
+          if (errorData.reason?.toLowerCase().includes('cost deliberation')) {
+            // Close the process stage dialog first
+            setProcessStageDialog(false);
+            setComments('');
+            
+            // Then highlight the cost deliberation section
+            setTimeout(() => {
+              highlightCostDeliberationCard();
+            }, 300); // Small delay to allow dialog to close smoothly
+          }
+          
+          return;
+        }
+      }
+
+      await fetch(`/api/MaintenanceRequest/${requestId}/process-stage?userId=${userId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ comments }),
+        body: JSON.stringify({
+          comments: comments
+        })
       });
-      if (!response.ok) throw new Error('Failed to process stage');
+
       showNotification('Stage processed successfully');
       fetchRequestDetails();
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification('Failed to process stage', 'error');
     } finally {
       setLoading(false);
-      setProcessDialogOpen(false);
+      setProcessStageDialog(false);
       setComments('');
     }
+  };
+
+  // COST DELIBERATION HANDLERS
+  const handleOpenCostDeliberation = () => {
+    setCostDeliberationModalOpen(true);
+  };
+
+  const highlightCostDeliberationCard = () => {
+    // Find the cost deliberation section in the RequestDetail component
+    const costDeliberationSection = document.querySelector('[data-section="cost-deliberation"]');
+    if (costDeliberationSection) {
+      // Scroll to the section
+      costDeliberationSection.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      });
+      
+      // Add highlight effect
+      costDeliberationSection.style.animation = 'costDeliberationHighlight 2s ease-in-out';
+      
+      // Remove animation after it completes
+      setTimeout(() => {
+        costDeliberationSection.style.animation = '';
+      }, 2000);
+    }
+  };
+
+  const handleCloseCostDeliberation = () => {
+    setCostDeliberationModalOpen(false);
+  };
+
+  const handleCostUpdated = async () => {
+    // Refresh request details to show updated cost information
+    await fetchRequestDetails();
+    showNotification('Cost deliberation updated successfully', 'success');
+  };
+
+  // DOCUMENT HANDLERS
+  const handleDocumentUpload = async () => {
+    await fetchDocuments();
+    showNotification('Document uploaded successfully', 'success');
+  };
+
+  const handleDocumentDownload = async (documentId, fileName) => {
+    try {
+      const response = await fetch(`/api/MaintenanceRequest/documents/${documentId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        showNotification('Failed to download document', 'error');
+      }
+    } catch (error) {
+      showNotification('Failed to download document', 'error');
+      }
   };
 
   const getStatusColor = (status) => {
@@ -190,11 +319,95 @@ const RequestDetail = ({ requestId, onBack, showNotification, setLoading }) => {
                 <Typography variant="body2" sx={{ mt: 1 }}>
                   <strong>Estimated Cost:</strong> ${request.estimatedCost}
                 </Typography>
+                
+                {/* COST DELIBERATION SECTION */}
+                <Box 
+                  data-section="cost-deliberation"
+                  sx={{ 
+                    mt: 2,
+                    '@keyframes costDeliberationHighlight': {
+                      '0%': {
+                        transform: 'scale(1)',
+                        boxShadow: '0 0 0 0 rgba(255, 193, 7, 0.7)',
+                        borderColor: '#ffc107'
+                      },
+                      '50%': {
+                        transform: 'scale(1.02)',
+                        boxShadow: '0 0 0 10px rgba(255, 193, 7, 0.3)',
+                        borderColor: '#ff9800'
+                      },
+                      '100%': {
+                        transform: 'scale(1)',
+                        boxShadow: '0 0 0 0 rgba(255, 193, 7, 0)',
+                        borderColor: 'divider'
+                      }
+                    }
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Cost Deliberation
+                  </Typography>
+                  
+                  {request.costDeliberationStatus ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <CostDeliberationBadge
+                        status={request.costDeliberationStatus}
+                        proposedCost={request.proposedCost}
+                        negotiatedCost={request.negotiatedCost}
+                        finalCost={request.finalCost}
+                        onClick={request.currentStage === 'Review' ? handleOpenCostDeliberation : undefined}
+                        showAmount={true}
+                      />
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      No cost deliberation started
+                    </Typography>
+                  )}
+                  
+                  {request.currentStage === 'Review' && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleOpenCostDeliberation}
+                      startIcon={<MonetizationOnIcon />}
+                      sx={{
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        height: 32,
+                        px: 2,
+                        py: 0.5,
+                        borderRadius: '6px',
+                        textTransform: 'none',
+                        letterSpacing: '0.3px',
+                        '&:hover': {
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 2px 8px rgba(25, 118, 210, 0.2)'
+                        },
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}
+                    >
+                      {request.costDeliberationStatus ? 'Manage Cost Deliberation' : 'Start Cost Deliberation'}
+                    </Button>
+                  )}
+                </Box>
               </Grid>
 
               <Grid item xs={12}>
                 <Typography variant="subtitle1">Admin Comments</Typography>
                 <Typography sx={{ mt: 1 }}>{request.adminComments || 'No comments'}</Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" sx={{ mb: 2 }}>Documents</Typography>
+                <DocumentUpload
+                  requestId={requestId}
+                  userId={userId}
+                  token={token}
+                  documents={documents}
+                  onDocumentUpload={handleDocumentUpload}
+                  onDocumentDownload={handleDocumentDownload}
+                />
               </Grid>
             </Grid>
           </Paper>
@@ -289,7 +502,8 @@ const RequestDetail = ({ requestId, onBack, showNotification, setLoading }) => {
         </Grid>
       </Grid>
 
-      <Dialog open={processDialogOpen} onClose={() => setProcessDialogOpen(false)}>
+      {/* PROCESS STAGE DIALOG */}
+      <Dialog open={processStageDialog} onClose={() => setProcessStageDialog(false)}>
         <DialogTitle>Process {currentAction}</DialogTitle>
         <DialogContent>
           <TextField
@@ -306,12 +520,22 @@ const RequestDetail = ({ requestId, onBack, showNotification, setLoading }) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setProcessDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setProcessStageDialog(false)}>Cancel</Button>
           <Button onClick={submitProcessStage} variant="contained" color="primary">
             Submit
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* COST DELIBERATION MODAL */}
+      <CostDeliberationModal
+        open={costDeliberationModalOpen}
+        onClose={handleCloseCostDeliberation}
+        requestId={requestId}
+        currentStage={request?.currentStage}
+        currentUserId={userId}
+        onCostUpdated={handleCostUpdated}
+      />
     </Box>
   );
 };

@@ -15,7 +15,6 @@ import UpcomingMaintenanceWidget from "../components/dashboard/UpcomingMaintenan
 import UserActivityWidget from "../components/dashboard/UserActivityWidget";
 import DocumentExpiryWidget from "../components/dashboard/DocumentExpiryWidget";
 
-
 const api = axios.create({
   baseURL: 'https://localhost:7092/api',
   headers: {
@@ -38,7 +37,11 @@ export default function Dashboard({ sidebarExpanded = true }) {
   const { userId } = useAuth();
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
+      if (!isMounted) return;
+      
       setLoading(true);
       setError(null);
 
@@ -49,6 +52,8 @@ export default function Dashboard({ sidebarExpanded = true }) {
           api.get("/VehicleAssignment/AllAssignments"),
           api.get("/MaintenanceRequest/active-requests"),
         ]);
+
+        if (!isMounted) return;
 
         const vehiclesData = vehiclesRes.data || [];
         const availableVehicles = vehiclesData.filter(v => v.status === 'Available').length;
@@ -63,13 +68,18 @@ export default function Dashboard({ sidebarExpanded = true }) {
 
         setLoading(false);
       } catch (error) {
-        console.error("API Error:", error);
+        if (!isMounted) return;
         setError(error.response?.data?.title || error.message);
         setLoading(false);
       }
     };
 
     fetchData();
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const refreshData = () => {

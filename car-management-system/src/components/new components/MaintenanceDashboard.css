@@ -17,6 +17,11 @@
   --shadow: 0 8px 32px rgba(37, 99, 235, 0.13);
 }
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 body, .maintenance-dashboard {
   background: var(--bg);
   font-family: 'Inter', system-ui, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

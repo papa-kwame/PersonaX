@@ -25,10 +25,8 @@ const FuelExpensesDashboard = () => {
       try {
         const response = await api.get('/api/fuellogs/stats/monthly-summary');
         setData(response.data);
-        console.log('Monthly summary:', response.data);
-      } catch (error) {
-        console.error('Failed to fetch summary:', error.message);
-      } finally {
+        } catch (error) {
+        } finally {
         setLoading(false);
       }
     };

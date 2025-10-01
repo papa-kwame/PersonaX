@@ -155,7 +155,7 @@ export default function Sidebar({ onSidebarToggle }) {
           borderRight: '1px solid #333333',
           transition: 'width 0.3s ease-in-out',
           overflowX: 'hidden',
-          boxShadow: '2px 0 12px rgba(0, 0, 0, 0.4)',
+          boxShadow: '2px 0 12px rgba(0, 0, 0, 0.79)',
           display: 'flex',
           flexDirection: 'column',
           position: 'fixed',
@@ -175,12 +175,15 @@ export default function Sidebar({ onSidebarToggle }) {
         height: 60,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: sidebarExpanded ? 'space-between' : 'center',
         px: 2,
         borderBottom: '1px solid #333333',
         flexShrink: 0,
         backgroundColor: '#111111'
       }}>
+        {sidebarExpanded && (
+          <Typography variant="h7" component="div" sx={{ flexGrow: 1 }}>PersonaXFleet</Typography>
+        )}
         <IconButton
           onClick={toggleSidebar}
                   sx={{
@@ -197,13 +200,13 @@ export default function Sidebar({ onSidebarToggle }) {
           }}
         >
           <i className={sidebarExpanded ? "bi bi-layout-sidebar-inset-reverse" : "bi bi-layout-sidebar-inset"} style={{ fontSize: '1.1rem' }}></i>
-        </IconButton>
+        </IconButton> 
       </Box>
 
       {/* Navigation Items */}
       <List sx={{ px: 1.5, py: 2, flexGrow: 1, overflowY: 'auto' }}>
-        {menuItems.map((item) =>
-          item.roles.some(role => hasRole(role)) && (
+          {menuItems.map((item) =>
+            item.roles.some(role => hasRole(role)) && (
             <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
               <Tooltip
                 title={!sidebarExpanded ? item.label : ''}
@@ -261,14 +264,14 @@ export default function Sidebar({ onSidebarToggle }) {
                   )}
                 </ListItemButton>
               </Tooltip>
-            </ListItem>
-          )
-        )}
+              </ListItem>
+            )
+          )}
 
-        {shouldShowRequestsMenu && (
-          <>
+          {shouldShowRequestsMenu && (
+            <>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
+                <ListItemButton
                 onClick={(event) => {
                   if (!sidebarExpanded) {
                     setFlyoutAnchor(event.currentTarget);
@@ -278,13 +281,13 @@ export default function Sidebar({ onSidebarToggle }) {
                     setMaintenanceOpen(!maintenanceOpen);
                   }
                 }}
-                sx={{
+                  sx={{
                   height: 52,
                   borderRadius: '12px',
                   mx: 0.5,
                   backgroundColor: maintenanceOpen ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                   border: maintenanceOpen ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
-                  '&:hover': {
+                    '&:hover': {
                     backgroundColor: maintenanceOpen ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
                     borderColor: maintenanceOpen ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
                     transform: 'translateX(8px) translateY(-2px) scale(1.05) rotate(1deg)',
@@ -310,8 +313,8 @@ export default function Sidebar({ onSidebarToggle }) {
                     justifyContent: 'center'
                   })
                 }}>
-                  <BuildIcon />
-                </ListItemIcon>
+                    <BuildIcon />
+                  </ListItemIcon>
                 {sidebarExpanded && (
                   <>
                     <ListItemText
@@ -332,14 +335,14 @@ export default function Sidebar({ onSidebarToggle }) {
                     )}
                   </>
                 )}
-              </ListItemButton>
-            </ListItem>
+                </ListItemButton>
+              </ListItem>
             {sidebarExpanded && (
               <Collapse in={maintenanceOpen}>
                 <List component="div" disablePadding>
                   {maintenanceMenuItems.map((subItem) => (
                     <ListItem key={subItem.path} disablePadding sx={{ mb: 0.5 }}>
-                      <ListItemButton
+                        <ListItemButton
                         onClick={() => handleNavigation(subItem.path)}
                         sx={{
                           height: 44,
@@ -381,19 +384,19 @@ export default function Sidebar({ onSidebarToggle }) {
                             }
                           }}
                         />
-                      </ListItemButton>
-                    </ListItem>
+                        </ListItemButton>
+                      </ListItem>
                   ))}
                 </List>
               </Collapse>
             )}
-          </>
-        )}
+            </>
+          )}
 
-        {hasRole('Admin') && (
-          <>
+          {hasRole('Admin') && (
+            <>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
+                <ListItemButton
                 onClick={(event) => {
                   if (!sidebarExpanded) {
                     setFlyoutAnchor(event.currentTarget);
@@ -403,13 +406,13 @@ export default function Sidebar({ onSidebarToggle }) {
                     setAdminOpen(!adminOpen);
                   }
                 }}
-                sx={{
+                  sx={{
                   height: 52,
                   borderRadius: '12px',
                   mx: 0.5,
                   backgroundColor: adminOpen ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                   border: adminOpen ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
-                  '&:hover': {
+                    '&:hover': {
                     backgroundColor: adminOpen ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
                     borderColor: adminOpen ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
                     transform: 'translateX(8px) translateY(-2px) scale(1.05) rotate(1deg)',
@@ -435,8 +438,8 @@ export default function Sidebar({ onSidebarToggle }) {
                     justifyContent: 'center'
                   })
                 }}>
-                  <SecurityIcon />
-                </ListItemIcon>
+                    <SecurityIcon />
+                  </ListItemIcon>
                 {sidebarExpanded && (
                   <>
                     <ListItemText
@@ -457,14 +460,14 @@ export default function Sidebar({ onSidebarToggle }) {
                     )}
                   </>
                 )}
-              </ListItemButton>
-            </ListItem>
+                </ListItemButton>
+              </ListItem>
             {sidebarExpanded && (
               <Collapse in={adminOpen}>
                 <List component="div" disablePadding>
                   {adminMenuItems.map((subItem) => (
                     <ListItem key={subItem.path} disablePadding sx={{ mb: 0.5 }}>
-                      <ListItemButton
+                        <ListItemButton
                         onClick={() => handleNavigation(subItem.path)}
                         sx={{
                           height: 44,
@@ -505,15 +508,15 @@ export default function Sidebar({ onSidebarToggle }) {
                             }
                           }}
                         />
-                      </ListItemButton>
-                    </ListItem>
+                        </ListItemButton>
+                      </ListItem>
                   ))}
                 </List>
               </Collapse>
             )}
-          </>
-        )}
-      </List>
+            </>
+          )}
+        </List>
 
       {/* Flyout Menu for Collapsed Sidebar */}
       <Popper
@@ -562,7 +565,7 @@ export default function Sidebar({ onSidebarToggle }) {
               }}>
                 {flyoutItems.length > 0 && flyoutItems[0]?.label?.includes('Request') ? 'Requests' : 'Admin'}
               </Typography>
-            </Box>
+          </Box>
             <MenuList sx={{ py: 1 }}>
               {flyoutItems.map((subItem, index) => (
                 <MenuItem
@@ -595,7 +598,7 @@ export default function Sidebar({ onSidebarToggle }) {
                     height: 24
                   }}>
                     {subItem.icon}
-                  </Box>
+        </Box>
                   <Typography sx={{
                     fontSize: '0.875rem',
                     fontWeight: isActive(subItem.path) ? 600 : 500,

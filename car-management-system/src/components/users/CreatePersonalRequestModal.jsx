@@ -186,8 +186,7 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
         // Simulate API call
         setDepartments(['IT', 'Facilities', 'Transport', 'HR', 'Finance']);
       } catch (err) {
-        console.error('Failed to fetch departments:', err);
-      }
+        }
     };
 
     fetchDepartments();
@@ -223,7 +222,11 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
     setMessage(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const authData = localStorage.getItem('authData');
+      if (!authData) throw new Error('No authentication data found');
+      
+      const { token } = JSON.parse(authData);
+      if (!token) throw new Error('No authentication token found');
 
       if (!userId) {
         throw new Error('User ID not available');
@@ -273,8 +276,7 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
         errorMsg = err.message;
       }
       setError(errorMsg);
-      console.error('Submission error:', err);
-    } finally {
+      } finally {
       setSubmitting(false);
     }
   };
@@ -343,8 +345,6 @@ const CreatePersonalRequestModal = ({ open, onClose }) => {
                 </Select>
               </FormControl>
             </Grid>
-
-
 
           </Grid>
         );

@@ -20,10 +20,12 @@ import {
   InsertDriveFileRounded as InsertDriveFileRoundedIcon,
   DownloadRounded as DownloadRoundedIcon,
   CloudUploadRounded as CloudUploadRoundedIcon,
-  EventRounded as EventRoundedIcon
+  EventRounded as EventRoundedIcon,
+  Visibility as ViewIcon
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import api from '../services/api';
+import DocumentViewer from '../maintenance/DocumentViewer';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   borderRadius: '8px',
@@ -38,6 +40,8 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 const DocumentUpload = ({ requestId, userId, token, documents, onDocumentUpload, onDocumentDownload }) => {
   const theme = useTheme();
   const [uploading, setUploading] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
 
   const handleDocumentUpload = async (file) => {
     setUploading(true);
@@ -52,8 +56,7 @@ const DocumentUpload = ({ requestId, userId, token, documents, onDocumentUpload,
       });
       onDocumentUpload();
     } catch (error) {
-      console.error('Failed to upload document:', error);
-    } finally {
+      } finally {
       setUploading(false);
     }
   };
@@ -74,8 +77,17 @@ const DocumentUpload = ({ requestId, userId, token, documents, onDocumentUpload,
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Failed to download document:', error);
-    }
+      }
+  };
+
+  const handleViewDocument = (document) => {
+    setSelectedDocument(document);
+    setViewerOpen(true);
+  };
+
+  const handleCloseViewer = () => {
+    setViewerOpen(false);
+    setSelectedDocument(null);
   };
 
   return (
@@ -169,22 +181,41 @@ const DocumentUpload = ({ requestId, userId, token, documents, onDocumentUpload,
                     borderBottom: 'none'
                   }
                 }}
-                secondaryAction={
-                  <Tooltip title="Download">
-                    <IconButton
-                      edge="end"
-                      aria-label="download"
-                      onClick={() => handleDocumentDownload(document.documentId, document.fileName)}
-                      sx={{
-                        '&:hover': {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.1)
-                        }
-                      }}
-                    >
-                      <DownloadRoundedIcon color="primary" />
-                    </IconButton>
-                  </Tooltip>
-                }
+                 secondaryAction={
+                   <Box sx={{ display: 'flex', gap: 0.5 }}>
+                     <Tooltip title="View Document">
+                       <IconButton
+                         edge="end"
+                         aria-label="view"
+                         onClick={() => handleViewDocument(document)}
+                         sx={{
+                           backgroundColor: alpha(theme.palette.success.main, 0.1),
+                           mr: 1,
+                           '&:hover': {
+                             backgroundColor: alpha(theme.palette.success.main, 0.2),
+                             transform: 'scale(1.1)'
+                           }
+                         }}
+                       >
+                         <ViewIcon color="success" sx={{ fontSize: '1.2rem' }} />
+                       </IconButton>
+                     </Tooltip>
+                     <Tooltip title="Download">
+                       <IconButton
+                         edge="end"
+                         aria-label="download"
+                         onClick={() => handleDocumentDownload(document.documentId, document.fileName)}
+                         sx={{
+                           '&:hover': {
+                             backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                           }
+                         }}
+                       >
+                         <DownloadRoundedIcon color="primary" />
+                       </IconButton>
+                     </Tooltip>
+                   </Box>
+                 }
               >
                 <ListItemAvatar>
                   <Avatar sx={{
@@ -220,6 +251,16 @@ const DocumentUpload = ({ requestId, userId, token, documents, onDocumentUpload,
           </List>
         </StyledPaper>
       )}
+
+      {/* Document Viewer Modal */}
+      <DocumentViewer
+        open={viewerOpen}
+        onClose={handleCloseViewer}
+        documentId={selectedDocument?.documentId}
+        fileName={selectedDocument?.fileName}
+        token={token}
+        onDownload={handleDocumentDownload}
+      />
     </Box>
   );
 };

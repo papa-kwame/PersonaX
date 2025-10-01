@@ -28,12 +28,10 @@ export default function PendingApprovals({ approvals }) {
   };
 
   const handleApprove = (id) => {
-    console.log(`Approved approval ${id}`);
     // Add your approval logic here
   };
 
   const handleReject = (id) => {
-    console.log(`Rejected approval ${id}`);
     // Add your rejection logic here
   };
 

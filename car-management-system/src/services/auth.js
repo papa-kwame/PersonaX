@@ -4,7 +4,7 @@ const API_URL = 'https://localhost:7092/api';
 
 export const login = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/login`, { email, password }, {
+    const response = await axios.post(`${API_URL}/Auth/login`, { email, password }, {
       headers: { 'Content-Type': 'application/json' }
     });
 
@@ -31,7 +31,7 @@ export const login = async (email, password) => {
 
 export const verifyToken = async (token) => {
   try {
-    const response = await axios.get(`${API_URL}/auth/verify`, {
+    const response = await axios.get(`${API_URL}/Auth/verify`, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 5000
     });
@@ -40,24 +40,17 @@ export const verifyToken = async (token) => {
   } catch (error) {
     if (error.response) {
       if (error.response.status === 401) {
-        console.warn('Token expired or unauthorized');
-      } else {
-        console.error('Server error:', error.response.status, error.response.data);
+        // Token expired or unauthorized - handled by interceptor
       }
-    } else if (error.request) {
-      console.error('No response received:', error.request);
-    } else {
-      console.error('Axios config error:', error.message);
     }
 
     return false;
   }
 };
 
-
 export const register = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/register`, { email, password }, {
+    const response = await axios.post(`${API_URL}/Auth/register`, { email, password }, {
       headers: { 'Content-Type': 'application/json' }
     });
     return response.data;
@@ -85,4 +78,34 @@ export const getCurrentUserId = () => {
 export const getRouteRoles = () => {
   const authData = getAuthData();
   return authData?.routeRoles || null;
+};
+
+export const logout = async () => {
+  try {
+    const authData = getAuthData();
+    if (authData?.token) {
+      // Call the backend logout endpoint if it exists
+      try {
+        await axios.post(`${API_URL}/Auth/logout`, {}, {
+          headers: { Authorization: `Bearer ${authData.token}` },
+          timeout: 5000
+        });
+      } catch (error) {
+        // If backend logout fails, we still want to clear local storage
+      }
+    }
+    
+    // Clear local storage regardless of backend response
+    localStorage.removeItem('authData');
+    sessionStorage.removeItem('loginEmail');
+    sessionStorage.removeItem('loginPassword');
+    
+    return true;
+  } catch (error) {
+    // Even if there's an error, clear local storage
+    localStorage.removeItem('authData');
+    sessionStorage.removeItem('loginEmail');
+    sessionStorage.removeItem('loginPassword');
+    return false;
+  }
 };

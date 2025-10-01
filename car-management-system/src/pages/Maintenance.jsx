@@ -71,13 +71,18 @@ import {
   CloudUploadRounded as CloudUploadRoundedIcon,
   DownloadRounded as DownloadRoundedIcon,
   InsertDriveFileRounded as InsertDriveFileRoundedIcon,
+  Visibility as ViewIcon,
   AccessTimeRounded as AccessTimeRoundedIcon,
-  FiberManualRecord as FiberManualRecordIcon
+  FiberManualRecord as FiberManualRecordIcon,
+  AttachMoney as AttachMoneyIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { format, parseISO } from 'date-fns';
 import { formatDate, formatDateDisplay, safeFormat } from '../utils/dateUtils';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import CostDeliberationModal from '../components/maintenance/CostDeliberationModal';
+import CostDeliberationBadge from '../components/maintenance/CostDeliberationBadge';
+import DocumentViewer from '../components/maintenance/DocumentViewer';
 
 const stringToColor = (string) => {
   let hash = 0;
@@ -98,15 +103,33 @@ const stringToColor = (string) => {
 };
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-  borderRadius: '12px',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-  transition: 'all 0.3s ease',
+  borderRadius: '16px',
+  boxShadow: 'none',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   backgroundColor: '#ffffff',
+  border: '1px solid rgba(0,0,0,0.06)',
+  position: 'relative',
+  overflow: 'hidden',
   '&:hover': {
-    boxShadow: '0 6px 24px rgba(0,0,0,0.1)',
-    cursor: 'pointer'
+    transform: 'translateY(-2px)',
+    cursor: 'pointer',
+    borderColor: 'rgba(59, 130, 246, 0.2)'
   },
-  padding: theme.spacing(2),
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '3px',
+    background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4)',
+    opacity: 0,
+    transition: 'opacity 0.3s ease'
+  },
+  '&:hover::before': {
+    opacity: 1
+  },
+  padding: theme.spacing(3),
   marginBottom: theme.spacing(2)
 }));
 
@@ -270,6 +293,14 @@ const MaintenanceRequestApp = () => {
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectLoading, setRejectLoading] = useState(false);
 
+  // COST DELIBERATION STATE
+  const [costDeliberationModalOpen, setCostDeliberationModalOpen] = useState(false);
+  const [selectedRequestForCost, setSelectedRequestForCost] = useState(null);
+
+  // DOCUMENT VIEWER STATE
+  const [documentViewerOpen, setDocumentViewerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+
   const processStageButtonRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -356,10 +387,6 @@ const MaintenanceRequestApp = () => {
     setActiveTab('myRequests');
   }, []);
 
-  useEffect(() => {
-    console.log('Selected Request State:', selectedRequest);
-  }, [selectedRequest]);
-
   const fetchWorkflowStatus = async (requestId) => {
     try {
       const response = await api.get(`/api/MaintenanceRequest/${requestId}/workflow-status`, {
@@ -367,10 +394,8 @@ const MaintenanceRequestApp = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      console.log('Workflow Status:', response.data);
       setWorkflowStatus(response.data);
     } catch (error) {
-      console.error('Failed to fetch workflow status:', error);
       showNotification('Failed to fetch workflow status', 'error');
     }
   };
@@ -378,28 +403,20 @@ const MaintenanceRequestApp = () => {
   const fetchRequestComments = async (requestId) => {
     try {
       const response = await api.get(`/api/MaintenanceRequest/${requestId}/comments`);
-      console.log('Request Comments:', response.data.comments);
       setRequestComments(response.data.comments);
     } catch (error) {
-      console.error('Failed to fetch request comments:', error);
       showNotification('Failed to fetch request comments', 'error');
     }
   };
 
   const fetchRequestDocuments = async (requestId) => {
     try {
-      console.log('🔍 Fetching documents for request:', requestId);
       const url = `/api/MaintenanceRequest/${requestId}/documents`;
-      console.log('🔍 Full URL being called:', url);
       const response = await api.get(url, {
         params: { _t: Date.now() } // Cache busting
       });
-      console.log('📄 Documents response:', response.data);
       setRequestDocuments(response.data.documents || []);
-      console.log('📄 Set documents:', response.data.documents || []);
     } catch (error) {
-      console.error('❌ Failed to fetch request documents:', error);
-      console.error('❌ Error URL:', error.config?.url);
       setRequestDocuments([]);
     }
   };
@@ -506,6 +523,34 @@ const MaintenanceRequestApp = () => {
     if (!selectedRequest) return;
     setProcessStageLoading(true);
     try {
+      // Check if cost deliberation is required for Review stage
+      if (selectedRequest.currentStage === 'Review') {
+        const canProcessResponse = await api.get(`/api/MaintenanceRequest/${selectedRequest.id}/can-process-review`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        if (!canProcessResponse.data.canProcess) {
+          showNotification(canProcessResponse.data.reason, 'error');
+          setProcessStageLoading(false);
+          
+          // Highlight the cost deliberation card if cost deliberation is required
+          if (canProcessResponse.data.reason?.toLowerCase().includes('cost deliberation')) {
+            // Close the process stage modal first
+            setOpenStageDialog(false);
+            setStageComments('');
+            
+            // Then highlight the cost deliberation card
+            setTimeout(() => {
+              highlightCostDeliberationCard(selectedRequest.id);
+            }, 300); // Small delay to allow modal to close smoothly
+          }
+          
+          return;
+        }
+      }
+
       if (shouldSkipForRequestor(selectedRequest, userId)) {
         await api.post(`/api/MaintenanceRequest/${selectedRequest.id}/process-stage?userId=${userId}`, {
           comments: 'Automatically skipped'
@@ -561,11 +606,8 @@ const MaintenanceRequestApp = () => {
       return;
     }
 
-    if (request.currentStage !== 'Approve') {
-      showNotification('Only the final role can reject the request', 'error');
-      return;
-    }
-
+    // Allow rejection at any stage, not just 'Approve'
+    // The backend will handle the proper validation
     setRejectingRequestId(id);
     setRejectionReason('');
     setOpenRejectModal(true);
@@ -576,13 +618,23 @@ const MaintenanceRequestApp = () => {
       showNotification('Please enter a reason for rejection', 'error');
       return;
     }
+    
+    if (!rejectingRequestId) {
+      showNotification('No request selected for rejection', 'error');
+      return;
+    }
+    
     setRejectLoading(true);
-    // Debug logging for troubleshooting
-    console.log('Rejecting ID:', rejectingRequestId, 'User ID:', userId, 'Reason:', rejectionReason);
+    
     try {
-      await api.post(
+      // Rejecting request
+      const requestData = {
+        reason: rejectionReason
+      };
+
+      const response = await api.post(
         `/api/MaintenanceRequest/${rejectingRequestId}/reject?userId=${userId}`,
-        rejectionReason,
+        JSON.stringify(requestData), // Ensure it's properly JSON stringified
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -591,27 +643,60 @@ const MaintenanceRequestApp = () => {
         }
       );
 
-      showNotification('Request rejected successfully!');
+      showNotification('Request rejected successfully!', 'success');
 
-      const [requestsRes, pendingRes] = await Promise.all([
+      // Refresh data
+      const [requestsRes, pendingRes, myRequestsRes] = await Promise.all([
         api.get('/api/MaintenanceRequest/active-requests'),
         api.get(`/api/MaintenanceRequest/my-pending-actions?userId=${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        api.get(`/api/MaintenanceRequest/my-requests?userId=${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
         })
       ]);
 
       setRequests(requestsRes.data.map(formatRequestData));
       setPendingActions(pendingRes.data.map(formatRequestData));
+      setMyRequests(myRequestsRes.data.map(formatRequestData));
+      
+      // Close modal and reset state
       setOpenRejectModal(false);
       setRejectionReason('');
       setRejectingRequestId(null);
+      
     } catch (error) {
-      // Enhanced error notification for easier debugging
-      const errorMessage = `Status: ${error.response?.status || 'N/A'} | ${error.response?.data?.title || error.response?.data?.message || error.message || 'Failed to reject request'}`;
+      
+      let errorMessage = 'Failed to reject request';
+      
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        switch (status) {
+          case 400:
+            errorMessage = data?.message || data?.title || 'Invalid request data';
+            break;
+          case 401:
+            errorMessage = 'You are not authorized to perform this action';
+            break;
+          case 403:
+            errorMessage = 'You do not have permission to reject this request';
+            break;
+          case 404:
+            errorMessage = 'Request not found';
+            break;
+          case 409:
+            errorMessage = 'Request has already been processed';
+            break;
+          default:
+            errorMessage = data?.message || data?.title || `Server error (${status})`;
+        }
+      } else if (error.request) {
+        errorMessage = 'Network error - please check your connection';
+      }
+      
       showNotification(errorMessage, 'error');
-      console.error('Reject API error:', error);
     } finally {
       setRejectLoading(false);
     }
@@ -666,11 +751,130 @@ const MaintenanceRequestApp = () => {
   };
 
   const showNotification = (message, severity = 'success') => {
-    setNotification({ open: true, message, severity });
+    setNotification({ ...notification, open: true, message, severity });
   };
 
   const handleCloseNotification = () => {
     setNotification(prev => ({ ...prev, open: false }));
+  };
+
+  // COST DELIBERATION HELPER FUNCTIONS
+  const getCostDeliberationDisplayText = (status, proposedCost, negotiatedCost) => {
+    switch (status) {
+      case 'Pending':
+        return 'In Progress';
+      case 'MechanicsSelected':
+        return 'Mechanics Selected';
+      case 'Proposed':
+        return proposedCost ? `$${proposedCost.toFixed(2)}` : 'Proposed';
+      case 'Negotiating':
+        return negotiatedCost ? `$${negotiatedCost.toFixed(2)}` : 'Negotiating';
+      case 'Agreed':
+        return 'Agreed';
+      default:
+        return 'In Progress';
+    }
+  };
+
+  const getCostDeliberationColor = (status, finalCost) => {
+    if (finalCost) return 'success.main';
+    
+    switch (status) {
+      case 'Pending':
+      case 'MechanicsSelected':
+        return 'warning.main';
+      case 'Proposed':
+      case 'Negotiating':
+        return 'info.main';
+      case 'Agreed':
+        return 'success.main';
+      default:
+        return 'text.secondary';
+    }
+  };
+
+  const getCostDeliberationSubtitle = (status) => {
+    switch (status) {
+      case 'Pending':
+        return 'Selecting mechanics...';
+      case 'MechanicsSelected':
+        return 'Waiting for proposals';
+      case 'Proposed':
+        return 'Reviewing proposals';
+      case 'Negotiating':
+        return 'Negotiating terms';
+      case 'Agreed':
+        return 'Cost finalized';
+      default:
+        return 'In progress';
+    }
+  };
+
+  // COST DELIBERATION HANDLERS
+  const handleOpenCostDeliberation = (request) => {
+    setSelectedRequestForCost(request);
+    setCostDeliberationModalOpen(true);
+  };
+
+  const highlightCostDeliberationCard = (requestId) => {
+    // Find the cost deliberation card for this request
+    const cardElement = document.querySelector(`[data-request-id="${requestId}"][data-card-type="cost-deliberation"]`);
+    if (cardElement) {
+      // Scroll to the card
+      cardElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      });
+      
+      // Add highlight effect
+      cardElement.style.animation = 'costDeliberationHighlight 2s ease-in-out';
+      
+      // Remove animation after it completes
+      setTimeout(() => {
+        cardElement.style.animation = '';
+      }, 2000);
+    }
+  };
+
+  const handleCloseCostDeliberation = () => {
+    setCostDeliberationModalOpen(false);
+    setSelectedRequestForCost(null);
+  };
+
+  // DOCUMENT VIEWER HANDLERS
+  const handleViewDocument = (document) => {
+    setSelectedDocument(document);
+    setDocumentViewerOpen(true);
+  };
+
+  const handleCloseDocumentViewer = () => {
+    setDocumentViewerOpen(false);
+    setSelectedDocument(null);
+  };
+
+  const handleCostUpdated = async () => {
+    // Refresh the data to show updated cost information
+    try {
+      const [requestsRes, myRequestsRes] = await Promise.all([
+        api.get('/api/MaintenanceRequest/active-requests'),
+        api.get(`/api/MaintenanceRequest/my-requests?userId=${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+
+      setRequests(requestsRes.data.map(formatRequestData));
+      setMyRequests(myRequestsRes.data.map(formatRequestData));
+
+      const pendingRes = await api.get(`/api/MaintenanceRequest/my-pending-actions?userId=${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPendingActions(pendingRes.data.map(formatRequestData));
+
+      showNotification('Cost deliberation updated successfully', 'success');
+    } catch (error) {
+      showNotification('Failed to refresh data after cost update', 'error');
+    }
   };
 
   const getRequestTypeIcon = (type) => {
@@ -702,8 +906,30 @@ const MaintenanceRequestApp = () => {
   };
 
   const renderRequestDetails = (request) => {
+    
     return (
-      <Box sx={{ mt: 4, px: { xs: 2, md: 4 }, pb: 4 }}>
+      <Box sx={{ 
+        mt: 4, 
+        px: { xs: 2, md: 4 }, 
+        pb: 4,
+        '@keyframes costDeliberationHighlight': {
+          '0%': {
+            transform: 'scale(1)',
+            boxShadow: '0 0 0 0 rgba(255, 193, 7, 0.7)',
+            borderColor: '#ffc107'
+          },
+          '50%': {
+            transform: 'scale(1.02)',
+            boxShadow: '0 0 0 10px rgba(255, 193, 7, 0.3)',
+            borderColor: '#ff9800'
+          },
+          '100%': {
+            transform: 'scale(1)',
+            boxShadow: '0 0 0 0 rgba(255, 193, 7, 0)',
+            borderColor: 'divider'
+          }
+        }
+      }}>
         <Box sx={{
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
@@ -801,11 +1027,30 @@ const MaintenanceRequestApp = () => {
               label: 'Current Stage',
               value: request.currentStage,
               icon: <TimelineRoundedIcon />
+            },
+            {
+              label: 'Cost Deliberation',
+              value: request.finalCost 
+                ? `$${request.finalCost.toFixed(2)}` 
+                : request.costDeliberationStatus 
+                  ? getCostDeliberationDisplayText(request.costDeliberationStatus, request.proposedCost, request.negotiatedCost)
+                  : 'Not Started',
+              icon: <AttachMoneyIcon />,
+              color: getCostDeliberationColor(request.costDeliberationStatus, request.finalCost),
+              clickable: true,
+              onClick: (e) => {
+                e.stopPropagation();
+                handleOpenCostDeliberation(request);
+              },
+              subtitle: request.costDeliberationStatus ? getCostDeliberationSubtitle(request.costDeliberationStatus) : null
             }
           ].map((item, index) => (
             <StyledPaper
               key={index}
               elevation={0}
+              onClick={item.clickable ? item.onClick : undefined}
+              data-request-id={request.id}
+              data-card-type={item.label === 'Cost Deliberation' ? 'cost-deliberation' : 'other'}
               sx={{
                 p: 2.5,
                 borderRadius: 2,
@@ -813,9 +1058,18 @@ const MaintenanceRequestApp = () => {
                 border: '1px solid',
                 borderColor: 'divider',
                 transition: 'all 0.2s ease',
+                cursor: item.clickable ? 'pointer' : 'default',
                 '&:hover': {
                   transform: 'translateY(-2px)',
-                  boxShadow: theme.shadows[2]
+                  boxShadow: theme.shadows[2],
+                  ...(item.clickable && {
+                    borderColor: 'primary.main',
+                    backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                    '& .clickable-icon': {
+                      opacity: 1,
+                      transform: 'scale(1.1)'
+                    }
+                  })
                 }
               }}
             >
@@ -845,12 +1099,45 @@ const MaintenanceRequestApp = () => {
                       fontSize: '1.4rem'
                     }
                   })}
-                <Typography variant="body1" sx={{
-                  fontWeight: 500,
-                  color: item.color || 'text.primary'
-                }}>
-                  {item.value}
-                </Typography>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" sx={{
+                    fontWeight: 500,
+                    color: item.color || 'text.primary',
+                    fontSize: '1rem'
+                  }}>
+                    {item.value}
+                  </Typography>
+                  {item.subtitle && (
+                    <Typography variant="caption" sx={{
+                      color: 'text.secondary',
+                      fontSize: '0.7rem',
+                      fontWeight: 400,
+                      display: 'block',
+                      mt: 0.5
+                    }}>
+                      {item.subtitle}
+                    </Typography>
+                  )}
+                </Box>
+                {item.clickable && (
+                  <Box className="clickable-icon" sx={{
+                    ml: 'auto',
+                    opacity: 0.6,
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                  }}>
+                    <MonetizationOnIcon sx={{ 
+                      fontSize: '0.9rem',
+                      color: 'primary.main'
+                    }} />
+                  </Box>
+                )}
               </Box>
             </StyledPaper>
           ))}
@@ -917,7 +1204,6 @@ const MaintenanceRequestApp = () => {
           </StyledPaper>
         )}
 
-
         {(
           <StyledPaper elevation={0} sx={{
             mb: 4,
@@ -951,20 +1237,39 @@ const MaintenanceRequestApp = () => {
                       }
                     }}
                     secondaryAction={
-                      <Tooltip title="Download">
-                        <IconButton
-                          edge="end"
-                          aria-label="download"
-                          onClick={() => handleDocumentDownload(document.documentId, document.fileName)}
-                          sx={{
-                            '&:hover': {
-                              backgroundColor: alpha(theme.palette.primary.main, 0.1)
-                            }
-                          }}
-                        >
-                          <DownloadRoundedIcon color="primary" />
-                        </IconButton>
-                      </Tooltip>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <Tooltip title="View Document">
+                          <IconButton
+                            edge="end"
+                            aria-label="view"
+                            onClick={() => handleViewDocument(document)}
+                            sx={{
+                              backgroundColor: alpha(theme.palette.success.main, 0.1),
+                              mr: 1,
+                              '&:hover': {
+                                backgroundColor: alpha(theme.palette.success.main, 0.2),
+                                transform: 'scale(1.1)'
+                              }
+                            }}
+                          >
+                            <ViewIcon color="success" sx={{ fontSize: '1.2rem' }} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Download">
+                          <IconButton
+                            edge="end"
+                            aria-label="download"
+                            onClick={() => handleDocumentDownload(document.documentId, document.fileName)}
+                            sx={{
+                              '&:hover': {
+                                backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                              }
+                            }}
+                          >
+                            <DownloadRoundedIcon color="primary" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     }
                   >
                     <ListItemAvatar>
@@ -1507,10 +1812,18 @@ const MaintenanceRequestApp = () => {
                               borderColor: 'primary.light'
                             }
                           }}
-                        onClick={() => {
-                          console.log('Selected Request:', request);
+                        onClick={async () => {
                           setSelectedRequest(request);
                           setOpenDetailsDialog(true);
+                          
+                          // Fetch the latest request data to get updated cost deliberation info
+                          try {
+                            const response = await api.get(`/api/MaintenanceRequest/${request.id}`);
+                            const updatedRequest = formatRequestData(response.data);
+                            setSelectedRequest(updatedRequest);
+                          } catch (error) {
+                          }
+                          
                           fetchWorkflowStatus(request.id);
                           fetchRequestComments(request.id);
                           fetchRequestDocuments(request.id);
@@ -1534,90 +1847,145 @@ const MaintenanceRequestApp = () => {
                                 width: '100%'
                               }
                             }}>
-                              <Typography variant="subtitle1" sx={{
-                                fontWeight: 700,
-                                mb: 0.5,
-                                color: 'text.primary',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1
-                              }}>
-                                Maintenance Request
-                              </Typography>
+                               <Box sx={{
+                                 display: 'flex',
+                                 flexDirection: 'column',
+                                 gap: 1.5
+                               }}>
+                                 <Box sx={{
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: 1.5,
+                                   flexWrap: 'wrap'
+                                 }}>
+                                   <Typography variant="h6" sx={{
+                                     fontWeight: 700,
+                                     color: '#1f2937',
+                                     fontSize: '1.1rem',
+                                     lineHeight: 1.2
+                                   }}>
+                                     {request.vehicleMake} {request.vehicleModel}
+                                   </Typography>
+                                   <Box sx={{
+                                     width: 4,
+                                     height: 4,
+                                     borderRadius: '50%',
+                                     backgroundColor: '#9ca3af'
+                                   }} />
+                                   <Typography variant="body2" sx={{
+                                     color: '#6b7280',
+                                     fontSize: '0.9rem',
+                                     fontFamily: 'monospace',
+                                     fontWeight: 600,
+                                     backgroundColor: '#f3f4f6',
+                                     px: 1.5,
+                                     py: 0.5,
+                                     borderRadius: '6px',
+                                     border: '1px solid #e5e7eb'
+                                   }}>
+                                     {request.licensePlate}
+                                   </Typography>
+                                 </Box>
 
-                              <Box sx={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: 2,
-                                mt: 1.5,
-                                mb: 1.5,
-                                [theme.breakpoints.down('sm')]: {
-                                  flexDirection: 'column',
-                                  gap: 1
-                                }
-                              }}>
-                                <Typography variant="body2" sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                  color: 'text.secondary'
-                                }}>
-                              {request.vehicleMake} {request.vehicleModel} ({request.licensePlate})
-                            </Typography>
-
-                                <Typography variant="body2" sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                  color: 'text.secondary'
-                                }}>
-                                  {request.requestType} • {formatDateDisplay(request.requestDate, true)}
-                            </Typography>
-                          </Box>
+                                 <Box sx={{
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: 1.5,
+                                   flexWrap: 'wrap'
+                                 }}>
+                                   <Typography variant="body1" sx={{
+                                     color: '#374151',
+                                     fontSize: '1rem',
+                                     fontWeight: 600
+                                   }}>
+                                     {request.requestType}
+                                   </Typography>
+                                   <Box sx={{
+                                     width: 4,
+                                     height: 4,
+                                     borderRadius: '50%',
+                                     backgroundColor: '#9ca3af'
+                                   }} />
+                                   <Typography variant="body2" sx={{
+                                     color: '#6b7280',
+                                     fontSize: '0.9rem',
+                                     fontWeight: 500
+                                   }}>
+                                     {format(request.requestDate, 'dd MMM yyyy')}
+                                   </Typography>
+                                 </Box>
+                               </Box>
                             </Box>
 
                           <Box sx={{
                             display: 'flex',
-                              gap: 1.5,
-                              alignItems: 'center',
-                            flexWrap: 'wrap',
+                            flexDirection: 'column',
+                            gap: 1.5,
+                            alignItems: 'flex-end',
                             [theme.breakpoints.down('sm')]: {
-                                width: '100%',
-                                justifyContent: 'flex-start'
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              width: '100%',
+                              justifyContent: 'flex-start'
                             }
                           }}>
-                            <StatusBadge
-                              label={request.status}
-                              size="small"
-                              status={request.status}
-                              icon={getStatusIcon(request.status)}
+                            <Box sx={{
+                              display: 'flex',
+                              gap: 1,
+                              flexWrap: 'wrap',
+                              justifyContent: 'flex-end',
+                              [theme.breakpoints.down('sm')]: {
+                                justifyContent: 'flex-start'
+                              }
+                            }}>
+                              <StatusBadge
+                                label={request.status}
+                                size="small"
+                                status={request.status}
+                                icon={getStatusIcon(request.status)}
                                 sx={{
-                                  px: 1.5,
-                                  py: 0.5,
-                                  fontSize: '0.8rem'
+                                  px: 2,
+                                  py: 0.8,
+                                  fontSize: '0.8rem',
+                                  fontWeight: 600,
+                                  borderRadius: '20px',
+                                  height: 28,
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                                 }}
-                            />
-                            <PriorityBadge
-                              label={request.priority}
-                              size="small"
-                              priority={request.priority}
-                              icon={getPriorityIcon(request.priority)}
+                              />
+                              <PriorityBadge
+                                label={request.priority}
+                                size="small"
+                                priority={request.priority}
+                                icon={getPriorityIcon(request.priority)}
                                 sx={{
-                                  px: 1.5,
-                                  py: 0.5,
-                                  fontSize: '0.8rem'
+                                  px: 2,
+                                  py: 0.8,
+                                  fontSize: '0.8rem',
+                                  fontWeight: 600,
+                                  borderRadius: '20px',
+                                  height: 28,
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                                 }}
-                            />
+                              />
+                            </Box>
+                            
                             <Chip
                               label={request.currentStage}
                               size="small"
                               sx={{
-                                  fontWeight: 600,
-                                  fontSize: '0.75rem',
-                                  backgroundColor: alpha(theme.palette.info.main, 0.15),
-                                  color: theme.palette.info.dark,
-                                  border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
-                                  height: 24
+                                fontWeight: 600,
+                                fontSize: '0.8rem',
+                                backgroundColor: '#f0f9ff',
+                                color: '#0369a1',
+                                border: '1px solid #bae6fd',
+                                borderRadius: '20px',
+                                height: 28,
+                                px: 2,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                '& .MuiChip-label': {
+                                  px: 1
+                                }
                               }}
                             />
                           </Box>
@@ -1701,8 +2069,6 @@ const MaintenanceRequestApp = () => {
                         }
                       }}
                       onClick={() => {
-                        console.log('Selected Request (My Pending Actions):', request);
-                        console.log('Request ID (My Pending Actions):', request.id);
                         setSelectedRequest(request);
                         setOpenDetailsDialog(true);
                         fetchWorkflowStatus(request.id);
@@ -1728,46 +2094,74 @@ const MaintenanceRequestApp = () => {
                                 width: '100%'
                               }
                             }}>
-                              <Typography variant="subtitle1" sx={{
-                                fontWeight: 700,
-                                mb: 0.5,
-                                color: 'text.primary',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1
-                              }}>
-                                Maintenance Request
-                              </Typography>
+                               <Box sx={{
+                                 display: 'flex',
+                                 flexDirection: 'column',
+                                 gap: 1.5
+                               }}>
+                                 <Box sx={{
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: 1.5,
+                                   flexWrap: 'wrap'
+                                 }}>
+                                   <Typography variant="h6" sx={{
+                                     fontWeight: 700,
+                                     color: '#1f2937',
+                                     fontSize: '1.1rem',
+                                     lineHeight: 1.2
+                                   }}>
+                                     {request.vehicleMake} {request.vehicleModel}
+                                   </Typography>
+                                   <Box sx={{
+                                     width: 4,
+                                     height: 4,
+                                     borderRadius: '50%',
+                                     backgroundColor: '#9ca3af'
+                                   }} />
+                                   <Typography variant="body2" sx={{
+                                     color: '#6b7280',
+                                     fontSize: '0.9rem',
+                                     fontFamily: 'monospace',
+                                     fontWeight: 600,
+                                     backgroundColor: '#f3f4f6',
+                                     px: 1.5,
+                                     py: 0.5,
+                                     borderRadius: '6px',
+                                     border: '1px solid #e5e7eb'
+                                   }}>
+                                     {request.licensePlate}
+                                   </Typography>
+                                 </Box>
 
-                              <Box sx={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: 2,
-                                mt: 1.5,
-                                mb: 1.5,
-                                [theme.breakpoints.down('sm')]: {
-                                  flexDirection: 'column',
-                                  gap: 1
-                                }
-                              }}>
-                                <Typography variant="body2" sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                  color: 'text.secondary'
-                                }}>
-                            {request.vehicleMake} {request.vehicleModel} ({request.licensePlate})
-                          </Typography>
-
-                                <Typography variant="body2" sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                  color: 'text.secondary'
-                                }}>
-                            {request.requestType} • {format(request.requestDate, 'PP')}
-                          </Typography>
-                        </Box>
+                                 <Box sx={{
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: 1.5,
+                                   flexWrap: 'wrap'
+                                 }}>
+                                   <Typography variant="body1" sx={{
+                                     color: '#374151',
+                                     fontSize: '1rem',
+                                     fontWeight: 600
+                                   }}>
+                                     {request.requestType}
+                                   </Typography>
+                                   <Box sx={{
+                                     width: 4,
+                                     height: 4,
+                                     borderRadius: '50%',
+                                     backgroundColor: '#9ca3af'
+                                   }} />
+                                   <Typography variant="body2" sx={{
+                                     color: '#6b7280',
+                                     fontSize: '0.9rem',
+                                     fontWeight: 500
+                                   }}>
+                                     {format(request.requestDate, 'dd MMM yyyy')}
+                                   </Typography>
+                                 </Box>
+                               </Box>
                             </Box>
 
                         <Box sx={{
@@ -1803,6 +2197,7 @@ const MaintenanceRequestApp = () => {
                                   height: 24
                             }}
                           />
+                          
                         </Box>
                       </Box>
                     </StyledPaper>
@@ -1883,7 +2278,6 @@ const MaintenanceRequestApp = () => {
                         }
                       }}
                       onClick={() => {
-                        console.log('Selected Request:', request);
                         setSelectedRequest(request);
                         setOpenDetailsDialog(true);
                         fetchWorkflowStatus(request.id);
@@ -1909,46 +2303,74 @@ const MaintenanceRequestApp = () => {
                                 width: '100%'
                               }
                             }}>
-                              <Typography variant="subtitle1" sx={{
-                                fontWeight: 700,
-                                mb: 0.5,
-                                color: 'text.primary',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1
-                              }}>
-                                Maintenance Request
-                              </Typography>
+                               <Box sx={{
+                                 display: 'flex',
+                                 flexDirection: 'column',
+                                 gap: 1.5
+                               }}>
+                                 <Box sx={{
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: 1.5,
+                                   flexWrap: 'wrap'
+                                 }}>
+                                   <Typography variant="h6" sx={{
+                                     fontWeight: 700,
+                                     color: '#1f2937',
+                                     fontSize: '1.1rem',
+                                     lineHeight: 1.2
+                                   }}>
+                                     {request.vehicleMake} {request.vehicleModel}
+                                   </Typography>
+                                   <Box sx={{
+                                     width: 4,
+                                     height: 4,
+                                     borderRadius: '50%',
+                                     backgroundColor: '#9ca3af'
+                                   }} />
+                                   <Typography variant="body2" sx={{
+                                     color: '#6b7280',
+                                     fontSize: '0.9rem',
+                                     fontFamily: 'monospace',
+                                     fontWeight: 600,
+                                     backgroundColor: '#f3f4f6',
+                                     px: 1.5,
+                                     py: 0.5,
+                                     borderRadius: '6px',
+                                     border: '1px solid #e5e7eb'
+                                   }}>
+                                     {request.licensePlate}
+                                   </Typography>
+                                 </Box>
 
-                              <Box sx={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: 2,
-                                mt: 1.5,
-                                mb: 1.5,
-                                [theme.breakpoints.down('sm')]: {
-                                  flexDirection: 'column',
-                                  gap: 1
-                                }
-                              }}>
-                                <Typography variant="body2" sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                  color: 'text.secondary'
-                                }}>
-                            {request.vehicleMake} {request.vehicleModel} ({request.licensePlate})
-                          </Typography>
-
-                                <Typography variant="body2" sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                  color: 'text.secondary'
-                                }}>
-                            {request.requestType} • {format(request.requestDate, 'PP')}
-                          </Typography>
-                        </Box>
+                                 <Box sx={{
+                                   display: 'flex',
+                                   alignItems: 'center',
+                                   gap: 1.5,
+                                   flexWrap: 'wrap'
+                                 }}>
+                                   <Typography variant="body1" sx={{
+                                     color: '#374151',
+                                     fontSize: '1rem',
+                                     fontWeight: 600
+                                   }}>
+                                     {request.requestType}
+                                   </Typography>
+                                   <Box sx={{
+                                     width: 4,
+                                     height: 4,
+                                     borderRadius: '50%',
+                                     backgroundColor: '#9ca3af'
+                                   }} />
+                                   <Typography variant="body2" sx={{
+                                     color: '#6b7280',
+                                     fontSize: '0.9rem',
+                                     fontWeight: 500
+                                   }}>
+                                     {format(request.requestDate, 'dd MMM yyyy')}
+                                   </Typography>
+                                 </Box>
+                               </Box>
                             </Box>
 
                         <Box sx={{
@@ -1995,6 +2417,7 @@ const MaintenanceRequestApp = () => {
                                   height: 24
                             }}
                           />
+                          
                         </Box>
                       </Box>
                     </StyledPaper>
@@ -2332,7 +2755,6 @@ const MaintenanceRequestApp = () => {
                       }
                     }}
                     onClick={() => {
-                      console.log('Selected Request:', request);
                       setSelectedRequest(request);
                       setOpenDetailsDialog(true);
                       fetchWorkflowStatus(request.id);
@@ -2466,6 +2888,26 @@ const MaintenanceRequestApp = () => {
             </StyledButton>
           </DialogActions>
         </Dialog>
+
+        {/* COST DELIBERATION MODAL */}
+        <CostDeliberationModal
+          open={costDeliberationModalOpen}
+          onClose={handleCloseCostDeliberation}
+          requestId={selectedRequestForCost?.id}
+          currentStage={selectedRequestForCost?.currentStage}
+          currentUserId={userId}
+          onCostUpdated={handleCostUpdated}
+        />
+
+        {/* DOCUMENT VIEWER MODAL */}
+        <DocumentViewer
+          open={documentViewerOpen}
+          onClose={handleCloseDocumentViewer}
+          documentId={selectedDocument?.documentId}
+          fileName={selectedDocument?.fileName}
+          token={token}
+          onDownload={handleDocumentDownload}
+        />
 
         <Snackbar
           open={notification.open}

@@ -45,7 +45,14 @@ import {
   Refresh,
   CheckCircle as CheckCircleIcon,
   Info as InfoIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
+  Download as DownloadIcon,
+  Close,
+  Upload,
+  Edit as EditIcon,
+  Edit as UploadIcon,
+
 } from '@mui/icons-material';
 import logo from "../../../src/assets/persol.png";
 import ico from "../../assets/icon-img.jpg";
@@ -58,6 +65,15 @@ export default function Navbar() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [anchorEl, setAnchorEl] = useState(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
+  const [licenseImageUrl, setLicenseImageUrl] = useState(null);
+  const [licenseLoading, setLicenseLoading] = useState(false);
+  const [licenseError, setLicenseError] = useState(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const { user, logout, userEmail, username, userId } = useAuth();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -71,6 +87,16 @@ export default function Navbar() {
   const [notifTab, setNotifTab] = useState('unread'); // 'unread' | 'read' | 'all'
   const [pendingActions, setPendingActions] = useState([]);
   const [toast, setToast] = useState({ open: false, message: '' });
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
+  const [avatarHover, setAvatarHover] = useState(false);
+  const [editPhotoModalOpen, setEditPhotoModalOpen] = useState(false);
+  const [deletePhotoModalOpen, setDeletePhotoModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+const handleEditPhotoClick = () => {
+  setEditPhotoModalOpen(true);
+  setAvatarHover(false);
+};
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -91,8 +117,7 @@ export default function Navbar() {
       setProfileModalOpen(true);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to fetch profile data');
-      console.error('Profile fetch error:', err);
-    } finally {
+      } finally {
       setLoading(false);
     }
   };
@@ -105,6 +130,150 @@ export default function Navbar() {
   const handleRetry = () => {
     setError(null);
     handleProfileClick();
+  };
+
+  const handleViewLicense = async () => {
+    setLicenseLoading(true);
+    setLicenseError(null);
+    try {
+      const response = await api.get(`/api/Auth/license-image/${userId}`, {
+        responseType: 'blob'
+      });
+      const imageUrl = URL.createObjectURL(response.data);
+      setLicenseImageUrl(imageUrl);
+      setLicenseModalOpen(true);
+    } catch (err) {
+      setLicenseError('No license image found or failed to load license');
+      } finally {
+      setLicenseLoading(false);
+    }
+  };
+
+  const fetchProfilePhoto = async () => {
+  try {
+    const response = await api.get(`/api/Auth/profile-image/${userId}`, {
+      responseType: 'blob',
+    });
+    const imageUrl = URL.createObjectURL(response.data);
+    setProfilePhotoUrl(imageUrl);
+  } catch (err) {
+    // 404 is expected when user has no profile picture
+    // Don't log this as an error to avoid console spam
+    if (err.response?.status !== 404) {
+      console.warn('Failed to fetch profile photo:', err.message);
+    }
+    // Keep profilePhotoUrl as null/undefined to show default avatar
+  }
+};
+
+    const handleViewProfilePhoto = async () => {
+    setLicenseLoading(true);
+    setLicenseError(null);
+    try {
+      const response = await api.get(`/api/Auth/profile-image/${userId}`, {
+        responseType: 'blob'
+      });
+      const imageUrl = URL.createObjectURL(response.data);
+      setLicenseImageUrl(imageUrl);
+      setLicenseModalOpen(true);
+    } catch (err) {
+      setLicenseError('No profile image found or failed to load license');
+      } finally {
+      setLicenseLoading(false);
+    }
+  };
+const handleDeletePhoto = async () => {
+  setIsDeleting(true);
+  try {
+    await api.delete(`/api/Auth/DeleteProfileImage?userId=${userId}`);
+    setProfilePhotoUrl(null);
+    setToast({ open: true, message: 'Profile photo deleted successfully.' });
+  } catch (err) {
+    setToast({ open: true, message: 'Failed to delete profile photo.' });
+  } finally {
+    setIsDeleting(false);
+    setDeletePhotoModalOpen(false);
+  }
+};
+
+  const handleLicenseModalClose = () => {
+    setLicenseModalOpen(false);
+    setLicenseError(null);
+    if (licenseImageUrl) {
+      URL.revokeObjectURL(licenseImageUrl);
+      setLicenseImageUrl(null);
+    }
+  };
+
+  const handleUploadClick = () => {
+    setUploadModalOpen(true);
+    setUploadError(null);
+    setUploadSuccess(false);
+    setSelectedFile(null);
+  };
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        setUploadError('Please select a valid file type (JPG, PNG, GIF, or PDF)');
+        return;
+      }
+      
+      // Validate file size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setUploadError('File size must be less than 10MB');
+        return;
+      }
+      
+      setSelectedFile(file);
+      setUploadError(null);
+    }
+  };
+
+  const handleUploadSubmit = async () => {
+    if (!selectedFile) {
+      setUploadError('Please select a file to upload');
+      return;
+    }
+
+    setUploadLoading(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('licenseImage', selectedFile);
+
+      await api.post(`/api/Auth/UpdateLicenseImage?userId=${userId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setUploadSuccess(true);
+      setUploadLoading(false);
+      
+      // Close upload modal and refresh license view
+      setTimeout(() => {
+        setUploadModalOpen(false);
+        setUploadSuccess(false);
+        setSelectedFile(null);
+        // Refresh the license view
+        handleViewLicense();
+      }, 2000);
+    } catch (err) {
+      setUploadError(err.response?.data?.message || 'Failed to upload license');
+      setUploadLoading(false);
+    }
+  };
+
+  const handleUploadModalClose = () => {
+    setUploadModalOpen(false);
+    setUploadError(null);
+    setUploadSuccess(false);
+    setSelectedFile(null);
   };
 
   const fetchNotifications = async () => {
@@ -214,6 +383,12 @@ export default function Navbar() {
   };
 
   React.useEffect(() => {
+  if (userId) {
+    fetchProfilePhoto();
+  }
+}, [userId]);
+
+  React.useEffect(() => {
     if (userId) fetchUnreadCount();
   }, [userId]);
 
@@ -244,7 +419,7 @@ export default function Navbar() {
         }}>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>
-              <img src={logo} alt="Logo" style={{ height: '40px' }} />
+              <img src={logo} alt="Logo" style={{ height: '25px' }} />
             </Link>
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -265,15 +440,16 @@ export default function Navbar() {
                 }
               }}
             >
-              <Avatar 
-                alt="Profile" 
-                src={ico} 
-                sx={{ 
-                  width: 55, 
-                  height: 55,
-                  backgroundColor: theme.palette.grey[700]
-                }} 
-              />
+            <Avatar
+              alt="Profile"
+              src={profilePhotoUrl}
+              sx={{
+                width: 40,
+                height: 40,
+                backgroundColor: theme.palette.grey[700]
+              }}
+            />
+
             </IconButton>
             <IconButton
               size="large"
@@ -340,16 +516,17 @@ export default function Navbar() {
                 alignItems: 'center',
                 backgroundColor: theme.palette.grey[100]
               }}>
-                <Avatar 
-                  alt="Profile" 
-                  src={ico} 
-                  sx={{ 
-                    width: 56, 
-                    height: 56, 
-                    mr: 2,
-                    border: `2px solid ${theme.palette.primary.main}`
-                  }} 
-                />
+<Avatar
+  alt="Profile"
+  src={profilePhotoUrl}
+  sx={{
+    width: 45,
+    height: 45,
+    backgroundColor: theme.palette.grey[700],
+    marginRight:2
+  }}
+/>
+
                 <Box>
                   <Typography variant="subtitle1" fontWeight="bold">
                     {username || "John Doe"}
@@ -383,17 +560,18 @@ export default function Navbar() {
                 sx={{
                   py: 1.5,
                   '&:hover': {
-                    backgroundColor: theme.palette.error.light,
+                    backgroundColor: theme.palette.dark,
                     color: theme.palette.error.contrastText
                   }
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                <ListItemIcon sx={{ minWidth: 40, color: 'red' }}>
                   <ExitToApp fontSize="small" />
                 </ListItemIcon>
                 <ListItemText 
                   primary="Logout" 
-                  primaryTypographyProps={{ variant: 'body1' }}
+                  primaryTypographyProps={{ variant: 'body1',color:'error' }}
+                
                 />
               </MenuItem>
             </Menu>
@@ -411,15 +589,24 @@ export default function Navbar() {
           alignItems: 'center',
           justifyContent: 'center',
           p: 2,
-          backdropFilter: 'blur(4px)'
+          backdropFilter: 'blur(8px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)'
         }}
       >
         <Card sx={{ 
           width: '100%', 
-          maxWidth: 600,
-          boxShadow: theme.shadows[10],
-          borderRadius: 3,
-          overflow: 'hidden'
+          maxWidth: 650,
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          transform: 'scale(1)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            transform: 'scale(1.02)',
+            boxShadow: '0 35px 80px rgba(0, 0, 0, 0.3)'
+          }
         }}>
           <CardContent sx={{ p: 0 }}>
             {loading ? (
@@ -465,40 +652,224 @@ export default function Navbar() {
             ) : profileData ? (
               <>
                 <Box sx={{ 
-                  p: 4,
+                  p: 5,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                  background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
                   color: 'white',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}>
-                  <Avatar
-                    sx={{
-                      width: 120,
-                      height: 120,
-                      fontSize: '3rem',
-                      mb: 3,
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      border: '3px solid white'
+                  {/* Background Pattern */}
+                  <Box sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                    pointerEvents: 'none'
+                  }} />
+                                    
+<Box
+  sx={{
+    position: 'relative',
+    display: 'inline-block',
+    '&:hover .avatar-actions': { display: 'flex' }
+  }}
+  onMouseEnter={() => setAvatarHover(true)}
+  onMouseLeave={() => setAvatarHover(false)}
+>
+  <Avatar
+    src={profilePhotoUrl}
+    sx={{
+      width: 140,
+      height: 140,
+      fontSize: '3.5rem',
+      mb: 3,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      border: '4px solid rgba(255,255,255,0.3)',
+      backdropFilter: 'blur(10px)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+      position: 'relative',
+      zIndex: 1,
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        transform: 'scale(1.05)',
+        borderColor: 'rgba(255,255,255,0.5)'
+      }
+    }}
+  >
+    {!profilePhotoUrl && profileData?.userName?.charAt(0).toUpperCase()}
+  </Avatar>
+
+  {/* Edit/Delete Actions (Hidden by default) */}
+  <Box
+    className="avatar-actions"
+    sx={{
+      position: 'absolute',
+      bottom: 0,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      display: avatarHover ? 'flex' : 'none',
+      gap: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      padding: '6px 12px',
+      borderRadius: '20px',
+      zIndex: 2,
+      transition: 'all 0.2s ease'
+    }}
+  >
+    <IconButton
+      size="small"
+      onClick={handleEditPhotoClick}
+      sx={{
+        color: 'white',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.3)' }
+      }}
+    >
+      <EditIcon fontSize="small" />
+    </IconButton>
+    <IconButton
+      size="small"
+      onClick={() => setDeletePhotoModalOpen(true)}
+      sx={{
+        color: 'white',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.3)' }
+      }}
+    >
+      <DeleteIcon fontSize="small" />
+    </IconButton>
+  </Box>
+</Box>
+<Modal
+  open={editPhotoModalOpen}
+  onClose={() => setEditPhotoModalOpen(false)}
+  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+>
+  <Card sx={{ width: 500, p: 3 }}>
+    <CardContent>
+      <Typography variant="h6" gutterBottom>
+        Upload New Profile Photo
+      </Typography>
+      <input
+        accept="image/*"
+        style={{ display: 'none' }}
+        id="edit-profile-photo-input"
+        type="file"
+        onChange={async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const formData = new FormData();
+          formData.append('ProfileImage', file);
+
+          try {
+            await api.put(`/api/Auth/UpdateProfileImage?userId=${userId}`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            const response = await api.get(`/api/Auth/profile-image/${userId}`, { responseType: 'blob' });
+            const imageUrl = URL.createObjectURL(response.data);
+            setProfilePhotoUrl(imageUrl);
+            setToast({ open: true, message: 'Profile photo updated successfully.' });
+          } catch (err) {
+            setToast({ open: true, message: 'Failed to update profile photo.' });
+          } finally {
+            setEditPhotoModalOpen(false);
+          }
+        }}
+      />
+      <label htmlFor="edit-profile-photo-input">
+        <Button variant="contained" component="span" startIcon={<UploadIcon />}>
+          Choose Photo
+        </Button>
+      </label>
+      <Button
+        variant="outlined"
+        sx={{ mt: 2 }}
+        onClick={() => setEditPhotoModalOpen(false)}
+      >
+        Cancel
+      </Button>
+    </CardContent>
+  </Card>
+</Modal>
+<Modal
+  open={deletePhotoModalOpen}
+  onClose={() => setDeletePhotoModalOpen(false)}
+  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+>
+  <Card sx={{ width: 400, p: 3 }}>
+    <CardContent>
+      <Typography variant="h6" gutterBottom>
+        Delete Profile Photo
+      </Typography>
+      <Typography variant="body2" color="text.secondary" paragraph>
+        Are you sure you want to delete your profile photo? This cannot be undone.
+      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={() => setDeletePhotoModalOpen(false)}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={handleDeletePhoto}
+          disabled={isDeleting}
+        >
+          {isDeleting ? <CircularProgress size={20} /> : 'Delete'}
+        </Button>
+      </Box>
+    </CardContent>
+  </Card>
+</Modal>
+
+                  <Typography 
+                    variant="h4" 
+                    component="h2" 
+                    gutterBottom 
+                    sx={{ 
+                      fontWeight: 700,
+                      position: 'relative',
+                      zIndex: 1,
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                      letterSpacing: '0.5px'
                     }}
                   >
-                    {profileData.userName?.charAt(0).toUpperCase()}
-                  </Avatar>
-                  <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
                     {profileData.userName}
                   </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+                  
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: 1.5, 
+                    justifyContent: 'center',
+                    position: 'relative',
+                    zIndex: 1
+                  }}>
                     {profileData.roles?.map((role) => (
                       <Chip
                         key={role}
                         label={role}
-                        color="default"
-                        size="small"
+                        size="medium"
                         sx={{ 
-                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          backgroundColor: 'rgba(255,255,255,0.15)',
                           color: 'white',
-                          fontWeight: 500
+                          fontWeight: 600,
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255,255,255,0.25)',
+                            transform: 'translateY(-1px)'
+                          },
+                          transition: 'all 0.2s ease'
                         }}
                       />
                     ))}
@@ -506,72 +877,605 @@ export default function Navbar() {
                 </Box>
 
                 <List sx={{ p: 0 }}>
-                  <ListItem sx={{ px: 3, py: 2 }}>
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      <EmailIcon color="primary" />
+                  <ListItem sx={{ 
+                    px: 4, 
+                    py: 3,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0,0,0,0.02)',
+                      transform: 'translateX(4px)'
+                    }
+                  }}>
+                    <ListItemIcon sx={{ 
+                      minWidth: 56,
+                      p: 1.5,
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                      color: theme.palette.primary.main,
+                      mr: 2
+                    }}>
+                      <EmailIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Email"
-                      primaryTypographyProps={{ variant: 'subtitle2', color: 'text.secondary' }}
+                      primary="Email Address"
+                      primaryTypographyProps={{ 
+                        variant: 'subtitle2', 
+                        color: 'text.secondary',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        mb: 0.5
+                      }}
                       secondary={profileData.email}
-                      secondaryTypographyProps={{ variant: 'body1' }}
+                      secondaryTypographyProps={{ 
+                        variant: 'body1',
+                        fontWeight: 500,
+                        color: 'text.primary'
+                      }}
                     />
                   </ListItem>
-                  <Divider component="li" />
+                  <Divider component="li" sx={{ mx: 4, opacity: 0.6 }} />
 
-                  <ListItem sx={{ px: 3, py: 2 }}>
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      <PhoneIcon color="primary" />
+                  <ListItem sx={{ 
+                    px: 4, 
+                    py: 3,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0,0,0,0.02)',
+                      transform: 'translateX(4px)'
+                    }
+                  }}>
+                    <ListItemIcon sx={{ 
+                      minWidth: 56,
+                      p: 1.5,
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(76, 175, 80, 0.08)',
+                      color: theme.palette.success.main,
+                      mr: 2
+                    }}>
+                      <PhoneIcon />
                     </ListItemIcon>
                     <ListItemText
                       primary="Phone Number"
-                      primaryTypographyProps={{ variant: 'subtitle2', color: 'text.secondary' }}
+                      primaryTypographyProps={{ 
+                        variant: 'subtitle2', 
+                        color: 'text.secondary',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        mb: 0.5
+                      }}
                       secondary={profileData.phoneNumber || 'Not provided'}
-                      secondaryTypographyProps={{ variant: 'body1' }}
+                      secondaryTypographyProps={{ 
+                        variant: 'body1',
+                        fontWeight: 500,
+                        color: 'text.primary'
+                      }}
                     />
                   </ListItem>
-                  <Divider component="li" />
+                  <Divider component="li" sx={{ mx: 4, opacity: 0.6 }} />
 
-                  <ListItem sx={{ px: 3, py: 2 }}>
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      <DepartmentIcon color="primary" />
+                  <ListItem sx={{ 
+                    px: 4, 
+                    py: 3,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0,0,0,0.02)',
+                      transform: 'translateX(4px)'
+                    }
+                  }}>
+                    <ListItemIcon sx={{ 
+                      minWidth: 56,
+                      p: 1.5,
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(156, 39, 176, 0.08)',
+                      color: theme.palette.secondary.main,
+                      mr: 2
+                    }}>
+                      <DepartmentIcon />
                     </ListItemIcon>
                     <ListItemText
                       primary="Department"
-                      primaryTypographyProps={{ variant: 'subtitle2', color: 'text.secondary' }}
+                      primaryTypographyProps={{ 
+                        variant: 'subtitle2', 
+                        color: 'text.secondary',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        mb: 0.5
+                      }}
                       secondary={profileData.department || 'Not specified'}
-                      secondaryTypographyProps={{ variant: 'body1' }}
+                      secondaryTypographyProps={{ 
+                        variant: 'body1',
+                        fontWeight: 500,
+                        color: 'text.primary'
+                      }}
                     />
                   </ListItem>
-                  <Divider component="li" />
+                  <Divider component="li" sx={{ mx: 4, opacity: 0.6 }} />
 
-                  <ListItem sx={{ px: 3, py: 2 }}>
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      {profileData.isLocked ? (
-                        <LockIcon color="error" />
-                      ) : (
-                        <LockOpenIcon color="success" />
-                      )}
+                  <ListItem sx={{ 
+                    px: 4, 
+                    py: 3,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0,0,0,0.02)',
+                      transform: 'translateX(4px)'
+                    }
+                  }}>
+                    <ListItemIcon sx={{ 
+                      minWidth: 56,
+                      p: 1.5,
+                      borderRadius: '12px',
+                      backgroundColor: profileData.isLocked ? 'rgba(244, 67, 54, 0.08)' : 'rgba(76, 175, 80, 0.08)',
+                      color: profileData.isLocked ? theme.palette.error.main : theme.palette.success.main,
+                      mr: 2
+                    }}>
+                      {profileData.isLocked ? <LockIcon /> : <LockOpenIcon />}
                     </ListItemIcon>
                     <ListItemText
                       primary="Account Status"
-                      primaryTypographyProps={{ variant: 'subtitle2', color: 'text.secondary' }}
+                      primaryTypographyProps={{ 
+                        variant: 'subtitle2', 
+                        color: 'text.secondary',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        mb: 0.5
+                      }}
                       secondary={
                         profileData.isLocked ? (
-                          <Typography component="span" color="error.main" variant="body1">
+                          <Typography component="span" color="error.main" variant="body1" fontWeight={600}>
                             Account is locked
                           </Typography>
                         ) : (
-                          <Typography component="span" color="success.main" variant="body1">
+                          <Typography component="span" color="success.main" variant="body1" fontWeight={600}>
                             Account is active
                           </Typography>
                         )
                       }
                     />
                   </ListItem>
+                  <Divider component="li" sx={{ mx: 4, opacity: 0.6 }} />
+
+                  <ListItem sx={{ 
+                    px: 4, 
+                    py: 3,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0,0,0,0.02)',
+                      transform: 'translateX(4px)'
+                    }
+                  }}>
+                    <ListItemIcon sx={{ 
+                      minWidth: 56,
+                      p: 1.5,
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(255, 152, 0, 0.08)',
+                      color: theme.palette.warning.main,
+                      mr: 2
+                    }}>
+                      <BadgeIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Driver's License"
+                      primaryTypographyProps={{ 
+                        variant: 'subtitle2', 
+                        color: 'text.secondary',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        mb: 0.5
+                      }}
+                      secondary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<VisibilityIcon />}
+                            onClick={handleViewLicense}
+                            disabled={licenseLoading}
+                            sx={{
+                              borderColor: theme.palette.primary.main,
+                              color: theme.palette.primary.main,
+                              fontWeight: 600,
+                              borderRadius: '8px',
+                              px: 2,
+                              py: 0.5,
+                              '&:hover': {
+                                borderColor: theme.palette.primary.dark,
+                                backgroundColor: theme.palette.primary.light + '15',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            {licenseLoading ? 'Loading...' : 'View License'}
+                          </Button>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
                 </List>
               </>
             ) : null}
+          </CardContent>
+        </Card>
+      </Modal>
+
+      {/* License Modal */}
+      <Modal
+        open={licenseModalOpen}
+        onClose={handleLicenseModalClose}
+        aria-labelledby="license-modal-title"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+          backdropFilter: 'blur(8px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)'
+        }}
+      >
+        <Card sx={{ 
+          width: '100%', 
+          maxWidth: 900,
+          maxHeight: '90vh',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          transform: 'scale(1)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            transform: 'scale(1.02)',
+            boxShadow: '0 35px 80px rgba(0, 0, 0, 0.3)'
+          }
+        }}>
+          <CardContent sx={{ p: 0 }}>
+            <Box sx={{ 
+              p: 4, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Background Pattern */}
+              <Box sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                pointerEvents: 'none'
+              }} />
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative', zIndex: 1 }}>
+                <Box sx={{
+                  p: 1.5,
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                  <BadgeIcon sx={{ fontSize: 24 }} />
+                </Box>
+                <Typography variant="h5" component="h2" sx={{ 
+                  fontWeight: 700,
+                  textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                  letterSpacing: '0.5px'
+                }}>
+                  Driver's License
+                </Typography>
+              </Box>
+              
+              <IconButton
+                onClick={handleLicenseModalClose}
+                sx={{ 
+                  color: 'white',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  position: 'relative',
+                  zIndex: 1,
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    transform: 'scale(1.1)'
+                  },
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Close />
+              </IconButton>
+            </Box>
+
+            <Box sx={{ p: 4 }}>
+              {licenseError ? (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  py: 6,
+                  textAlign: 'center'
+                }}>
+                  <Box sx={{
+                    p: 3,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(158, 158, 158, 0.1)',
+                    mb: 3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <InfoIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
+                  </Box>
+                  <Typography variant="h5" color="text.secondary" gutterBottom sx={{ fontWeight: 600 }}>
+                    No License Found
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 400 }}>
+                    {licenseError}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    onClick={handleLicenseModalClose}
+                    sx={{ 
+                      px: 4,
+                      py: 1.5,
+                      borderRadius: '8px',
+                      fontWeight: 600
+                    }}
+                  >
+                    Close
+                  </Button>
+                </Box>
+              ) : licenseImageUrl ? (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center',
+                  gap: 3
+                }}>
+                  <Box sx={{
+                    width: '100%',
+                    maxWidth: 700,
+                    border: '2px solid rgba(0,0,0,0.1)',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                    background: 'white',
+                    position: 'relative'
+                  }}>
+                    <img
+                      src={licenseImageUrl}
+                      alt="Driver's License"
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        display: 'block'
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: 2, 
+                    mt: 2,
+                    flexWrap: 'wrap',
+                    justifyContent: 'center'
+                  }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = licenseImageUrl;
+                        link.download = 'drivers-license';
+                        link.click();
+                      }}
+                      sx={{
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        borderColor: theme.palette.primary.main,
+                        color: theme.palette.primary.main,
+                        '&:hover': {
+                          borderColor: theme.palette.primary.dark,
+                          backgroundColor: theme.palette.primary.light + '15',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+                        },
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      Download
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<Upload />}
+                      onClick={handleUploadClick}
+                      sx={{
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        borderColor: theme.palette.success.main,
+                        color: theme.palette.success.main,
+                        '&:hover': {
+                          borderColor: theme.palette.success.dark,
+                          backgroundColor: theme.palette.success.light + '15',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 12px rgba(76, 175, 80, 0.2)'
+                        },
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      Upload New
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={handleLicenseModalClose}
+                      sx={{
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #2d2d2d 0%, #404040 100%)',
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                        },
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      Close
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  py: 6 
+                }}>
+                  <CircularProgress size={40} />
+                </Box>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      </Modal>
+
+      {/* Upload License Modal */}
+      <Modal
+        open={uploadModalOpen}
+        onClose={handleUploadModalClose}
+        aria-labelledby="upload-license-modal-title"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+          backdropFilter: 'blur(4px)'
+        }}
+      >
+        <Card sx={{ 
+          width: '100%', 
+          maxWidth: 500,
+          boxShadow: theme.shadows[10],
+          borderRadius: 3,
+          overflow: 'hidden'
+        }}>
+          <CardContent sx={{ p: 0 }}>
+            <Box sx={{ 
+              p: 3, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
+              color: 'white'
+            }}>
+              <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
+                Upload New License
+              </Typography>
+              <IconButton
+                onClick={handleUploadModalClose}
+                sx={{ color: 'white' }}
+              >
+                <Close />
+              </IconButton>
+            </Box>
+
+            <Box sx={{ p: 3 }}>
+              {uploadSuccess ? (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  py: 4,
+                  textAlign: 'center'
+                }}>
+                  <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main', mb: 2 }} />
+                  <Typography variant="h6" color="success.main" gutterBottom>
+                    License Updated Successfully!
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Your license has been updated. The modal will close automatically.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <Box>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Select License File
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Supported formats: JPG, PNG, GIF, PDF (Max size: 10MB)
+                    </Typography>
+                    
+                    <input
+                      accept=".jpg,.jpeg,.png,.gif,.pdf"
+                      style={{ display: 'none' }}
+                      id="license-file-input"
+                      type="file"
+                      onChange={handleFileSelect}
+                    />
+                    <label htmlFor="license-file-input">
+                      <Button
+                        variant="outlined"
+                        component="span"
+                        startIcon={<Upload />}
+                        fullWidth
+                        sx={{
+                          py: 2,
+                          borderStyle: 'dashed',
+                          borderWidth: 2,
+                          '&:hover': {
+                            borderColor: theme.palette.primary.main,
+                            backgroundColor: theme.palette.primary.light + '10'
+                          }
+                        }}
+                      >
+                        {selectedFile ? selectedFile.name : 'Choose File'}
+                      </Button>
+                    </label>
+                    
+                    {selectedFile && (
+                      <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {uploadError && (
+                    <Alert severity="error" sx={{ mt: 2 }}>
+                      {uploadError}
+                    </Alert>
+                  )}
+
+                  <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                    <Button
+                      variant="outlined"
+                      onClick={handleUploadModalClose}
+                      disabled={uploadLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={handleUploadSubmit}
+                      disabled={!selectedFile || uploadLoading}
+                      startIcon={uploadLoading ? <CircularProgress size={16} /> : null}
+                    >
+                      {uploadLoading ? 'Uploading...' : 'Upload License'}
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+            </Box>
           </CardContent>
         </Card>
       </Modal>

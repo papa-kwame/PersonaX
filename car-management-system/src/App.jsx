@@ -1,46 +1,51 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import LoadingSpinner from './components/LoadingSpinner';
 
-import Home from './pages/Home';
-import Login from './components/auth/Login';
-import Unauthorized from './pages/Unauthorized';
+// Lazy load components for better performance
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./components/auth/Login'));
+const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 
-import Layout from './components/shared/Layout';
-import Dashboard from './pages/Dashboard';
-import Vehicles from './pages/Vehicles';
-import VehicleNewPage from './components/vehicles/VehicleNewPage';
-import VehicleShowPage from './components/vehicles/VehicleShowPage';
-import Assignments from './pages/Assignments';
+const Layout = lazy(() => import('./components/shared/Layout'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Vehicles = lazy(() => import('./pages/Vehicles'));
+const VehicleNewPage = lazy(() => import('./components/vehicles/VehicleNewPage'));
+const VehicleShowPage = lazy(() => import('./components/vehicles/VehicleShowPage'));
+const Assignments = lazy(() => import('./pages/Assignments'));
 
-import Maintenance from './pages/Maintenance';
+const Maintenance = lazy(() => import('./pages/Maintenance'));
 
-import Approvals from './pages/Approvals';
-import MechanicDashboard from './pages/MechanicDashboard';
+const Approvals = lazy(() => import('./pages/Approvals'));
+const MechanicDashboard = lazy(() => import('./pages/MechanicDashboard'));
 
-import Admin from './pages/Admin';
-import AdminUsers from './components/admin/AdminUsers';
-import AdminSettings from './components/admin/AdminSettings';
-import AdminAudit from './components/admin/AdminAudit';
-import AdminReports from './components/admin/AdminReports';
-import AdminRoles from './components/admin/RoleManagementPage';
+const Admin = lazy(() => import('./pages/Admin'));
+const AdminUsers = lazy(() => import('./components/admin/AdminUsers'));
+const AdminSettings = lazy(() => import('./components/admin/AdminSettings'));
+const AdminAudit = lazy(() => import('./components/admin/AdminAudit'));
+const AdminReports = lazy(() => import('./components/admin/AdminReports'));
+const AdminRoles = lazy(() => import('./components/admin/RoleManagementPage'));
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import RouteManagementPage from './components/admin/RouteManagementPage';
-import VehicleEditForm from './components/vehicles/VehicleEditForm';
-import RegisterPage from './components/auth/RegisterPage';
-import UserDashboard from './components/users/UserDashboard';
-import AssignmentHistory from './components/assignments/AssignmentHistory';
-import NotificationButton from './components/users/Notifications';
-import VehicleAssignmentApp from './components/assignments/UserAssignments';
-import AdminFuelLogger from './components/admin/AdminFuelLogger';
-import ChangePasswordOnFirstLogin from './components/auth/ChangePassword';
-import SchedulePage from './components/new components/Schedule';
-import VehicleForm from './components/vehicles/VehicleForm';
-import CompleteInvoiceForm from './components/new components/InvoiceForm';
-import MaintenanceSchedulesPage from './components/new components/MaintenanceSchedulesPage';
-import LayoutUser from './components/shared/LayoutUser';
+import PerformanceDashboard from './components/shared/PerformanceDashboard';
+
+const RouteManagementPage = lazy(() => import('./components/admin/RouteManagementPage'));
+const VehicleEditForm = lazy(() => import('./components/vehicles/VehicleEditForm'));
+const RegisterPage = lazy(() => import('./components/auth/RegisterPage'));
+const UserDashboard = lazy(() => import('./components/users/UserDashboard'));
+const AssignmentHistory = lazy(() => import('./components/assignments/AssignmentHistory'));
+const NotificationButton = lazy(() => import('./components/users/Notifications'));
+const VehicleAssignmentApp = lazy(() => import('./components/assignments/UserAssignments'));
+const AdminFuelLogger = lazy(() => import('./components/admin/AdminFuelLogger'));
+const ChangePasswordOnFirstLogin = lazy(() => import('./components/auth/ChangePassword'));
+const SchedulePage = lazy(() => import('./components/new components/Schedule'));
+const VehicleForm = lazy(() => import('./components/vehicles/VehicleForm'));
+const CompleteInvoiceForm = lazy(() => import('./components/new components/InvoiceForm'));
+const Mechanic = lazy(() => import('./components/new components/Mechanic'));
+const LayoutUser = lazy(() => import('./components/shared/LayoutUser'));
 
 function RequirePasswordChange({ children }) {
   const { mustChangePassword } = useAuth();
@@ -59,7 +64,8 @@ function App() {
     <AuthProvider>
       <Router>
         <RequirePasswordChange>
-          <Routes>
+          <Suspense fallback={<LoadingSpinner size="lg" text="Loading application..." fullPage={true} />}>
+            <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/change-password" element={<ChangePasswordOnFirstLogin />} />
@@ -99,7 +105,7 @@ function App() {
  
             <Route path="/mechanic" element={
               <ProtectedRoute requiredRoles={['Mechanic']}>
-                <Layout><MaintenanceSchedulesPage /></Layout>
+                <Layout><Mechanic /></Layout>
               </ProtectedRoute>
             } />
           
@@ -120,7 +126,6 @@ function App() {
                 <Layout><Assignments /></Layout>
               </ProtectedRoute>
             } />
-
 
             <Route path="/invoicing" element={
               <ProtectedRoute requiredRoles={['Admin']}>
@@ -155,6 +160,12 @@ function App() {
             <Route path="/admin" element={
               <ProtectedRoute requiredRoles={['Admin']}>
                 <Layout><Admin /></Layout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin/performance" element={
+              <ProtectedRoute requiredRoles={['Admin']}>
+                <Layout><PerformanceDashboard /></Layout>
               </ProtectedRoute>
             } />
 
@@ -199,7 +210,8 @@ function App() {
                 <Layout><AdminReports /></Layout>
               </ProtectedRoute>
             } />
-          </Routes>
+            </Routes>
+          </Suspense>
         </RequirePasswordChange>
       </Router>
     </AuthProvider>
