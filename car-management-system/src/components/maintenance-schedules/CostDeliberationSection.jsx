@@ -47,18 +47,7 @@ const CostDeliberationSection = ({
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Background decoration */}
-      <Box sx={{
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        width: '120px',
-        height: '120px',
-        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.02) 100%)',
-        borderRadius: '50%',
-        transform: 'translate(30px, -30px)',
-        zIndex: 0
-      }} />
+
       
       <Box sx={{ position: 'relative', zIndex: 1 }}>
         <Box sx={{ 
@@ -99,51 +88,7 @@ const CostDeliberationSection = ({
               </Typography>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={fetchCostDeliberationRequests}
-              sx={{ 
-                borderRadius: '12px',
-                borderColor: 'rgba(37, 99, 235, 0.3)',
-                color: '#2563eb',
-                fontWeight: 600,
-                textTransform: 'none',
-                px: 3,
-                py: 1,
-                '&:hover': {
-                  borderColor: '#2563eb',
-                  backgroundColor: 'rgba(37, 99, 235, 0.04)'
-                }
-              }}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={async () => {
-                try {
-                  const response = await api.get(`/api/MaintenanceRequest/debug/cost-deliberation/${userId}`);
-                  } catch (error) {
-                  }
-              }}
-              sx={{ 
-                borderRadius: '12px',
-                borderColor: 'rgba(255, 0, 0, 0.3)',
-                color: '#dc2626',
-                fontWeight: 600,
-                textTransform: 'none',
-                px: 3,
-                py: 1,
-                '&:hover': {
-                  borderColor: '#dc2626',
-                  backgroundColor: 'rgba(220, 38, 38, 0.04)'
-                }
-              }}
-            >
-              Debug
-            </Button>
-          </Box>
+
         </Box>
       
         {costDeliberationRequests.length === 0 ? (
@@ -453,6 +398,15 @@ const CostDeliberationSection = ({
 };
 
 export default CostDeliberationSection;
+
+
+
+
+
+
+
+
+
 
 
 

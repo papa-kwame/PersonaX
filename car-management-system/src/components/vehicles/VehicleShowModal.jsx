@@ -312,7 +312,6 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
     >
       <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
         <Box sx={{ height: '90vh', overflow: 'auto', backgroundColor: COLORS.BACKGROUND }}>
-          {/* Header */}
           <Box sx={{
             p: 1,
             background: COLORS.CARD_BG,
@@ -330,23 +329,23 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                 }}>
                   <CarIcon sx={{ fontSize: 28 }} />
                 </Avatar>
-                <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, gap: 30 }}>
                   <Typography variant="h6" fontWeight={300} sx={{ 
-                    mb: 1,
+                    fontFamily: 'monospace',
                     color: COLORS.TEXT_PRIMARY
                   }}>
-                    {vehicle.make} {vehicle.model} ( {vehicle.year} )
+                    {vehicle.make} {vehicle.model}  
                   </Typography>
 
                   <Typography variant="body2" sx={{ 
                     color: COLORS.TEXT_SECONDARY,
                     fontFamily: 'monospace',
-                    fontSize: '0.875rem'
+                    fontSize: '1.275rem'
                   }}>
                     VIN: {vehicle.vin}
                   </Typography>
                 </Box>
-              </Box>
+           
               
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ 
@@ -413,6 +412,7 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
                   <CloseIcon />
                 </IconButton>
               </Box>
+                 </Box>
             </Box>
           </Box>
 
@@ -423,7 +423,8 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
               color: COLORS.TEXT_PRIMARY,
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 1,
+              mb: 3
             }}>
               <ScheduleIcon sx={{ color: COLORS.SECONDARY }} />
               Document Status
@@ -700,7 +701,7 @@ export default function VehicleShowModal({ vehicle, open, onClose, onEdit, onDel
               alignItems: 'center',
               gap: 1
             }}>
-              <InfoIcon sx={{ color: COLORS.SECONDARY }} />
+              <InfoIcon sx={{ color:'black' }} />
               Vehicle Details
             </Typography>
             

@@ -2889,7 +2889,6 @@ const MaintenanceRequestApp = () => {
           </DialogActions>
         </Dialog>
 
-        {/* COST DELIBERATION MODAL */}
         <CostDeliberationModal
           open={costDeliberationModalOpen}
           onClose={handleCloseCostDeliberation}
@@ -2899,7 +2898,6 @@ const MaintenanceRequestApp = () => {
           onCostUpdated={handleCostUpdated}
         />
 
-        {/* DOCUMENT VIEWER MODAL */}
         <DocumentViewer
           open={documentViewerOpen}
           onClose={handleCloseDocumentViewer}

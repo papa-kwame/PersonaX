@@ -560,7 +560,8 @@ const RouteManagementPage = () => {
         alignItems: 'center', 
         justifyContent: 'space-between', 
         mb: 5,
-        p: { xs: 2, sm: 3 },
+        p: { xs: 1, sm: 1 },
+        pl: { xs: 2, sm: 3 }, 
         backgroundColor: 'white',
         borderRadius: '16px',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
@@ -575,35 +576,29 @@ const RouteManagementPage = () => {
           textAlign: { xs: 'center', sm: 'left' }
         }}>
           <Avatar sx={{ 
-            width: { xs: 56, sm: 64 }, 
-            height: { xs: 56, sm: 64 }, 
+            width: { xs: 30, sm: 30 }, 
+            height: { xs: 30, sm: 30 }, 
             mr: { xs: 0, sm: 3 },
             mb: { xs: 2, sm: 0 },
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'black',
             boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
           }}>
-            <LockIcon sx={{ color: 'white', fontSize: { xs: 24, sm: 28 } }} />
+            <LockIcon sx={{ color: 'white', fontSize: { xs: 18, sm: 18 } }} />
           </Avatar>
           <Box>
-            <Typography variant="h4" component="h2" sx={{ 
+            <Typography variant="h1" component="h7" sx={{ 
               fontWeight: 800, 
               color: '#1e293b',
-              fontSize: { xs: '1.5rem', sm: '2rem' },
+              fontSize: { xs: '1rem', sm: '1.3rem' },
               mb: 0.5,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'black',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
               Route Management
             </Typography>
-            <Typography variant="body1" sx={{ 
-              color: '#64748b',
-              fontSize: { xs: '1rem', sm: '1.1rem' },
-              fontWeight: 500
-            }}>
-              Create and manage approval routes
-            </Typography>
+
           </Box>
         </Box>
         <Button
@@ -612,7 +607,7 @@ const RouteManagementPage = () => {
           startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
           disabled={loading}
           sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'black',
             color: 'white',
             px: { xs: 3, sm: 4 },
             py: 1.5,
@@ -623,7 +618,7 @@ const RouteManagementPage = () => {
             boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
             width: { xs: '100%', sm: 'auto' },
             '&:hover': { 
-              background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+              background: 'linear-gradient(135deg, #909090ff 0%, #565657ff 100%)',
               transform: 'translateY(-2px)',
               boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)'
             },
@@ -636,7 +631,7 @@ const RouteManagementPage = () => {
             transition: 'all 0.3s ease'
           }}
         >
-          + Add Route
+           Add Route
         </Button>
       </Box>
 
@@ -956,9 +951,10 @@ const RouteManagementPage = () => {
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center', 
-            p: 4,
+            p: 1,
+            pl: 3,
             borderBottom: '1px solid #e3e8f0',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'black',
             color: 'white'
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -978,12 +974,7 @@ const RouteManagementPage = () => {
               }}>
                 {isEditing ? 'Edit Approval Route' : 'Create New Route'}
               </Typography>
-                <Typography variant="body2" sx={{ 
-                  opacity: 0.9,
-                  fontSize: '0.9rem'
-                }}>
-                  Configure approval workflow for {currentRoute.department || 'department'}
-              </Typography>
+
               </Box>
             </Box>
             <IconButton 
@@ -1643,11 +1634,11 @@ const RouteManagementPage = () => {
             <Box>
               <Typography variant="body2" color="text.secondary">
                 {currentRoute.users.length === 4 ? 
-                  '✅ All roles assigned - Ready to save' : 
-                  `⚠️ ${4 - currentRoute.users.length} role${4 - currentRoute.users.length !== 1 ? 's' : ''} remaining`
+                  ' All roles assigned - Ready to save' : 
+                  `${4 - currentRoute.users.length} role${4 - currentRoute.users.length !== 1 ? 's' : ''} remaining`
                 }
               </Typography>
-            </Box>
+            </Box> 
             <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               variant="outlined"
